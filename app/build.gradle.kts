@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.helloworld"
+    namespace = "com.devsoftware.pdfreader"
     compileSdk = 34
 
     buildFeatures {
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.helloworld"
+        applicationId = "com.devsoftware.pdfreader"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
@@ -24,17 +25,21 @@ class MainActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
-        // ⚡ SENSİNİN ÇALIŞAN AYARLARIN + GEREKLİLER
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
-        webView.settings.allowFileAccess = true
-        webView.settings.allowContentAccess = true
-        webView.settings.allowUniversalAccessFromFileURLs = true
+        // === WebView Ayarları ===
+        val settings = webView.settings
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.allowFileAccess = true
+        settings.allowContentAccess = true
+        settings.allowUniversalAccessFromFileURLs = true
+        settings.allowFileAccessFromFileURLs = true
 
-        // HTML → Android bridge
+        webView.webChromeClient = WebChromeClient()
+
+        // HTML → Android köprüsü
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
-        // HTML içinde tıklanan özel linkler
+        // Özel link yakalama
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
@@ -51,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 
-    /** Tüm Dosya İzni Ekranı */
+    /** Tüm Dosya Erişimi Ayarı */
     private fun openAllFilesPermission() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -68,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Android → HTML Bridge */
+    /** JavaScript Interface (HTML → Android) */
     inner class AndroidBridge {
 
         @JavascriptInterface
@@ -78,13 +83,12 @@ class MainActivity : AppCompatActivity() {
             } else true
         }
 
-        /** Tüm cihaz depolarını tarar */
         @JavascriptInterface
         fun listPDFs(): String {
 
             val pdfList = ArrayList<String>()
 
-            // ⚡ TÜM OLASI ROOT DİZİNLER
+            // === Tarama yapılacak potansiyel root dizinler ===
             val roots = listOf(
                 File("/storage/emulated/0"),
                 File("/sdcard"),
@@ -92,31 +96,41 @@ class MainActivity : AppCompatActivity() {
                 Environment.getExternalStorageDirectory()
             )
 
-            roots.forEach { root ->
-                if (root.exists()) {
-                    scanPDFs(root, pdfList)
+            for (root in roots) {
+                if (root.exists() && root.canRead()) {
+                    scanSafe(root, pdfList)
                 }
             }
 
             return pdfList.joinToString("||")
         }
 
-        /** PDF tarayıcı (recursive) */
-        private fun scanPDFs(folder: File, output: MutableList<String>) {
-            if (!folder.exists()) return
-            if (folder.name.startsWith(".")) return
+        /** Güvenli PDF tarama — Android/data ve .klasörleri skip */
+        private fun scanSafe(dir: File, out: MutableList<String>) {
 
-            folder.listFiles()?.forEach { file ->
+            if (!dir.exists() || !dir.canRead()) return
+
+            // Android/data ve obb -> yasak → atla
+            if (dir.absolutePath.contains("/Android/data") ||
+                dir.absolutePath.contains("/Android/obb")) return
+
+            // gizli klasörleri atla
+            if (dir.name.startsWith(".")) return
+
+            val files = dir.listFiles() ?: return
+
+            for (file in files) {
+
                 if (file.isDirectory) {
-                    scanPDFs(file, output)
+                    scanSafe(file, out)
                 } else if (file.name.lowercase().endsWith(".pdf")) {
-                    output.add(file.absolutePath)
+                    out.add(file.absolutePath)
                 }
             }
         }
     }
 
-    /** İzin ekranından dönünce HTML'e bilgi gönder */
+    /** Ayarlardan dönünce HTML'e bilgi gönder */
     override fun onResume() {
         super.onResume()
         webView.post {

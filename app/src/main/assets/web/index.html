@@ -5,13 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF Reader | Dev Software</title>
   
-  <link rel="icon" type="image/png" href="logo/logo.png">
-  
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-  
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
+
+/* ttf */
+
+/* Material Symbols Rounded - Local WebView Font */
+@font-face {
+    font-family: 'Material Symbols Rounded';
+    src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
+    font-weight: 100 700;
+    font-style: normal;
+}
+
+/* Google'ın resmi class'ı - HTML ile birebir uyumlu */
+.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 48;
+}
+
+    
     /* --- 1. DEĞİŞKENLER --- */
     :root {
       --background: #e8e8e8;
@@ -808,38 +836,8 @@
     .empty-state { padding: 40px; text-align: center; color: var(--text-secondary); }
     .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
   </style>
-
-<!-- INJECTED: Local Material Symbols font for WebView -->
-<style>
-@font-face {
-  font-family: 'Material Symbols Rounded';
-  src: url('fonts/MaterialSymbolsRounded.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-.material-symbols-rounded {
-  font-family: 'Material Symbols Rounded';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 20px;
-  line-height: 1;
-  display: inline-block;
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 48;
-}
-</style>
-<!-- END INJECTED -->
 </head>
 <body>
-
-<!-- INJECTED: Permission UI for 'Cihazda' tab -->
-<div id="permissionBox" style="display:none; background:#fff3cd; padding:18px; border-radius:12px; border:1px solid #ffeeba; margin:16px 0; text-align:center;">
-  <h3 style="margin:0 0 8px 0;">Tüm Dosyalara Erişim Gerekli</h3>
-  <p style="margin:0 0 12px 0;">PDF dosyalarını göstermek için uygulamaya tam dosya erişim izni vermen gerekiyor.</p>
-  <button onclick="goSettings()" style="background:#ff5722;color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;">Ayarlardan İzin Ver</button>
-</div>
-<!-- END INJECTED -->
-
 
   <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handleFileSelect(event)">
 
@@ -923,6 +921,18 @@
     </div>
 
     <div class="content-panel" id="devicePanel">
+      <!-- PERMISSION BLOCK INSERTED -->
+      <div id="permissionContainer" style="padding:20px; text-align:center;">
+        <img src="images/permission1.png" style="width:120px; opacity:0.7;">
+        <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
+        <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
+        <button onclick="location.href='settings://all_files'"
+                style="padding:12px 20px; border-radius:12px; background:#E53935; color:white; border:none; margin-top:15px;">
+            Ayarlardan Erişim Ver
+        </button>
+      </div>
+      <!-- END PERMISSION BLOCK -->
+    
       <div class="grid" id="deviceList"></div>
     </div>
 
@@ -1399,15 +1409,85 @@
 
     // Cihaz PDF Tarama Fonksiyonu
     function scanDeviceForPDFs() {
+        // Eğer Android köprüsü varsa izin kontrol et
+        try {
+            if (typeof Android !== 'undefined' && Android.checkPermission && !Android.checkPermission()) {
+                // izin yok -> banner göster, listeyi temizle / render et
+                showDevicePermissionBanner();
+                // sadece cihaz kaynaklı dosyaları temizle (varsa)
+                importedFiles = importedFiles.filter(f => !f.path || !f.path.startsWith('/'));
+                renderDeviceList();
+                return;
+            }
+        } catch (e) {
+            console.warn('Android bridge check failed', e);
+        }
+
+        // izin varsa banner gizle ve Android'den PDF yollarını al
+        hideDevicePermissionBanner();
+
+        let paths = [];
+        try {
+            if (typeof Android !== 'undefined' && Android.listPDFs) {
+                const res = Android.listPDFs();
+                if (res && res.length > 0) {
+                    paths = res.split('||').filter(p=>p && p.trim().length>0);
+                }
+            }
+        } catch (e) {
+            console.error('Android.listPDFs error', e);
+        }
+
+        // paths -> importedFiles (avoid duplicates)
+        let nextId = importedFiles.length ? (Math.max(...importedFiles.map(f=>f.id||0)) + 1) : 1;
+        paths.forEach(p => {
+            if (!importedFiles.some(f => f.path === p)) {
+                const name = p.split('/').pop();
+                importedFiles.push({
+                    id: nextId++,
+                    name: name,
+                    size: '',
+                    date: '',
+                    isFavorite: false,
+                    path: p
+                });
+            }
+        });
+
+        // render result
         if (importedFiles.length === 0) {
-            alert("Cihazda henüz taranmış/import edilmiş PDF bulunamadı. Lütfen '+' butonu ile PDF ekleyin.");
-        } else {
-             alert(`${importedFiles.length} adet dosya listeleniyor.`);
+            // if still empty, let renderDeviceList show empty state
         }
         renderDeviceList();
     }
 
+    // helper: show/hide permission banner for device tab
+    function showDevicePermissionBanner() {
+        let container = document.getElementById('device-permission-banner');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'device-permission-banner';
+            container.className = 'permission-banner';
+            container.innerHTML = `<div class="permission-box">
+                <div class="permission-title">Uygulama cihaz dosyalarına erişim gerektiriyor</div>
+                <div class="permission-desc">PDF'leri görmek için lütfen "Tüm dosyalara erişim" iznini verin.</div>
+                <div class="permission-actions">
+                    <button onclick="location.href='settings://all_files'" class="btn btn-primary">Ayarları Aç</button>
+                </div>
+            </div>`;
+            const parent = document.getElementById('deviceList') || document.body;
+            parent.parentNode.insertBefore(container, parent);
+        }
+        container.style.display = 'block';
+    }
+
+    function hideDevicePermissionBanner() {
+        const container = document.getElementById('device-permission-banner');
+        if (container) container.style.display = 'none';
+    }
+
     // --- SELECTION MODE FUNCTIONS ---
+
     function enterSelectionMode() {
         isSelectionMode = true;
         document.body.classList.add('selection-mode');
@@ -1890,86 +1970,19 @@
     window.printSelectedCards = printSelectedCards;
     window.handleFileSelect = handleFileSelect;
 
-  </script>
+  
 
-<!-- INJECTED: Android bridge & permission handling -->
-<script>
-function goSettings() {
-  // navigate to Android intent handled by MainActivity
-  window.location.href = "settings://all_files";
-}
-
-function onAndroidResume() {
-  // called by Android when returning from settings to refresh permission state
-  try { checkPermissionAndLoad(); } catch(e){ console.error(e); }
-}
-
-function checkPermissionAndLoad() {
-  try {
-    var has = false;
-    if (typeof Android !== "undefined" && Android.checkPermission) {
-      has = Android.checkPermission();
-    } else {
-      // non-Android (web) assume true for testing
-      has = true;
-    }
-
-    var pb = document.getElementById("permissionBox");
-    if (!has) {
-      if (pb) pb.style.display = "block";
-      // clear or hide lists if needed
-      if (typeof showPdfList === "function") showPdfList([]);
-      return;
-    } else {
-      if (pb) pb.style.display = "none";
-    }
-
-    // request list from Android bridge
-    var listStr = "";
-    if (typeof Android !== "undefined" && Android.listPDFs) {
-      try { listStr = Android.listPDFs(); } catch(e){ console.error(e); listStr = ""; }
-    }
-    var arr = [];
-    if (listStr && listStr.length>0) arr = listStr.split("||").filter(Boolean);
-
-    if (typeof showPdfList === "function") {
-      showPdfList(arr);
-    } else {
-      // fallback: render simple list into an element with id 'pdfList'
-      var container = document.getElementById("pdfList");
-      if (container) {
-        if (arr.length===0) {
-          container.innerHTML = "<p>Bu cihazda PDF bulunamadı.</p>";
-        } else {
-          var html = "";
-          arr.forEach(function(path){
-            var name = path.substring(path.lastIndexOf('/')+1);
-            html += '<div class="pdf-item" onclick="openPDF(\\'' + encodeURIComponent(path) + '\\')">' +
-                    '<span class=\"material-symbols-rounded\">picture_as_pdf</span>' +
-                    '<span style=\"margin-left:10px\">' + name + '</span></div>';
-          });
-          container.innerHTML = html;
+    // Android'den döndüğünde çağrılacak (MainActivity.evaluateJavascript)
+    function onAndroidResume() {
+        try {
+            if (currentNav === 'device') {
+                scanDeviceForPDFs();
+            }
+        } catch (e) {
+            console.warn('onAndroidResume error', e);
         }
-      }
     }
-  } catch(err) {
-    console.error("checkPermissionAndLoad error:", err);
-  }
-}
 
-function openPDF(encPath) {
-  try {
-    var path = decodeURIComponent(encPath);
-    // open viewer.html in same folder via file param
-    window.location.href = "viewer.html?file=" + encodeURIComponent(path);
-  } catch(e) {
-    console.error(e);
-  }
-}
-
-// run on load
-window.addEventListener("load", function(){ setTimeout(checkPermissionAndLoad, 100); });
 </script>
-<!-- END INJECTED -->
 </body>
 </html>

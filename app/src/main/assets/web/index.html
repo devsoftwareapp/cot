@@ -893,6 +893,18 @@
     </div>
 
     <div class="content-panel" id="devicePanel">
+      <!-- PERMISSION BLOCK INSERTED -->
+      <div id="permissionContainer" style="padding:20px; text-align:center;">
+        <img src="images/permission1.png" style="width:120px; opacity:0.7;">
+        <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
+        <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
+        <button onclick="location.href='settings://all_files'"
+                style="padding:12px 20px; border-radius:12px; background:#E53935; color:white; border:none; margin-top:15px;">
+            Ayarlardan Erişim Ver
+        </button>
+      </div>
+      <!-- END PERMISSION BLOCK -->
+    
       <div class="grid" id="deviceList"></div>
     </div>
 

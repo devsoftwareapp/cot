@@ -24,13 +24,19 @@ class MainActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
+        // === WebView Ayarları ===
         webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.allowFileAccess = true
+        webView.settings.allowUniversalAccessFromFileURLs = true
+
+        // HTML → Android bridge
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
+        // HTML içinden tıklanan özel linkleri yakala
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
-                // HTML → Android ayarlarını aç
                 if (url == "settings://all_files") {
                     openAllFilesPermission()
                     return true
@@ -40,11 +46,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // HTML yükle
+        // index.html yükle
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 
-    /** Tüm dosya izni aç */
+    /** Tüm Dosya İzni sayfası aç */
     private fun openAllFilesPermission() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -61,10 +67,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Android → HTML Bridge */
+    /** Android → HTML köprüsü */
     inner class AndroidBridge {
 
-        /** HTML: izin var mı? */
         @JavascriptInterface
         fun checkPermission(): Boolean {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -72,24 +77,25 @@ class MainActivity : AppCompatActivity() {
             } else true
         }
 
-        /** HTML: PDF listele */
+        /** Tüm cihaz depolarından PDF tarayıcı */
         @JavascriptInterface
         fun listPDFs(): String {
 
             val pdfList = ArrayList<String>()
 
-            // 🔥 TÜM DEPOLUMA KÖK KLASÖR
-            val root = File("/storage/emulated/0")
+            // Cihazın kök klasörü
+            val root = File(Environment.getExternalStorageDirectory().absolutePath)
+
             scanPDFs(root, pdfList)
 
-            return pdfList.joinToString("||") // HTML tarafında split edeceğiz
+            return pdfList.joinToString("||")  // HTML tarafında split edilecek
         }
 
         /** Recursive PDF tarayıcı */
         private fun scanPDFs(folder: File, output: MutableList<String>) {
             if (!folder.exists()) return
 
-            // Gizli klasörleri es geç (performans artar)
+            // gizli klasörleri atla
             if (folder.name.startsWith(".")) return
 
             folder.listFiles()?.forEach { file ->
@@ -103,10 +109,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Android ayarlarından geri dönünce HTML'e haber ver */
+    /** Android ayarlarından dönünce HTML'e bilgi gönder */
     override fun onResume() {
         super.onResume()
-
         webView.post {
             webView.evaluateJavascript("onAndroidResume()", null)
         }

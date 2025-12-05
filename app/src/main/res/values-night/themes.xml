@@ -1,7 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.HelloWorld" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
+
+    <!-- Base dark theme -->
+    <style name="Base.Theme.PDFReader" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Dark theme customization here -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
     </style>
+
+    <!-- App theme -->
+    <style name="Theme.PDFReader" parent="Base.Theme.PDFReader" />
 </resources>

@@ -24,9 +24,17 @@ class MainActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
+        // ⚡ SENSİNİN ÇALIŞAN AYARLARIN + GEREKLİLER
         webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = true
+        webView.settings.allowUniversalAccessFromFileURLs = true
+
+        // HTML → Android bridge
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
+        // HTML içinde tıklanan özel linkler
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
@@ -39,9 +47,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // index.html yükle
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 
+    /** Tüm Dosya İzni Ekranı */
     private fun openAllFilesPermission() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -58,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Android → HTML Bridge */
     inner class AndroidBridge {
 
         @JavascriptInterface
@@ -67,15 +78,18 @@ class MainActivity : AppCompatActivity() {
             } else true
         }
 
+        /** Tüm cihaz depolarını tarar */
         @JavascriptInterface
         fun listPDFs(): String {
 
             val pdfList = ArrayList<String>()
 
+            // ⚡ TÜM OLASI ROOT DİZİNLER
             val roots = listOf(
                 File("/storage/emulated/0"),
                 File("/sdcard"),
-                File("/storage/self/primary")
+                File("/storage/self/primary"),
+                Environment.getExternalStorageDirectory()
             )
 
             roots.forEach { root ->
@@ -87,12 +101,12 @@ class MainActivity : AppCompatActivity() {
             return pdfList.joinToString("||")
         }
 
+        /** PDF tarayıcı (recursive) */
         private fun scanPDFs(folder: File, output: MutableList<String>) {
             if (!folder.exists()) return
             if (folder.name.startsWith(".")) return
 
             folder.listFiles()?.forEach { file ->
-
                 if (file.isDirectory) {
                     scanPDFs(file, output)
                 } else if (file.name.lowercase().endsWith(".pdf")) {
@@ -102,9 +116,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** İzin ekranından dönünce HTML'e bilgi gönder */
     override fun onResume() {
         super.onResume()
-
         webView.post {
             webView.evaluateJavascript("onAndroidResume()", null)
         }

@@ -17,8 +17,9 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
 
     lateinit var webView: WebView
+    private var backPressedTime: Long = 0
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,14 +44,26 @@ class MainActivity : AppCompatActivity() {
                     openAllFilesPermission()
                     return true
                 }
+                
+                // Viewer.html'den geri dönüş kontrolü
+                if (url.contains("file:///android_asset/web/index.html")) {
+                    // JavaScript'e geri dönüldü bilgisini gönder
+                    webView.postDelayed({
+                        webView.evaluateJavascript("""
+                            if (typeof onReturnFromViewer === 'function') {
+                                onReturnFromViewer();
+                            }
+                        """.trimIndent(), null)
+                    }, 300)
+                }
+                
                 return false
             }
             
-            // Sayfa yükleme tamamlandığında
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
-                // JavaScript ile iletişim kur
-                injectJavaScript()
+                // JavaScript'e geri tuşu kontrolü için fonksiyon ekle
+                injectBackButtonHandler()
             }
         }
 
@@ -58,22 +71,112 @@ class MainActivity : AppCompatActivity() {
     }
     
     // JavaScript'e geri tuşu kontrolü ekle
-    private fun injectJavaScript() {
+    private fun injectBackButtonHandler() {
         webView.evaluateJavascript("""
-            // Android geri tuşu kontrolü
-            window.isAtHomePage = function() {
-                return window.location.pathname.includes('index.html') || 
-                       window.location.href.includes('index.html');
+            // Android geri tuşu kontrolü için global değişken
+            window.androidBackPressed = function() {
+                // Mevcut sayfanın viewer.html olup olmadığını kontrol et
+                if (window.location.href.includes('viewer.html')) {
+                    // Viewer'dan index.html'ye dön
+                    window.location.href = 'file:///android_asset/web/index.html';
+                    return true;
+                }
+                
+                // Eğer selection modundaysa çık
+                if (typeof isSelectionMode !== 'undefined' && isSelectionMode) {
+                    if (typeof exitSelectionMode === 'function') {
+                        exitSelectionMode();
+                    }
+                    return false;
+                }
+                
+                // Eğer arama modundaysa çık
+                if (document.body.classList.contains('is-searching')) {
+                    const closeBtn = document.getElementById('closeSearchBtn');
+                    if (closeBtn) closeBtn.click();
+                    return false;
+                }
+                
+                // Eğer drawer açıksa kapat
+                const drawer = document.getElementById('drawer');
+                if (drawer && drawer.classList.contains('open')) {
+                    const overlay = document.getElementById('drawerOverlay');
+                    if (overlay) overlay.click();
+                    return false;
+                }
+                
+                // Eğer context menu açıksa kapat
+                const contextSheet = document.getElementById('contextSheet');
+                if (contextSheet && contextSheet.classList.contains('show')) {
+                    const contextOverlay = document.getElementById('contextOverlay');
+                    if (contextOverlay) contextOverlay.click();
+                    return false;
+                }
+                
+                // Eğer FAB menu açıksa kapat
+                const fabMenu = document.getElementById('fabMenu');
+                if (fabMenu && fabMenu.classList.contains('show')) {
+                    fabMenu.classList.remove('show');
+                    return false;
+                }
+                
+                // Ana sayfada değilsek ana sayfaya dön
+                if (typeof currentNav !== 'undefined' && currentNav !== 'home') {
+                    if (typeof switchNav === 'function') {
+                        switchNav('home');
+                    }
+                    return false;
+                }
+                
+                // Ana sayfadaysak ve viewer.html'de değilsek çıkış kontrolü
+                return 'exit_check';
             };
             
-            window.handleAndroidBack = function() {
-                // Ana sayfadaysa uyarı göster
-                if (isAtHomePage()) {
-                    if (typeof currentNav !== 'undefined' && currentNav === 'home') {
-                        return true; // Ana sayfada, çıkış yap
-                    }
+            // Viewer'dan dönüldüğünde çağrılacak fonksiyon
+            window.onReturnFromViewer = function() {
+                // Viewer'dan döndük, ana sayfaya geç
+                if (typeof currentNav !== 'undefined') {
+                    currentNav = 'home';
                 }
-                return false; // Geri git
+                
+                // Nav'ı güncelle
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(nav => nav.classList.remove('active'));
+                const homeNav = document.querySelector('.nav-item[data-nav="home"]');
+                if (homeNav) homeNav.classList.add('active');
+                
+                // Paneli güncelle
+                const panels = document.querySelectorAll('.content-panel');
+                panels.forEach(panel => panel.classList.remove('active'));
+                const homePanel = document.getElementById('recentPanel');
+                if (homePanel) homePanel.classList.add('active');
+                
+                // Tabs'ı güncelle
+                const tabs = document.querySelectorAll('.tab');
+                tabs.forEach(tab => tab.classList.remove('active'));
+                const recentTab = document.querySelector('.tab[data-tab="recent"]');
+                if (recentTab) recentTab.classList.add('active');
+                
+                // Top bar'ı sıfırla
+                const topBar = document.getElementById('topBar');
+                if (topBar) {
+                    topBar.style.transform = 'translateY(0)';
+                    topBar.classList.remove('tabs-hidden');
+                }
+                
+                // Main content padding'i ayarla
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) {
+                    mainContent.style.paddingTop = 'var(--top-bar-total)';
+                }
+                
+                // FAB'ı göster
+                const fabButton = document.getElementById('fabButton');
+                if (fabButton) {
+                    fabButton.style.display = 'flex';
+                }
+                
+                console.log('Returned from viewer');
             };
         """.trimIndent(), null)
     }
@@ -109,7 +212,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        /** PDF Tarama - MediaStore kullanarak */
+        /** PDF Tarama */
         @JavascriptInterface
         fun listPDFs(): String {
             // Önce izin kontrolü
@@ -119,92 +222,66 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            return try {
-                val pdfList = scanPDFsWithMediaStore()
-                if (pdfList.isEmpty()) "" else pdfList.joinToString("||")
+            val pdfList = mutableListOf<String>()
+            val roots = mutableListOf<File>()
+
+            // Tüm olası kök dizinler
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val externalStorage = Environment.getExternalStorageDirectory()
+                if (externalStorage.exists()) {
+                    roots.add(externalStorage)
+                }
+            } else {
+                roots.apply {
+                    add(File("/storage/emulated/0"))
+                    add(File("/sdcard"))
+                    add(File("/storage/self/primary"))
+                    Environment.getExternalStorageDirectory()?.let { add(it) }
+                }
+            }
+
+            // Downloads, Documents, DCIM gibi önemli klasörleri de tara
+            val importantDirs = listOf(
+                Environment.DIRECTORY_DOWNLOADS,
+                Environment.DIRECTORY_DOCUMENTS,
+                Environment.DIRECTORY_DCIM
+            )
+
+            importantDirs.forEach { dirType ->
+                getExternalFilesDir(dirType)?.let { dir ->
+                    if (dir.exists()) roots.add(dir)
+                }
+            }
+
+            // Tarama işlemi
+            roots.forEach { root ->
+                if (root.exists() && root.canRead()) {
+                    scanForPDFs(root, pdfList, 0)
+                }
+            }
+
+            return if (pdfList.isEmpty()) "" else pdfList.joinToString("||")
+        }
+
+        /** Rekürsif PDF tarama */
+        private fun scanForPDFs(dir: File, output: MutableList<String>, depth: Int) {
+            if (depth > 10) return
+            if (dir.name.startsWith(".")) return
+            
+            try {
+                dir.listFiles()?.forEach { file ->
+                    if (file.isDirectory) {
+                        scanForPDFs(file, output, depth + 1)
+                    } else if (file.isFile && file.name.lowercase().endsWith(".pdf")) {
+                        output.add(file.absolutePath)
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                // MediaStore başarısız olursa eski yönteme dön
-                legacyListPDFs()
-            }
-        }
-        
-        /** MediaStore ile PDF tarama */
-        private fun scanPDFsWithMediaStore(): List<String> {
-            val pdfList = mutableListOf<String>()
-            val contentResolver: android.content.ContentResolver = applicationContext.contentResolver
-            
-            val projection = arrayOf(
-                android.provider.MediaStore.Files.FileColumns._ID,
-                android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME,
-                android.provider.MediaStore.Files.FileColumns.SIZE,
-                android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED
-            )
-            
-            val selection = "${android.provider.MediaStore.Files.FileColumns.MIME_TYPE} = ?"
-            val selectionArgs = arrayOf("application/pdf")
-            
-            val sortOrder = "${android.provider.MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
-            
-            contentResolver.query(
-                android.provider.MediaStore.Files.getContentUri("external"),
-                projection,
-                selection,
-                selectionArgs,
-                sortOrder
-            )?.use { cursor ->
-                val idColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Files.FileColumns._ID)
-                val nameColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Files.FileColumns.DISPLAY_NAME)
-                
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idColumn)
-                    val name = cursor.getString(nameColumn)
-                    val contentUri = android.content.ContentUris.withAppendedId(
-                        android.provider.MediaStore.Files.getContentUri("external"),
-                        id
-                    )
-                    pdfList.add("$id||$name||${contentUri}")
-                }
-            }
-            
-            return pdfList
-        }
-        
-        /** Eski yöntemle PDF tarama (geriye dönük uyumluluk) */
-        private fun legacyListPDFs(): String {
-            val pdfList = ArrayList<String>()
-
-            val roots = listOf(
-                File("/storage/emulated/0"),
-                File("/sdcard"),
-                File("/storage/self/primary"),
-                Environment.getExternalStorageDirectory()
-            )
-
-            roots.forEach { root ->
-                if (root.exists()) {
-                    scanPDFs(root, pdfList)
-                }
-            }
-
-            return pdfList.joinToString("||")
-        }
-
-        /** PDF tarayıcı (recursive) */
-        private fun scanPDFs(folder: File, output: MutableList<String>) {
-            if (!folder.exists()) return
-            if (folder.name.startsWith(".")) return
-
-            folder.listFiles()?.forEach { file ->
-                if (file.isDirectory) {
-                    scanPDFs(file, output)
-                } else if (file.name.lowercase().endsWith(".pdf")) {
-                    output.add(file.absolutePath)
-                }
             }
         }
 
-        /** Test için: İzin durumunu döndür */
+        /** İzin durumunu döndür */
         @JavascriptInterface
         fun getPermissionStatus(): String {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -214,10 +291,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        /** Geri tuşu için: Ana sayfada mı kontrolü */
+        /** Geri tuşu için: Viewer'da mı kontrolü */
         @JavascriptInterface
-        fun checkIfAtHomePage(): Boolean {
-            return webView.url?.contains("index.html") == true
+        fun isInViewer(): Boolean {
+            return webView.url?.contains("viewer.html") == true
         }
     }
 
@@ -225,7 +302,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         webView.post {
-            // JavaScript'e izin durumunu gönder
             webView.evaluateJavascript("""
                 try {
                     onAndroidResume();
@@ -237,66 +313,28 @@ class MainActivity : AppCompatActivity() {
     }
     
     // --- GERİ TUŞU İŞLEMİ ---
-    private var backPressedTime: Long = 0
-    
     override fun onBackPressed() {
-        // WebView'de geri gitme özelliğini kontrol et
-        if (webView.canGoBack()) {
-            // JavaScript ile geri tuşu işlemini kontrol et
-            webView.evaluateJavascript("""
-                (function() {
-                    // Eğer viewer.html'de isek index.html'ye dön
-                    if (window.location.href.includes('viewer.html')) {
-                        return 'VIEWER';
-                    }
-                    
-                    // Eğer ana sayfadaysak ve home sekmesindeysek çıkış göster
-                    if (typeof currentNav !== 'undefined' && currentNav === 'home') {
-                        return 'HOME_EXIT';
-                    }
-                    
-                    // Eğer diğer sekmelerdeysek ana sayfaya dön
-                    if (typeof currentNav !== 'undefined' && currentNav !== 'home') {
-                        switchNav('home');
-                        return 'NAV_HOME';
-                    }
-                    
-                    return 'GO_BACK';
-                })();
-            """.trimIndent()) { result ->
-                when (result?.trim('"')) {
-                    "VIEWER" -> {
-                        // viewer.html'den index.html'ye dön
-                        webView.loadUrl("file:///android_asset/web/index.html")
-                    }
-                    "HOME_EXIT" -> {
-                        // Ana sayfada çift tıklama ile çıkış
-                        if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                            super.onBackPressed()
-                            finish()
-                        } else {
-                            Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
-                            backPressedTime = System.currentTimeMillis()
-                        }
-                    }
-                    "NAV_HOME" -> {
-                        // Zaten switchNav çağrıldı, bir şey yapma
-                    }
-                    else -> {
-                        // WebView'de geri git
-                        webView.goBack()
-                    }
+        // JavaScript ile geri tuşu işlemini kontrol et
+        webView.evaluateJavascript("""
+            if (typeof androidBackPressed === 'function') {
+                androidBackPressed();
+            } else {
+                'exit_check';
+            }
+        """.trimIndent()) { result ->
+            val jsResult = result?.trim('"')
+            
+            if (jsResult == "exit_check") {
+                // Ana sayfadaysa çift tıklama ile çıkış
+                if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                    super.onBackPressed()
+                    finish()
+                } else {
+                    Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
+                    backPressedTime = System.currentTimeMillis()
                 }
             }
-        } else {
-            // WebView'de geri gidilecek sayfa yok
-            if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                super.onBackPressed()
-                finish()
-            } else {
-                Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
-                backPressedTime = System.currentTimeMillis()
-            }
+            // Diğer durumlarda JavaScript zaten işlemi yaptı, bir şey yapma
         }
     }
 }

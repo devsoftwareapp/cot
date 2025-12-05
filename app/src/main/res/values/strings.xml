@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">PDF Reader</string>
-    <string name="PDFReader">Hello Android</string>
     <string name="press_me">Press Me</string>
+    <string name="hello_pdf_reader">Hello PDF Reader</string>
 </resources>

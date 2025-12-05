@@ -2062,6 +2062,186 @@
     window.scanDeviceForPDFs = scanDeviceForPDFs;
     window.onAndroidResume = onAndroidResume;
 
+
+// JavaScript dosyasına bu fonksiyonları ekleyin:
+
+// Geri tuşu kontrolü
+let canExit = false;
+
+// Geri tuşu dinleyicisi
+function setupBackButtonHandler() {
+    // Android geri tuşu için
+    if (window.history && window.history.pushState) {
+        window.history.pushState(null, null, window.location.href);
+        
+        window.onpopstate = function(event) {
+            handleBackButton();
+        };
+    }
+}
+
+// Geri tuşu işleyicisi
+function handleBackButton() {
+    // Eğer selection modundaysa çık
+    if (isSelectionMode) {
+        exitSelectionMode();
+        return false;
+    }
+    
+    // Eğer arama modundaysa çık
+    if (document.body.classList.contains('is-searching')) {
+        closeSearchBtn.click();
+        return false;
+    }
+    
+    // Eğer drawer açıksa kapat
+    if (drawer.classList.contains('open')) {
+        drawer.classList.remove('open');
+        overlay.classList.remove('show');
+        return false;
+    }
+    
+    // Eğer context menu açıksa kapat
+    if (contextSheet.classList.contains('show')) {
+        closeContextMenu();
+        return false;
+    }
+    
+    // Eğer FAB menu açıksa kapat
+    if (fabMenu.classList.contains('show')) {
+        fabMenu.classList.remove('show');
+        return false;
+    }
+    
+    // Ana sayfada değilsek ana sayfaya dön
+    if (currentNav !== 'home') {
+        switchNav('home');
+        return false;
+    }
+    
+    // Ana sayfadaysak çıkış uyarısı göster
+    if (!canExit) {
+        showExitToast();
+        canExit = true;
+        setTimeout(() => canExit = false, 2000);
+        return true;
+    }
+    
+    return true;
+}
+
+// Çıkış toast mesajı
+function showExitToast() {
+    // Toast mesajı oluştur
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 9999;
+        font-size: 14px;
+        animation: fadeInOut 2s;
+    `;
+    
+    // Stil için animasyon
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    toast.textContent = 'Çıkmak için tekrar geri tuşuna basın';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+        if (style.parentNode) {
+            style.parentNode.removeChild(style);
+        }
+    }, 2000);
+}
+
+// Android'den gelen geri tuşu kontrolü
+if (typeof Android !== 'undefined') {
+    // Android geri tuşu için
+    document.addEventListener('backbutton', function(e) {
+        e.preventDefault();
+        handleBackButton();
+    }, false);
+}
+
+// Sayfa yüklendiğinde geri tuşu handler'ını kur
+document.addEventListener('DOMContentLoaded', () => {
+    setupBackButtonHandler();
+    
+    // Ana sayfaya dönüldüğünde state'i güncelle
+    window.addEventListener('popstate', function() {
+        if (!window.location.href.includes('viewer.html')) {
+            // index.html'ye döndüysek
+            switchNav('home');
+        }
+    });
+});
+
+// Viewer'dan dönüş için
+if (window.location.href.includes('index.html') && sessionStorage.getItem('fromViewer')) {
+    sessionStorage.removeItem('fromViewer');
+    // Viewer'dan döndük, gerekirse state'i sıfırla
+    currentNav = 'home';
+    switchNav('home');
+    switchTab('recent', true);
+}
+
+// Viewer'a giderken session storage'a kaydet
+function goToViewer(url) {
+    sessionStorage.setItem('fromViewer', 'true');
+    window.location.href = url;
+}
+
+// handleCardClick fonksiyonunu güncelle:
+function handleCardClick(element, name, cardId) {
+    if (isSelectionMode) {
+        toggleCardSelection(cardId);
+        return;
+    }
+    
+    if (!isLongPress) {
+        let fileData = importedFiles.find(f => f.id === cardId);
+        if (!fileData) {
+            fileData = devicePDFs.find(f => f.id === cardId);
+        }
+
+        if (fileData && fileData.base64) {
+            const url = "viewer.html?base64=" + 
+                        encodeURIComponent(fileData.base64) + 
+                        "&name=" + 
+                        encodeURIComponent(name);
+            goToViewer(url);
+        } else if (fileData && fileData.path) {
+            const url = "viewer.html?file=" + 
+                        encodeURIComponent(fileData.path) + 
+                        "&name=" + 
+                        encodeURIComponent(name);
+            goToViewer(url);
+        } else {
+            alert("Dosya verisi bulunamadı!");
+        }
+    }
+}
+    
+
   </script>
 </body>
 </html>

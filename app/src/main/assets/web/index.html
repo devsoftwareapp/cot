@@ -2066,22 +2066,73 @@
 // JavaScript dosyasına bu fonksiyonları ekleyin:
 
 // Geri tuşu kontrolü
-let canExit = false;
 
-// Geri tuşu dinleyicisi
-function setupBackButtonHandler() {
-    // Android geri tuşu için
-    if (window.history && window.history.pushState) {
-        window.history.pushState(null, null, window.location.href);
-        
-        window.onpopstate = function(event) {
-            handleBackButton();
-        };
-    }
+
+
+
+
+
+    
+
+    
+// index.html'nin <script> bölümüne bu fonksiyonları ekleyin:
+
+// Geri tuşu için global değişken
+let backPressedTime = 0;
+
+// Geri tuşu toast mesajı göster
+function showExitToast() {
+    // Toast mesajı oluştur
+    const toast = document.createElement('div');
+    toast.id = 'exitToast';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        z-index: 9999;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        white-space: nowrap;
+    `;
+    
+    toast.textContent = 'Çıkmak için tekrar geri tuşuna basın';
+    document.body.appendChild(toast);
+    
+    // Görünür yap
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    }, 10);
+    
+    // 2 saniye sonra gizle ve sil
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-20px)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 2000);
 }
 
-// Geri tuşu işleyicisi
-function handleBackButton() {
+// Android geri tuşu fonksiyonu (MainActivity'den çağrılacak)
+window.androidBackPressed = function() {
+    // Mevcut sayfanın viewer.html olup olmadığını kontrol et
+    if (window.location.href.includes('viewer.html')) {
+        // Viewer'dan index.html'ye dön
+        window.location.href = 'file:///android_asset/web/index.html';
+        return true;
+    }
+    
     // Eğer selection modundaysa çık
     if (isSelectionMode) {
         exitSelectionMode();
@@ -2119,98 +2170,31 @@ function handleBackButton() {
         return false;
     }
     
-    // Ana sayfadaysak çıkış uyarısı göster
-    if (!canExit) {
+    // Ana sayfadaysak çıkış kontrolü
+    const now = Date.now();
+    if (backPressedTime + 2000 > now) {
+        // Çift tıklama ile çık (Android tarafında işlenecek)
+        return 'exit_check';
+    } else {
+        // İlk tıklama, toast göster
         showExitToast();
-        canExit = true;
-        setTimeout(() => canExit = false, 2000);
-        return true;
+        backPressedTime = now;
+        return false;
+    }
+};
+
+// Viewer'a giderken history state ekle
+function goToViewer(url) {
+    // History state ekle (geri tuşu için)
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ page: "viewer" }, "", window.location.href);
     }
     
-    return true;
-}
-
-// Çıkış toast mesajı
-function showExitToast() {
-    // Toast mesajı oluştur
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        z-index: 9999;
-        font-size: 14px;
-        animation: fadeInOut 2s;
-    `;
-    
-    // Stil için animasyon
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    toast.textContent = 'Çıkmak için tekrar geri tuşuna basın';
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-        }
-        if (style.parentNode) {
-            style.parentNode.removeChild(style);
-        }
-    }, 2000);
-}
-
-// Android'den gelen geri tuşu kontrolü
-if (typeof Android !== 'undefined') {
-    // Android geri tuşu için
-    document.addEventListener('backbutton', function(e) {
-        e.preventDefault();
-        handleBackButton();
-    }, false);
-}
-
-// Sayfa yüklendiğinde geri tuşu handler'ını kur
-document.addEventListener('DOMContentLoaded', () => {
-    setupBackButtonHandler();
-    
-    // Ana sayfaya dönüldüğünde state'i güncelle
-    window.addEventListener('popstate', function() {
-        if (!window.location.href.includes('viewer.html')) {
-            // index.html'ye döndüysek
-            switchNav('home');
-        }
-    });
-});
-
-// Viewer'dan dönüş için
-if (window.location.href.includes('index.html') && sessionStorage.getItem('fromViewer')) {
-    sessionStorage.removeItem('fromViewer');
-    // Viewer'dan döndük, gerekirse state'i sıfırla
-    currentNav = 'home';
-    switchNav('home');
-    switchTab('recent', true);
-}
-
-// Viewer'a giderken session storage'a kaydet
-function goToViewer(url) {
-    sessionStorage.setItem('fromViewer', 'true');
+    // Viewer'a git
     window.location.href = url;
 }
 
-// handleCardClick fonksiyonunu güncelle:
+// handleCardClick fonksiyonunu güncelle
 function handleCardClick(element, name, cardId) {
     if (isSelectionMode) {
         toggleCardSelection(cardId);
@@ -2240,8 +2224,38 @@ function handleCardClick(element, name, cardId) {
         }
     }
 }
-    
 
+// History state kontrolü
+window.addEventListener('popstate', function(event) {
+    // Geri tuşu ile viewer'dan döndüysek
+    if (event.state && event.state.page === "viewer") {
+        // Ana sayfaya dön
+        currentNav = 'home';
+        switchNav('home');
+        switchTab('recent', true);
+    }
+});
+
+// DOM yüklendiğinde history state'i ayarla
+document.addEventListener('DOMContentLoaded', () => {
+    // İlk history state'i ekle
+    if (window.history && window.history.replaceState) {
+        window.history.replaceState({ page: "home" }, "", window.location.href);
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+    
   </script>
 </body>
 </html>

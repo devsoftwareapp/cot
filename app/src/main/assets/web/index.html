@@ -5,46 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF Reader | Dev Software</title>
   
-  
   <style>
+    /* Material Symbols Rounded - Local WebView Font */
+    @font-face {
+        font-family: 'Material Symbols Rounded';
+        src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
+        font-weight: 100 700;
+        font-style: normal;
+    }
 
-/* ttf */
-
-/* Material Symbols Rounded - Local WebView Font */
-@font-face {
-    font-family: 'Material Symbols Rounded';
-    src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
-    font-weight: 100 700;
-    font-style: normal;
-}
-
-/* Google'ın resmi class'ı - HTML ile birebir uyumlu */
-.material-symbols-rounded {
-    font-family: 'Material Symbols Rounded';
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    display: inline-block;
-    line-height: 1;
-    text-transform: none;
-    letter-spacing: normal;
-    word-wrap: normal;
-    white-space: nowrap;
-    direction: ltr;
-    -webkit-font-smoothing: antialiased;
-    font-variation-settings:
-        'FILL' 0,
-        'wght' 400,
-        'GRAD' 0,
-        'opsz' 48;
-}
-
+    .material-symbols-rounded {
+        font-family: 'Material Symbols Rounded';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 24px;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 48;
+    }
     
     /* --- 1. DEĞİŞKENLER --- */
     :root {
       --background: #e8e8e8;
       --surface: #e8e8e8;
-      
       --primary: #E53935;
       --secondary: #B71C1C;
       --success: #4cc9f0;
@@ -74,18 +67,15 @@
       --z-overlay: 2000;
       --z-context-menu: 2100; 
       
-      /* KART DEĞİŞKENLERİ */
       --card-icon-size: 36px;
       --card-padding: 10px;
       --card-gutter: 12px;
       --card-max-width: 500px;
       
-      /* SVG RENKLERİ */
       --pdf-color-main: #E53935;
       --pdf-color-bg: #E53935; 
       --pdf-color-text: #E53935; 
       
-      /* SELECTION MODE */
       --selection-bg: rgba(229, 57, 53, 0.1);
       --selection-border: #E53935;
     }
@@ -96,11 +86,8 @@
       --text-primary: #f8fafc;
       --text-secondary: #cbd5e1;
       --border: #334155;
-      /* SVG RENKLERİ */
       --pdf-color-bg: #FF6961; 
       --pdf-color-text: #B71C1C; 
-      
-      /* SELECTION MODE DARK */
       --selection-bg: rgba(255, 105, 97, 0.15);
       --selection-border: #FF6961;
     }
@@ -118,8 +105,12 @@
     .text-sm { font-size: 14px; }
     .justify-between { justify-content: space-between; }
     .flex-col { flex-direction: column; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mb-2 { margin-bottom: 8px; }
+    .text-center { text-align: center; }
 
-    /* --- ARAMA MODU (IS-SEARCHING) --- */
+    /* --- ARAMA MODU --- */
     body.is-searching .tabs-container,
     body.is-searching .bottom-nav,
     body.is-searching .fab-container,
@@ -437,7 +428,6 @@
         padding-top: 0 !important;
         padding-bottom: 120px;
     }
-
 
     /* --- 5. KART TASARIMI --- */
     .card { 
@@ -835,6 +825,45 @@
     }
     .empty-state { padding: 40px; text-align: center; color: var(--text-secondary); }
     .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    
+    /* --- İZİN BANNER STİLLERİ --- */
+    .permission-banner {
+        padding: 20px;
+        text-align: center;
+        background: var(--surface);
+        border-radius: 12px;
+        margin: 20px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+    }
+    .permission-banner img {
+        width: 120px;
+        opacity: 0.7;
+        margin-bottom: 16px;
+    }
+    .permission-banner h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    .permission-banner p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+    .permission-banner button {
+        padding: 12px 20px;
+        border-radius: 12px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color var(--transition-fast);
+    }
+    .permission-banner button:hover {
+        background: var(--secondary);
+    }
   </style>
 </head>
 <body>
@@ -921,18 +950,17 @@
     </div>
 
     <div class="content-panel" id="devicePanel">
-      <!-- PERMISSION BLOCK INSERTED -->
-      <div id="permissionContainer" style="padding:20px; text-align:center;">
-        <img src="images/permission1.png" style="width:120px; opacity:0.7;">
+      <!-- İZİN BANNERİ -->
+      <div class="permission-banner" id="permissionContainer">
+        <img src="images/permission1.png" alt="İzin Gerekiyor">
         <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
         <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
-        <button onclick="location.href='settings://all_files'"
-                style="padding:12px 20px; border-radius:12px; background:#E53935; color:white; border:none; margin-top:15px;">
+        <button onclick="location.href='settings://all_files'">
             Ayarlardan Erişim Ver
         </button>
       </div>
-      <!-- END PERMISSION BLOCK -->
-    
+      
+      <!-- PDF LİSTESİ -->
       <div class="grid" id="deviceList"></div>
     </div>
 
@@ -1188,8 +1216,9 @@
     let isSelectionMode = false;
     let selectedCards = new Set();
 
-    // Data Storage (In-Memory for this session)
+    // Data Storage
     let importedFiles = []; // PDF Yükle ile gelen dosyalar
+    let devicePDFs = []; // Cihazdan taranan PDF'ler
 
     // Scroll & Swipe State
     let lastScrollY = 0;
@@ -1204,7 +1233,7 @@
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
-      loadData(); // Artık boş listeleri yüklüyor
+      loadData();
       attachEvents();
       document.getElementById('recentPanel').scrollTop = 0;
       document.querySelector('.setting-tab').classList.add('active');
@@ -1212,6 +1241,13 @@
       
       const currentTheme = localStorage.getItem('pdfTheme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.querySelector(`.theme-option[data-theme-val="${currentTheme === 'dark' ? 'dark' : (currentTheme === 'light' ? 'light' : 'device')}"]`).classList.add('active');
+      
+      // Uygulama açıldığında cihaz PDF'lerini kontrol et
+      setTimeout(() => {
+        if (currentNav === 'home') {
+          scanDeviceForPDFs();
+        }
+      }, 1000);
     });
 
     function initTheme() {
@@ -1237,10 +1273,15 @@
     }
 
     function loadData() {
-      // Demo verileri kaldırıldı. Sadece boş durumları veya importedFiles dizisini render ediyoruz.
       renderList('recentList', []); // Son kullanılanlar boş
       renderList('favoritesList', []); // Favoriler boş
-      renderDeviceList(); // Cihazda listesi (başlangıçta boş veya import edilenler)
+      
+      // Cihaz PDF'lerini ve importedFiles'ı birleştir
+      const allDeviceFiles = [...devicePDFs, ...importedFiles.filter(f => !f.path || !f.path.startsWith('/'))];
+      renderList('deviceList', allDeviceFiles);
+      
+      // İzin kontrolü yap
+      checkPermissionAndUpdateUI();
     }
 
     // Listeleri render eden yardımcı fonksiyon
@@ -1262,12 +1303,7 @@
         }
     }
 
-    // Cihazda listesini render eden özel fonksiyon
-    function renderDeviceList() {
-        renderList('deviceList', importedFiles);
-    }
-
-    // --- KART OLUŞTURMA ---
+    // KART OLUŞTURMA
     function createCard(name, size, date, isFavorite, id) {
       const MAX_LENGTH = 30;
       const truncatedName = name.length > MAX_LENGTH 
@@ -1332,7 +1368,95 @@
       </div>`;
     }
 
-    // --- DOSYA YÜKLEME VE TARAMA İŞLEMLERİ ---
+    // --- ANDROID İZİN VE PDF TARAMA ---
+    
+    // Android'den izin kontrolü
+    function checkAndroidPermission() {
+        try {
+            if (typeof Android !== 'undefined' && Android.checkPermission) {
+                return Android.checkPermission();
+            }
+            return false;
+        } catch (e) {
+            console.error('Permission check error:', e);
+            return false;
+        }
+    }
+    
+    // İzin durumuna göre UI güncelle
+    function checkPermissionAndUpdateUI() {
+        const hasPermission = checkAndroidPermission();
+        const permissionContainer = document.getElementById('permissionContainer');
+        const deviceList = document.getElementById('deviceList');
+        
+        if (!hasPermission) {
+            // İzin yoksa banner göster, listeyi gizle
+            if (permissionContainer) permissionContainer.style.display = 'block';
+            if (deviceList) deviceList.style.display = 'none';
+        } else {
+            // İzin varsa banner gizle, listeyi göster
+            if (permissionContainer) permissionContainer.style.display = 'none';
+            if (deviceList) deviceList.style.display = 'grid';
+        }
+    }
+
+    // Cihaz PDF'lerini tarama
+    function scanDeviceForPDFs() {
+        try {
+            // Önce izin kontrolü
+            if (!checkAndroidPermission()) {
+                checkPermissionAndUpdateUI();
+                return;
+            }
+            
+            // Android bridge'den PDF listesini al
+            let pdfPaths = [];
+            if (typeof Android !== 'undefined' && Android.listPDFs) {
+                const result = Android.listPDFs();
+                if (result && result.trim().length > 0 && result !== "PERMISSION_DENIED") {
+                    pdfPaths = result.split('||').filter(p => p && p.trim().length > 0);
+                }
+            }
+            
+            // PDF'leri devicePDFs dizisine ekle
+            devicePDFs = [];
+            let nextId = 1000; // Cihaz PDF'leri için yüksek ID'ler
+            
+            pdfPaths.forEach(path => {
+                const name = path.split('/').pop();
+                devicePDFs.push({
+                    id: nextId++,
+                    name: name,
+                    size: getFileSizeFromPath(path),
+                    date: getFileDateFromPath(path),
+                    isFavorite: false,
+                    path: path
+                });
+            });
+            
+            // UI'ı güncelle
+            checkPermissionAndUpdateUI();
+            loadData(); // Verileri yeniden yükle
+            
+        } catch (e) {
+            console.error('Device scan error:', e);
+            checkPermissionAndUpdateUI();
+        }
+    }
+    
+    // Dosya boyutunu al (simüle)
+    function getFileSizeFromPath(path) {
+        // Gerçek uygulamada Android'den dosya boyutu alınmalı
+        return "~2.5 MB";
+    }
+    
+    // Dosya tarihini al (simüle)
+    function getFileDateFromPath(path) {
+        const now = new Date();
+        return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+    }
+
+    // --- DOSYA YÜKLEME İŞLEMLERİ ---
     
     // FAB Action Handler
     function handleFabAction(action) {
@@ -1369,10 +1493,10 @@
                     date: formattedDate,
                     isFavorite: false,
                     id: Date.now(), 
-                    base64: base64Data // <--- ÖNEMLİ: Base64 formatında saklıyoruz
+                    base64: base64Data // Base64 formatında saklıyoruz
                 };
 
-                // Listeye Ekle
+                // importedFiles dizisine ekle
                 importedFiles.unshift(newFile); 
 
                 alert(`${newFile.name} başarıyla içe aktarıldı.`);
@@ -1386,7 +1510,7 @@
                 switchTab('device', true);
                 
                 // Listeyi yeniden çiz
-                renderDeviceList();
+                loadData();
                 
                 // Input değerini temizle
                 pdfFileInput.value = '';
@@ -1405,85 +1529,6 @@
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-    }
-
-    // Cihaz PDF Tarama Fonksiyonu
-    function scanDeviceForPDFs() {
-        // Eğer Android köprüsü varsa izin kontrol et
-        try {
-            if (typeof Android !== 'undefined' && Android.checkPermission && !Android.checkPermission()) {
-                // izin yok -> banner göster, listeyi temizle / render et
-                showDevicePermissionBanner();
-                // sadece cihaz kaynaklı dosyaları temizle (varsa)
-                importedFiles = importedFiles.filter(f => !f.path || !f.path.startsWith('/'));
-                renderDeviceList();
-                return;
-            }
-        } catch (e) {
-            console.warn('Android bridge check failed', e);
-        }
-
-        // izin varsa banner gizle ve Android'den PDF yollarını al
-        hideDevicePermissionBanner();
-
-        let paths = [];
-        try {
-            if (typeof Android !== 'undefined' && Android.listPDFs) {
-                const res = Android.listPDFs();
-                if (res && res.length > 0) {
-                    paths = res.split('||').filter(p=>p && p.trim().length>0);
-                }
-            }
-        } catch (e) {
-            console.error('Android.listPDFs error', e);
-        }
-
-        // paths -> importedFiles (avoid duplicates)
-        let nextId = importedFiles.length ? (Math.max(...importedFiles.map(f=>f.id||0)) + 1) : 1;
-        paths.forEach(p => {
-            if (!importedFiles.some(f => f.path === p)) {
-                const name = p.split('/').pop();
-                importedFiles.push({
-                    id: nextId++,
-                    name: name,
-                    size: '',
-                    date: '',
-                    isFavorite: false,
-                    path: p
-                });
-            }
-        });
-
-        // render result
-        if (importedFiles.length === 0) {
-            // if still empty, let renderDeviceList show empty state
-        }
-        renderDeviceList();
-    }
-
-    // helper: show/hide permission banner for device tab
-    function showDevicePermissionBanner() {
-        let container = document.getElementById('device-permission-banner');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'device-permission-banner';
-            container.className = 'permission-banner';
-            container.innerHTML = `<div class="permission-box">
-                <div class="permission-title">Uygulama cihaz dosyalarına erişim gerektiriyor</div>
-                <div class="permission-desc">PDF'leri görmek için lütfen "Tüm dosyalara erişim" iznini verin.</div>
-                <div class="permission-actions">
-                    <button onclick="location.href='settings://all_files'" class="btn btn-primary">Ayarları Aç</button>
-                </div>
-            </div>`;
-            const parent = document.getElementById('deviceList') || document.body;
-            parent.parentNode.insertBefore(container, parent);
-        }
-        container.style.display = 'block';
-    }
-
-    function hideDevicePermissionBanner() {
-        const container = document.getElementById('device-permission-banner');
-        if (container) container.style.display = 'none';
     }
 
     // --- SELECTION MODE FUNCTIONS ---
@@ -1573,9 +1618,10 @@
         }
         
         if (confirm(`${selectedCards.size} öğe silinecek. Emin misiniz?`)) {
-            // importedFiles dizisinden sil
+            // importedFiles ve devicePDFs dizilerinden sil
             selectedCards.forEach(cardId => {
                 importedFiles = importedFiles.filter(file => file.id !== cardId);
+                devicePDFs = devicePDFs.filter(file => file.id !== cardId);
             });
             
             alert(`${selectedCards.size} öğe silindi.`);
@@ -1608,12 +1654,18 @@
         const actionText = isFavorite ? 'Favorilere Eklendi' : 'Favorilerden Kaldırıldı';
         alert(`"${card.dataset.name}" ${actionText}`);
         
-        const fileIndex = importedFiles.findIndex(f => f.id === cardId);
+        // importedFiles'da güncelle
+        let fileIndex = importedFiles.findIndex(f => f.id === cardId);
         if(fileIndex > -1) {
             importedFiles[fileIndex].isFavorite = isFavorite;
         }
+        
+        // devicePDFs'de güncelle
+        fileIndex = devicePDFs.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            devicePDFs[fileIndex].isFavorite = isFavorite;
+        }
     }
-
 
     // --- LONG PRESS VE CLICK YÖNETİMİ ---
     let longPressTimer;
@@ -1655,9 +1707,12 @@
         
         if (!isLongPress) {
             // 1. Kart ID'sine göre dosya verisini bul
-            const fileData = importedFiles.find(f => f.id === cardId);
+            let fileData = importedFiles.find(f => f.id === cardId);
+            if (!fileData) {
+                fileData = devicePDFs.find(f => f.id === cardId);
+            }
 
-            // 2. Base64 verisi var mı kontrol et
+            // 2. Base64 verisi var mı kontrol et (importedFiles için)
             if (fileData && fileData.base64) {
                 // 3. Base64 verisini URL parametresi olarak ekle
                 const url = "viewer.html?base64=" + 
@@ -1666,6 +1721,13 @@
                             encodeURIComponent(name);
 
                 // 4. Yönlendir
+                window.location.href = url;
+            } else if (fileData && fileData.path) {
+                // Cihaz PDF'si için farklı bir yaklaşım
+                const url = "viewer.html?file=" + 
+                            encodeURIComponent(fileData.path) + 
+                            "&name=" + 
+                            encodeURIComponent(name);
                 window.location.href = url;
             } else {
                 alert("Dosya verisi bulunamadı!");
@@ -1680,7 +1742,7 @@
             return;
         }
         
-        currentContextFile = name;
+        currentContextFile = { name, cardId };
         contextTitle.textContent = name;
         contextMeta.textContent = `${size} • ${date}`;
         
@@ -1698,16 +1760,20 @@
         setTimeout(() => {
             switch(action) {
                 case 'rename':
-                    alert(`"${currentContextFile}" yeniden adlandırılıyor...`);
+                    alert(`"${currentContextFile.name}" yeniden adlandırılıyor...`);
                     break;
                 case 'share':
-                    alert(`"${currentContextFile}" paylaşılıyor...`);
+                    alert(`"${currentContextFile.name}" paylaşılıyor...`);
                     break;
                 case 'print':
-                    alert(`"${currentContextFile}" yazdırılıyor...`);
+                    alert(`"${currentContextFile.name}" yazdırılıyor...`);
                     break;
                 case 'delete':
-                    if(confirm(`"${currentContextFile}" dosyasını silmek istediğinize emin misiniz?`)) {
+                    if(confirm(`"${currentContextFile.name}" dosyasını silmek istediğinize emin misiniz?`)) {
+                        // Dosyayı ilgili diziden sil
+                        importedFiles = importedFiles.filter(f => f.id !== currentContextFile.cardId);
+                        devicePDFs = devicePDFs.filter(f => f.id !== currentContextFile.cardId);
+                        loadData();
                         alert('Dosya silindi.');
                     }
                     break;
@@ -1757,7 +1823,7 @@
 
       searchInput.addEventListener('input', triggerSearch);
 
-      // 1. SCROLL
+      // SCROLL
       panels.forEach(panel => {
         panel.addEventListener('scroll', (e) => {
           if (document.body.classList.contains('is-searching')) return;
@@ -1775,7 +1841,7 @@
         });
       });
 
-      // 2. SWIPE
+      // SWIPE
       panels.forEach(panel => {
         panel.addEventListener('touchstart', e => {
             if (document.body.classList.contains('is-searching')) return;
@@ -1888,6 +1954,11 @@
             }
         }
       });
+      
+      // Cihaz sekmesine geçildiğinde PDF'leri tara
+      if (id === 'device') {
+          scanDeviceForPDFs();
+      }
     }
 
     function changeTab(dir) {
@@ -1951,6 +2022,25 @@
         document.querySelector('.help-form').reset();
     }
 
+    // Android'den döndüğünde çağrılacak
+    function onAndroidResume() {
+        try {
+            // İzin durumunu kontrol et
+            checkPermissionAndUpdateUI();
+            
+            // Eğer cihaz sekmesindeyse PDF'leri yeniden tara
+            if (currentNav === 'home') {
+                const activeTab = document.querySelector('.tab.active').dataset.tab;
+                if (activeTab === 'device') {
+                    scanDeviceForPDFs();
+                }
+            }
+        } catch (e) {
+            console.warn('onAndroidResume error', e);
+        }
+    }
+
+    // Global fonksiyonlar
     window.setThemePreference = setThemePreference;
     window.sendHelpEmail = sendHelpEmail;
     window.handleFileSource = handleFileSource;
@@ -1969,20 +2059,9 @@
     window.shareSelectedCards = shareSelectedCards; 
     window.printSelectedCards = printSelectedCards;
     window.handleFileSelect = handleFileSelect;
+    window.scanDeviceForPDFs = scanDeviceForPDFs;
+    window.onAndroidResume = onAndroidResume;
 
-  
-
-    // Android'den döndüğünde çağrılacak (MainActivity.evaluateJavascript)
-    function onAndroidResume() {
-        try {
-            if (currentNav === 'device') {
-                scanDeviceForPDFs();
-            }
-        } catch (e) {
-            console.warn('onAndroidResume error', e);
-        }
-    }
-
-</script>
+  </script>
 </body>
 </html>

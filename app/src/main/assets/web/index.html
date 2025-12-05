@@ -1,84 +1,81 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>PDF Reader</title>
-<style>
-    body { font-family: Arial; padding: 20px; }
-    #btnPermission {
-        display: block;
-        width: 100%;
-        padding: 14px;
-        font-size: 18px;
-        background: #007bff;
-        color: white;
-        border-radius: 8px;
-        border: none;
-        margin-top: 40px;
-    }
-    #pdfList div {
-        background: #eee;
-        padding: 12px;
-        margin-top: 10px;
-        border-radius: 6px;
-    }
-</style>
+    <meta charset="UTF-8">
+    <title>PDF Reader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        #permissionBtn {
+            padding: 12px 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        #pdfList div {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
 
-<h2>PDF Dosyaları</h2>
+    <button id="permissionBtn" onclick="openPermission()">
+        📂 Tüm Dosya Erişim İznini Aç
+    </button>
 
-<button id="btnPermission" onclick="goPermission()">
-    Tüm Dosya Erişim Ayarına Git
-</button>
+    <h2>📄 PDF Dosyaları</h2>
+    <div id="pdfList">Henüz PDF taranmadı...</div>
 
-<div id="pdfList"></div>
+    <script>
+        function openPermission() {
+            window.location.href = "settings://all_files";
+        }
 
-<script>
+        function loadPDFs() {
+            const hasPermission = Android.checkPermission();
 
-// Android yeniden görününce MainActivity onResume çağırır
-function onAndroidResume() {
-    checkPermissionAndLoad();
-}
+            if (!hasPermission) {
+                document.getElementById("pdfList").innerHTML = "İzin gerekli...";
+                return;
+            }
 
-function checkPermissionAndLoad() {
-    const granted = Android.checkPermission();
+            // İzin varsa butonu gizle
+            document.getElementById("permissionBtn").style.display = "none";
 
-    if (granted) {
-        // Buton gizlensin
-        document.getElementById("btnPermission").style.display = "none";
+            const result = Android.listPDFs();
+            if (!result || result.length === 0) {
+                document.getElementById("pdfList").innerHTML = "PDF bulunamadı.";
+                return;
+            }
 
-        // PDF'leri getir
+            const pdfs = result.split("||");
+
+            let html = "";
+            pdfs.forEach(path => {
+                html += `<div>${path}</div>`;
+            });
+
+            document.getElementById("pdfList").innerHTML = html;
+        }
+
+        // Android onResume → HTML'e haber verir
+        function onAndroidResume() {
+            loadPDFs();
+        }
+
+        // Sayfa açıldığında
         loadPDFs();
-    }
-}
+    </script>
 
-function goPermission() {
-    window.location.href = "settings://all_files";
-}
-
-function loadPDFs() {
-    const data = Android.listPDFs();
-    const pdfs = data.split("||");
-
-    const container = document.getElementById("pdfList");
-    container.innerHTML = "";
-
-    if (pdfs.length === 1 && pdfs[0] === "") {
-        container.innerHTML = "<p>PDF bulunamadı.</p>";
-        return;
-    }
-
-    pdfs.forEach(path => {
-        const div = document.createElement("div");
-        div.innerText = path;
-        container.appendChild(div);
-    });
-}
-
-// İlk açılış
-checkPermissionAndLoad();
-
-</script>
 </body>
 </html>

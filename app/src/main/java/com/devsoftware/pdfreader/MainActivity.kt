@@ -1,7 +1,6 @@
 package com.devsoftware.pdfreader
 
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -26,33 +25,42 @@ class MainActivity : AppCompatActivity() {
 
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
-                // 🔥 intent:// yakalama
+                // intent:// linklerini yakala
                 if (url.startsWith("intent://")) {
-                    try {
+                    return try {
                         val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
                         startActivity(intent)
+                        true
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        true
                     }
-                    return true
                 }
 
-                // 🔥 Android 11+ için "All files access" ayarına gitme
+                // Tüm dosya izni ayarına git
                 if (url == "settings://all_files") {
                     try {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+
+                            // 🔥 Uygulamaya özel tüm dosya erişimi ekranına gider
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                             intent.data = Uri.parse("package:$packageName")
                             startActivity(intent)
+
                         } else {
+
+                            // Android 10 ve öncesi – uygulama ayarları
                             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                             intent.data = Uri.parse("package:$packageName")
                             startActivity(intent)
                         }
-                    } catch (e: ActivityNotFoundException) {
-                        val intent = Intent(Settings.ACTION_SETTINGS)
-                        startActivity(intent)
+
+                    } catch (e: Exception) {
+                        // Ekstra garanti → Genel ayarlara git
+                        val fallback = Intent(Settings.ACTION_SETTINGS)
+                        startActivity(fallback)
                     }
+
                     return true
                 }
 
@@ -60,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // HTML'i yükle
+        // assets içinden HTML yükle
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 }

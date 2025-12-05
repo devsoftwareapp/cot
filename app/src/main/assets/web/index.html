@@ -1409,15 +1409,85 @@
 
     // Cihaz PDF Tarama Fonksiyonu
     function scanDeviceForPDFs() {
+        // Eğer Android köprüsü varsa izin kontrol et
+        try {
+            if (typeof Android !== 'undefined' && Android.checkPermission && !Android.checkPermission()) {
+                // izin yok -> banner göster, listeyi temizle / render et
+                showDevicePermissionBanner();
+                // sadece cihaz kaynaklı dosyaları temizle (varsa)
+                importedFiles = importedFiles.filter(f => !f.path || !f.path.startsWith('/'));
+                renderDeviceList();
+                return;
+            }
+        } catch (e) {
+            console.warn('Android bridge check failed', e);
+        }
+
+        // izin varsa banner gizle ve Android'den PDF yollarını al
+        hideDevicePermissionBanner();
+
+        let paths = [];
+        try {
+            if (typeof Android !== 'undefined' && Android.listPDFs) {
+                const res = Android.listPDFs();
+                if (res && res.length > 0) {
+                    paths = res.split('||').filter(p=>p && p.trim().length>0);
+                }
+            }
+        } catch (e) {
+            console.error('Android.listPDFs error', e);
+        }
+
+        // paths -> importedFiles (avoid duplicates)
+        let nextId = importedFiles.length ? (Math.max(...importedFiles.map(f=>f.id||0)) + 1) : 1;
+        paths.forEach(p => {
+            if (!importedFiles.some(f => f.path === p)) {
+                const name = p.split('/').pop();
+                importedFiles.push({
+                    id: nextId++,
+                    name: name,
+                    size: '',
+                    date: '',
+                    isFavorite: false,
+                    path: p
+                });
+            }
+        });
+
+        // render result
         if (importedFiles.length === 0) {
-            alert("Cihazda henüz taranmış/import edilmiş PDF bulunamadı. Lütfen '+' butonu ile PDF ekleyin.");
-        } else {
-             alert(`${importedFiles.length} adet dosya listeleniyor.`);
+            // if still empty, let renderDeviceList show empty state
         }
         renderDeviceList();
     }
 
+    // helper: show/hide permission banner for device tab
+    function showDevicePermissionBanner() {
+        let container = document.getElementById('device-permission-banner');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'device-permission-banner';
+            container.className = 'permission-banner';
+            container.innerHTML = `<div class="permission-box">
+                <div class="permission-title">Uygulama cihaz dosyalarına erişim gerektiriyor</div>
+                <div class="permission-desc">PDF'leri görmek için lütfen "Tüm dosyalara erişim" iznini verin.</div>
+                <div class="permission-actions">
+                    <button onclick="location.href='settings://all_files'" class="btn btn-primary">Ayarları Aç</button>
+                </div>
+            </div>`;
+            const parent = document.getElementById('deviceList') || document.body;
+            parent.parentNode.insertBefore(container, parent);
+        }
+        container.style.display = 'block';
+    }
+
+    function hideDevicePermissionBanner() {
+        const container = document.getElementById('device-permission-banner');
+        if (container) container.style.display = 'none';
+    }
+
     // --- SELECTION MODE FUNCTIONS ---
+
     function enterSelectionMode() {
         isSelectionMode = true;
         document.body.classList.add('selection-mode');
@@ -1900,6 +1970,19 @@
     window.printSelectedCards = printSelectedCards;
     window.handleFileSelect = handleFileSelect;
 
-  </script>
+  
+
+    // Android'den döndüğünde çağrılacak (MainActivity.evaluateJavascript)
+    function onAndroidResume() {
+        try {
+            if (currentNav === 'device') {
+                scanDeviceForPDFs();
+            }
+        } catch (e) {
+            console.warn('onAndroidResume error', e);
+        }
+    }
+
+</script>
 </body>
 </html>

@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
+                // HTML → Android ayarlarını aç
                 if (url == "settings://all_files") {
                     openAllFilesPermission()
                     return true
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // HTML yükle
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 
@@ -62,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     /** Android → HTML Bridge */
     inner class AndroidBridge {
 
+        /** HTML: izin var mı? */
         @JavascriptInterface
         fun checkPermission(): Boolean {
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -69,20 +72,28 @@ class MainActivity : AppCompatActivity() {
             } else true
         }
 
+        /** HTML: PDF listele */
         @JavascriptInterface
         fun listPDFs(): String {
+
             val pdfList = ArrayList<String>()
-            val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-            scanPDFs(downloads, pdfList)
+            // 🔥 TÜM DEPOLUMA KÖK KLASÖR
+            val root = File("/storage/emulated/0")
+            scanPDFs(root, pdfList)
 
-            return pdfList.joinToString("||")  // HTML tarafında split edeceğiz
+            return pdfList.joinToString("||") // HTML tarafında split edeceğiz
         }
 
+        /** Recursive PDF tarayıcı */
         private fun scanPDFs(folder: File, output: MutableList<String>) {
             if (!folder.exists()) return
 
+            // Gizli klasörleri es geç (performans artar)
+            if (folder.name.startsWith(".")) return
+
             folder.listFiles()?.forEach { file ->
+
                 if (file.isDirectory) {
                     scanPDFs(file, output)
                 } else if (file.name.lowercase().endsWith(".pdf")) {
@@ -92,10 +103,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Android ayarlarından geri dönünce HTML'e haber ver */
     override fun onResume() {
         super.onResume()
 
-        // HTML'e izin durumunu bildir
         webView.post {
             webView.evaluateJavascript("onAndroidResume()", null)
         }

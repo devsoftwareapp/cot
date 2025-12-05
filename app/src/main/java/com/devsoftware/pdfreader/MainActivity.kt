@@ -1,4 +1,4 @@
-package com.yourapp
+package com.devsoftware.pdfreader
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
 
-                // WebView içinde intent:// yakalama
                 return if (url.startsWith("intent://")) {
                     try {
                         val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
@@ -37,7 +36,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // assets içindeki HTML'i yükle
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 }

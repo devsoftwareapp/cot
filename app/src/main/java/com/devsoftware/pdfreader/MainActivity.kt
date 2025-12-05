@@ -1,4 +1,4 @@
-package com.example.helloworld
+package com.devsoftware.pdfreader
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnGreet.setOnClickListener {
-            binding.tvGreet.setText(getString(R.string.hello_android))
+            binding.tvGreet.setText(getString(R.string.hello__pdf_reader))
         }
 
     }

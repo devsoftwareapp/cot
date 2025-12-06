@@ -2,11 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Android 13+ için medya izinleri (birlestirme.html için) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    
     <!-- Android 11+ All Files Access izni -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     
     <!-- Android 10 ve altı için depolama izinleri -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
         android:maxSdkVersion="28" />
     
@@ -15,6 +21,30 @@
     
     <!-- USB depolama erişimi (opsiyonel) -->
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    
+    <!-- Kamera erişimi (belge tarama için) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- Mikrofon erişimi (sesli okuma için) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Ağ durumu kontrolü -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- WiFi durumu kontrolü -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- Gerekli özellikler -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    
+    <!-- Android 14 için gerekli -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" 
+        android:maxSdkVersion="32" />
 
     <application
         android:allowBackup="true"
@@ -27,14 +57,25 @@
         android:theme="@style/Theme.PDFReader"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
-        tools:targetApi="31">
+        tools:targetApi="34">
+        
+        <!-- Hata raporlama -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|screenLayout|smallestScreenSize"
             android:windowSoftInputMode="adjustResize"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait">
+            
+            <!-- Hızlı Başlatma Splash Screen -->
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -51,6 +92,26 @@
                 <data android:host="*" />
                 <data android:pathPattern=".*\\.pdf" />
             </intent-filter>
+            
+            <!-- HTTP/HTTPS bağlantıları -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="*" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            
+            <!-- Content:// URI desteği -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
 
         </activity>
 
@@ -59,16 +120,50 @@
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true">
+            android:grantUriPermissions="true"
+            tools:replace="android:authorities">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        
+        <!-- WebView için güvenlik politikası -->
+        <meta-data
+            android:name="android.webkit.WebView.EnableSafeBrowsing"
+            android:value="true" />
+        
+        <!-- Splash Screen API 31+ -->
+        <meta-data
+            android:name="android.splashscreen"
+            android:resource="@drawable/ic_splash" />
+            
+        <!-- App Center Analytics (opsiyonel) -->
+        <meta-data
+            android:name="appCenterCrashesAlwaysSend"
+            android:value="false" />
+        <meta-data
+            android:name="appCenterAnalyticsAlwaysSend"
+            android:value="false" />
 
         <!-- Legacy depolama için policy -->
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
+            
+        <!-- Android 14 için gerekli -->
+        <uses-sdk
+            android:minSdkVersion="21"
+            android:targetSdkVersion="34" />
+            
+        <!-- Adaptive Icon -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+            
+        <!-- Data extraction for Android 12+ -->
+        <meta-data
+            android:name="android.app.usage.LOCAL_STORAGE"
+            android:value="allow" />
 
     </application>
 

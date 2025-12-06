@@ -1,0 +1,1862 @@
+<!doctype html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Sesli Okuma | PDF Reader</title>
+  
+  <style>
+    /* Material Symbols Rounded - Local WebView Font */
+    @font-face {
+        font-family: 'Material Symbols Rounded';
+        src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
+        font-weight: 100 700;
+        font-style: normal;
+    }
+
+    .material-symbols-rounded {
+        font-family: 'Material Symbols Rounded';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 24px;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 48;
+    }
+    
+    /* --- 1. DEĞİŞKENLER --- */
+    :root {
+      --background: #e8e8e8;
+      --surface: #ffffff;
+      --primary: #4a6fa5;
+      --secondary: #3a5985;
+      --success: #27ae60;
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --text-primary: #2c3e50;
+      --text-secondary: #7f8c8d;
+      --border: #d4d4d4; 
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      
+      --header-height: 64px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+
+    [data-theme="dark"] {
+      --background: #0f172a;
+      --surface: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --border: #334155;
+      --primary: #4a6fa5;
+      --secondary: #3a5985;
+    }
+
+    /* --- 2. TEMEL AYARLAR --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      height: 100%; 
+      font-family: 'Roboto', sans-serif; 
+      background-color: var(--background); 
+      color: var(--text-primary); 
+      overflow: hidden; 
+    }
+    body { display: flex; flex-direction: column; }
+    .material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; user-select: none; }
+    
+    /* Utility Classes */
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .flex-col { flex-direction: column; }
+    .gap-sm { gap: var(--spacing-sm); }
+    .gap-md { gap: var(--spacing-md); }
+    .gap-lg { gap: var(--spacing-lg); }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .text-secondary { color: var(--text-secondary); }
+    .text-sm { font-size: 14px; }
+    .text-lg { font-size: 18px; }
+    .text-xl { font-size: 20px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-4 { margin-bottom: 16px; }
+    .p-3 { padding: 12px; }
+    .p-4 { padding: 16px; }
+    .text-center { text-align: center; }
+    .w-full { width: 100%; }
+    .hidden { display: none !important; }
+    .absolute { position: absolute; }
+    .relative { position: relative; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+
+    /* --- 3. ÜST BAR (HEADER) --- */
+    .top-bar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: var(--header-height);
+        z-index: 100;
+        background: var(--surface);
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        box-shadow: var(--shadow-md);
+    }
+    .app-header { 
+        height: var(--header-height); 
+        padding: 0 var(--spacing-lg); 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        border-bottom: 1px solid var(--border);
+        position: relative; 
+    }
+
+    .logo { 
+        width: 36px; 
+        height: 36px; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden; 
+        flex-shrink: 0;
+    } 
+    .logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .app-title { 
+      font-size: 20px; 
+      font-weight: 700; 
+      background: linear-gradient(to right, #4a6fa5, #3498db); 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+      background-clip: text; 
+    }
+    
+    .icon-button { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: var(--radius-md); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: transparent; 
+      border: none; 
+      color: var(--text-secondary); 
+      cursor: pointer; 
+      transition: all var(--transition-fast); 
+    }
+    .icon-button:hover { 
+      background: rgba(0, 0, 0, 0.05); 
+      color: var(--text-primary); 
+    }
+    .icon-button.primary { 
+      background: var(--primary); 
+      color: white; 
+    }
+
+    /* --- 4. ANA İÇERİK ALANI --- */
+    .main-content {
+        padding-top: var(--header-height);
+        padding-bottom: 20px;
+        height: 100vh;
+        width: 100%;
+        overflow-y: auto; 
+        position: relative;
+        z-index: 1;
+        transition: padding 0.3s ease;
+    }
+    
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* --- 5. PDF SEÇİM ALANI --- */
+    .pdf-select-section {
+        margin-bottom: 24px;
+        padding: var(--spacing-lg);
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 2px dashed var(--border);
+        text-align: center;
+        transition: all var(--transition-normal);
+        cursor: pointer;
+    }
+    
+    .pdf-select-section:hover {
+        border-color: var(--primary);
+        background: rgba(74, 111, 165, 0.05);
+        transform: translateY(-2px);
+    }
+    
+    .select-pdf-icon {
+        font-size: 48px;
+        color: var(--primary);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .select-pdf-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .select-pdf-subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    /* --- 6. PDF BİLGİ GÖSTERİMİ --- */
+    .pdf-info-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: 24px;
+        border: 1px solid var(--border);
+        display: none;
+    }
+    
+    .pdf-info-card.visible {
+        display: block;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .pdf-info-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .pdf-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        word-break: break-all;
+    }
+    
+    .pdf-meta {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .language-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(74, 111, 165, 0.1);
+        border-radius: var(--radius-md);
+        margin-top: 12px;
+        font-size: 14px;
+    }
+    
+    .language-flag {
+        font-size: 20px;
+    }
+
+    /* --- 7. SESLİ OKUMA KONTROLLERİ --- */
+    .speech-controls {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: 24px;
+        border: 1px solid var(--border);
+        display: none;
+    }
+    
+    .speech-controls.visible {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .progress-info {
+        margin-bottom: 20px;
+    }
+    
+    .progress-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+    
+    .controls-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .control-button {
+        height: 50px;
+        border: none;
+        border-radius: var(--radius-md);
+        background: var(--primary);
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .control-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(74, 111, 165, 0.3);
+    }
+    
+    .control-button:active {
+        transform: translateY(0);
+    }
+    
+    .control-button.secondary {
+        background: var(--text-secondary);
+    }
+    
+    .control-button.success {
+        background: var(--success);
+    }
+    
+    .control-button.warning {
+        background: var(--warning);
+    }
+    
+    .control-button.error {
+        background: var(--error);
+    }
+    
+    .speed-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    
+    .speed-button {
+        flex: 1;
+        padding: 10px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    
+    .speed-button:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .speed-button.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    /* --- 8. TEXT GÖSTERİM ALANI --- */
+    .text-display {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: 24px;
+        border: 1px solid var(--border);
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+    }
+    
+    .text-display.visible {
+        display: block;
+    }
+    
+    .text-display-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+    
+    .text-content {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-primary);
+    }
+    
+    .text-highlight {
+        background: rgba(255, 235, 59, 0.5);
+        border-radius: 3px;
+        padding: 2px 0;
+        transition: background-color 0.3s ease;
+    }
+    
+    .current-sentence {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    /* --- 9. DURUM MESAJLARI --- */
+    .status-message {
+        padding: 16px;
+        border-radius: var(--radius-md);
+        margin-bottom: 16px;
+        text-align: center;
+        display: none;
+    }
+    
+    .status-message.visible {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .status-message.info {
+        background: rgba(74, 111, 165, 0.1);
+        color: var(--primary);
+        border: 1px solid rgba(74, 111, 165, 0.3);
+    }
+    
+    .status-message.success {
+        background: rgba(39, 174, 96, 0.1);
+        color: var(--success);
+        border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+    
+    .status-message.warning {
+        background: rgba(243, 156, 18, 0.1);
+        color: var(--warning);
+        border: 1px solid rgba(243, 156, 18, 0.3);
+    }
+    
+    .status-message.error {
+        background: rgba(231, 76, 60, 0.1);
+        color: var(--error);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    /* --- 10. BOŞ DURUM MESAJI --- */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-secondary);
+        display: none;
+    }
+    
+    .empty-state.visible {
+        display: block;
+    }
+    
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    .empty-text {
+        font-size: 16px;
+        margin-bottom: 24px;
+    }
+
+    /* --- 11. ANİMASYONLAR --- */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideIn {
+        from { 
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .pulse {
+        animation: pulse 1.5s infinite;
+    }
+
+    /* --- 12. DARK MODE DÜZENLEMELERİ --- */
+    [data-theme="dark"] .pdf-select-section:hover {
+        background: rgba(74, 111, 165, 0.2);
+    }
+    
+    [data-theme="dark"] .control-button:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    [data-theme="dark"] .speed-button:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .text-highlight {
+        background: rgba(255, 235, 59, 0.3);
+    }
+
+    /* --- 13. RESPONSIVE TASARIM --- */
+    @media (min-width: 768px) {
+        .container {
+            max-width: 600px;
+        }
+        
+        .controls-grid {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        
+        .text-display {
+            max-height: 400px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .controls-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .container {
+            padding: 16px;
+        }
+        
+        .app-header {
+            padding: 0 var(--spacing-md);
+        }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar-container" id="topBar">
+    <header class="app-header">
+      <div class="flex items-center gap-sm">
+        <button class="icon-button" onclick="goBack()">
+          <span class="material-symbols-rounded">arrow_back</span>
+        </button>
+        <div class="logo">
+          <img src="logo/logo.png" alt="PDF Reader Logo">
+        </div>
+        <h1 class="app-title" id="pageTitle">Sesli Okuma</h1>
+      </div>
+      <div class="flex items-center gap-sm">
+        <button class="icon-button" onclick="refreshPDFList()">
+          <span class="material-symbols-rounded">refresh</span>
+        </button>
+      </div>
+    </header>
+  </div>
+
+  <main class="main-content" id="mainContent">
+    <div class="container">
+      
+      <!-- PDF Seçim Alanı -->
+      <div class="pdf-select-section" id="pdfSelectSection" onclick="selectPDFFile()">
+        <div class="select-pdf-icon material-symbols-rounded">upload_file</div>
+        <h2 class="select-pdf-title" id="selectPdfTitle">PDF Dosyası Seç</h2>
+        <p class="select-pdf-subtitle" id="selectPdfSubtitle">Sesli okuma için bir PDF dosyası seçin</p>
+      </div>
+      
+      <!-- PDF Bilgi Kartı -->
+      <div class="pdf-info-card" id="pdfInfoCard">
+        <div class="pdf-info-header">
+          <div class="flex flex-col w-full">
+            <div class="pdf-name" id="currentPdfName">-</div>
+            <div class="pdf-meta">
+              <span id="currentPdfSize">-</span>
+              <span>•</span>
+              <span id="currentPdfDate">-</span>
+            </div>
+          </div>
+          <button class="icon-button" onclick="clearSelection()">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+        <div class="language-info" id="languageInfo">
+          <span class="language-flag" id="languageFlag">🇺🇸</span>
+          <span id="languageText">Dil: İngilizce</span>
+        </div>
+      </div>
+      
+      <!-- Sesli Okuma Kontrolleri -->
+      <div class="speech-controls" id="speechControls">
+        <div class="progress-info">
+          <div class="progress-text" id="progressText">Hazırlanıyor...</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        
+        <div class="controls-grid">
+          <button class="control-button secondary" id="btnPrev" onclick="prevSentence()" title="Önceki cümle">
+            <span class="material-symbols-rounded">skip_previous</span>
+            <span class="button-text">GERİ</span>
+          </button>
+          <button class="control-button success" id="btnPlayPause" onclick="togglePlayPause()" title="Oynat/Durdur">
+            <span class="material-symbols-rounded" id="playPauseIcon">play_arrow</span>
+            <span class="button-text" id="playPauseText">OYUNAT</span>
+          </button>
+          <button class="control-button secondary" id="btnNext" onclick="nextSentence()" title="Sonraki cümle">
+            <span class="button-text">İLERİ</span>
+            <span class="material-symbols-rounded">skip_next</span>
+          </button>
+          <button class="control-button warning" id="btnRestart" onclick="restartReading()" title="Baştan oku">
+            <span class="material-symbols-rounded">replay</span>
+            <span class="button-text">BAŞTAN</span>
+          </button>
+          <button class="control-button" id="btnSpeed" onclick="cycleSpeed()" title="Okuma hızı">
+            <span class="material-symbols-rounded">speed</span>
+            <span class="button-text" id="speedText">1.0x</span>
+          </button>
+          <button class="control-button error" id="btnStop" onclick="stopReading()" title="Okumayı durdur">
+            <span class="material-symbols-rounded">stop</span>
+            <span class="button-text">DURDUR</span>
+          </button>
+        </div>
+        
+        <div class="speed-controls">
+          <button class="speed-button" data-speed="0.5" onclick="setSpeed(0.5)">0.5x</button>
+          <button class="speed-button" data-speed="0.75" onclick="setSpeed(0.75)">0.75x</button>
+          <button class="speed-button active" data-speed="1.0" onclick="setSpeed(1.0)">1.0x</button>
+          <button class="speed-button" data-speed="1.25" onclick="setSpeed(1.25)">1.25x</button>
+          <button class="speed-button" data-speed="1.5" onclick="setSpeed(1.5)">1.5x</button>
+          <button class="speed-button" data-speed="2.0" onclick="setSpeed(2.0)">2.0x</button>
+        </div>
+      </div>
+      
+      <!-- Metin Gösterim Alanı -->
+      <div class="text-display" id="textDisplay">
+        <div class="text-display-title">Metin Önizleme</div>
+        <div class="text-content" id="textContent">
+          Metin yükleniyor...
+        </div>
+      </div>
+      
+      <!-- Durum Mesajları -->
+      <div class="status-message info" id="statusMessage">
+        <p id="statusText">PDF seçmek için yukarıdaki alana tıklayın</p>
+      </div>
+      
+      <!-- Boş Durum -->
+      <div class="empty-state visible" id="emptyState">
+        <div class="empty-icon material-symbols-rounded">volume_up</div>
+        <div class="empty-text" id="emptyStateText">Sesli okuma için bir PDF dosyası seçin</div>
+        <button class="control-button primary" onclick="selectPDFFile()">
+          <span class="material-symbols-rounded">upload_file</span>
+          PDF SEÇ
+        </button>
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- Gizli File Input -->
+  <input type="file" id="fileInput" accept=".pdf" class="hidden">
+
+  <script src="pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";</script>
+  <script src="lang.js"></script>
+  
+  <script>
+    // ==================== DEĞİŞKENLER ====================
+    let speechSynthesis = window.speechSynthesis;
+    let currentPdfFile = null;
+    let pdfTextContent = "";
+    let sentences = [];
+    let currentSentenceIndex = 0;
+    let isSpeaking = false;
+    let isPaused = false;
+    let speechRate = 1.0;
+    let currentUtterance = null;
+    let detectedLanguage = 'en-US';
+    let pdfDocument = null;
+    let textPositions = [];
+    let currentHighlight = null;
+    let extractionInProgress = false;
+    
+    // ==================== DİL ÇEVİRİLERİ ====================
+    const translations = {
+        "tr": {
+            "pageTitle": "Sesli Okuma",
+            "selectPdfTitle": "PDF Dosyası Seç",
+            "selectPdfSubtitle": "Sesli okuma için bir PDF dosyası seçin",
+            "btnPrev": "GERİ",
+            "btnPlayPause": "OYUNAT",
+            "btnNext": "İLERİ",
+            "btnRestart": "BAŞTAN",
+            "btnSpeed": "1.0x",
+            "btnStop": "DURDUR",
+            "emptyStateText": "Sesli okuma için bir PDF dosyası seçin",
+            "selectPdf": "PDF SEÇ",
+            "statusSelectPdf": "PDF seçmek için yukarıdaki alana tıklayın",
+            "statusLoading": "PDF yükleniyor...",
+            "statusExtracting": "Metin çıkarılıyor...",
+            "statusReady": "Okumaya hazır!",
+            "statusPlaying": "Okuyor...",
+            "statusPaused": "Duraklatıldı",
+            "statusCompleted": "Okuma tamamlandı",
+            "statusError": "Hata oluştu",
+            "progressExtracting": "Metin çıkarılıyor: ",
+            "progressSentence": "Cümle: ",
+            "progressComplete": "Tamamlandı",
+            "alertSelectPdf": "Lütfen önce bir PDF dosyası seçin",
+            "alertNoText": "PDF'de okunabilir metin bulunamadı",
+            "alertSpeechNotSupported": "Tarayıcınız ses sentezleme özelliğini desteklemiyor",
+            "alertAlreadySpeaking": "Zaten okuyor",
+            "alertNotSpeaking": "Okuma aktif değil",
+            "alertFirstSentence": "İlk cümledesiniz",
+            "alertLastSentence": "Son cümledesiniz",
+            "languageDetected": "Dil algılandı: "
+        },
+        "en": {
+            "pageTitle": "Text-to-Speech",
+            "selectPdfTitle": "Select PDF File",
+            "selectPdfSubtitle": "Select a PDF file for text-to-speech",
+            "btnPrev": "PREV",
+            "btnPlayPause": "PLAY",
+            "btnNext": "NEXT",
+            "btnRestart": "RESTART",
+            "btnSpeed": "1.0x",
+            "btnStop": "STOP",
+            "emptyStateText": "Select a PDF file for text-to-speech",
+            "selectPdf": "SELECT PDF",
+            "statusSelectPdf": "Click the area above to select a PDF",
+            "statusLoading": "Loading PDF...",
+            "statusExtracting": "Extracting text...",
+            "statusReady": "Ready to read!",
+            "statusPlaying": "Playing...",
+            "statusPaused": "Paused",
+            "statusCompleted": "Reading completed",
+            "statusError": "Error occurred",
+            "progressExtracting": "Extracting text: ",
+            "progressSentence": "Sentence: ",
+            "progressComplete": "Complete",
+            "alertSelectPdf": "Please select a PDF file first",
+            "alertNoText": "No readable text found in PDF",
+            "alertSpeechNotSupported": "Your browser doesn't support speech synthesis",
+            "alertAlreadySpeaking": "Already speaking",
+            "alertNotSpeaking": "Not currently speaking",
+            "alertFirstSentence": "You're at the first sentence",
+            "alertLastSentence": "You're at the last sentence",
+            "languageDetected": "Language detected: "
+        },
+        "ar": {
+            "pageTitle": "القراءة بصوت",
+            "selectPdfTitle": "اختر ملف PDF",
+            "selectPdfSubtitle": "اختر ملف PDF للقراءة بصوت",
+            "btnPrev": "السابق",
+            "btnPlayPause": "تشغيل",
+            "btnNext": "التالي",
+            "btnRestart": "إعادة",
+            "btnSpeed": "1.0x",
+            "btnStop": "توقف",
+            "emptyStateText": "اختر ملف PDF للقراءة بصوت",
+            "selectPdf": "اختر PDF",
+            "statusSelectPdf": "انقر على المنطقة أعلاه لاختيار PDF",
+            "statusLoading": "جار تحميل PDF...",
+            "statusExtracting": "جار استخراج النص...",
+            "statusReady": "جاهز للقراءة!",
+            "statusPlaying": "جاري التشغيل...",
+            "statusPaused": "متوقف مؤقتاً",
+            "statusCompleted": "اكتملت القراءة",
+            "statusError": "حدث خطأ",
+            "progressExtracting": "جار استخراج النص: ",
+            "progressSentence": "جملة: ",
+            "progressComplete": "مكتمل",
+            "alertSelectPdf": "الرجاء اختيار ملف PDF أولاً",
+            "alertNoText": "لم يتم العثور على نص قابل للقراءة في PDF",
+            "alertSpeechNotSupported": "متصفحك لا يدعم توليف الكلام",
+            "alertAlreadySpeaking": "جاري التحدث بالفعل",
+            "alertNotSpeaking": "غير متحدث حالياً",
+            "alertFirstSentence": "أنت في الجملة الأولى",
+            "alertLastSentence": "أنت في الجملة الأخيرة",
+            "languageDetected": "تم اكتشاف اللغة: "
+        },
+        "de": {
+            "pageTitle": "Sprachausgabe",
+            "selectPdfTitle": "PDF-Datei auswählen",
+            "selectPdfSubtitle": "Wählen Sie eine PDF-Datei für die Sprachausgabe",
+            "btnPrev": "ZURÜCK",
+            "btnPlayPause": "ABSPIELEN",
+            "btnNext": "WEITER",
+            "btnRestart": "NEUSTART",
+            "btnSpeed": "1.0x",
+            "btnStop": "STOPP",
+            "emptyStateText": "Wählen Sie eine PDF-Datei für die Sprachausgabe",
+            "selectPdf": "PDF AUSWÄHLEN",
+            "statusSelectPdf": "Klicken Sie auf den Bereich oben, um eine PDF auszuwählen",
+            "statusLoading": "PDF wird geladen...",
+            "statusExtracting": "Text wird extrahiert...",
+            "statusReady": "Bereit zum Lesen!",
+            "statusPlaying": "Wird abgespielt...",
+            "statusPaused": "Pausiert",
+            "statusCompleted": "Lesen abgeschlossen",
+            "statusError": "Fehler aufgetreten",
+            "progressExtracting": "Text extrahieren: ",
+            "progressSentence": "Satz: ",
+            "progressComplete": "Vollständig",
+            "alertSelectPdf": "Bitte wählen Sie zuerst eine PDF-Datei",
+            "alertNoText": "Kein lesbarer Text in PDF gefunden",
+            "alertSpeechNotSupported": "Ihr Browser unterstützt keine Sprachsynthese",
+            "alertAlreadySpeaking": "Spricht bereits",
+            "alertNotSpeaking": "Aktuell nicht aktiv",
+            "alertFirstSentence": "Sie sind beim ersten Satz",
+            "alertLastSentence": "Sie sind beim letzten Satz",
+            "languageDetected": "Sprache erkannt: "
+        },
+        "fr": {
+            "pageTitle": "Lecture vocale",
+            "selectPdfTitle": "Sélectionner un fichier PDF",
+            "selectPdfSubtitle": "Sélectionnez un fichier PDF pour la lecture vocale",
+            "btnPrev": "PRÉCÉDENT",
+            "btnPlayPause": "LECTURE",
+            "btnNext": "SUIVANT",
+            "btnRestart": "REDÉMARRER",
+            "btnSpeed": "1.0x",
+            "btnStop": "ARRÊTER",
+            "emptyStateText": "Sélectionnez un fichier PDF pour la lecture vocale",
+            "selectPdf": "SÉLECTIONNER PDF",
+            "statusSelectPdf": "Cliquez sur la zone ci-dessus pour sélectionner un PDF",
+            "statusLoading": "Chargement du PDF...",
+            "statusExtracting": "Extraction du texte...",
+            "statusReady": "Prêt à lire !",
+            "statusPlaying": "Lecture en cours...",
+            "statusPaused": "En pause",
+            "statusCompleted": "Lecture terminée",
+            "statusError": "Une erreur est survenue",
+            "progressExtracting": "Extraction du texte : ",
+            "progressSentence": "Phrase : ",
+            "progressComplete": "Complet",
+            "alertSelectPdf": "Veuillez d'abord sélectionner un fichier PDF",
+            "alertNoText": "Aucun texte lisible trouvé dans le PDF",
+            "alertSpeechNotSupported": "Votre navigateur ne prend pas en charge la synthèse vocale",
+            "alertAlreadySpeaking": "Lecture déjà en cours",
+            "alertNotSpeaking": "Pas actuellement en lecture",
+            "alertFirstSentence": "Vous êtes à la première phrase",
+            "alertLastSentence": "Vous êtes à la dernière phrase",
+            "languageDetected": "Langue détectée : "
+        },
+        "es": {
+            "pageTitle": "Lectura en voz alta",
+            "selectPdfTitle": "Seleccionar archivo PDF",
+            "selectPdfSubtitle": "Seleccione un archivo PDF para lectura en voz alta",
+            "btnPrev": "ANTERIOR",
+            "btnPlayPause": "REPRODUCIR",
+            "btnNext": "SIGUIENTE",
+            "btnRestart": "REINICIAR",
+            "btnSpeed": "1.0x",
+            "btnStop": "DETENER",
+            "emptyStateText": "Seleccione un archivo PDF para lectura en voz alta",
+            "selectPdf": "SELECCIONAR PDF",
+            "statusSelectPdf": "Haga clic en el área de arriba para seleccionar un PDF",
+            "statusLoading": "Cargando PDF...",
+            "statusExtracting": "Extrayendo texto...",
+            "statusReady": "¡Listo para leer!",
+            "statusPlaying": "Reproduciendo...",
+            "statusPaused": "En pausa",
+            "statusCompleted": "Lectura completada",
+            "statusError": "Ocurrió un error",
+            "progressExtracting": "Extrayendo texto: ",
+            "progressSentence": "Oración: ",
+            "progressComplete": "Completo",
+            "alertSelectPdf": "Por favor, seleccione primero un archivo PDF",
+            "alertNoText": "No se encontró texto legible en el PDF",
+            "alertSpeechNotSupported": "Su navegador no soporta síntesis de voz",
+            "alertAlreadySpeaking": "Ya se está leyendo",
+            "alertNotSpeaking": "No se está leyendo actualmente",
+            "alertFirstSentence": "Estás en la primera oración",
+            "alertLastSentence": "Estás en la última oración",
+            "languageDetected": "Idioma detectado: "
+        },
+        "ru": {
+            "pageTitle": "Озвучка текста",
+            "selectPdfTitle": "Выбрать файл PDF",
+            "selectPdfSubtitle": "Выберите файл PDF для озвучки",
+            "btnPrev": "НАЗАД",
+            "btnPlayPause": "ИГРАТЬ",
+            "btnNext": "ДАЛЬШЕ",
+            "btnRestart": "ЗАНОВО",
+            "btnSpeed": "1.0x",
+            "btnStop": "СТОП",
+            "emptyStateText": "Выберите файл PDF для озвучки",
+            "selectPdf": "ВЫБРАТЬ PDF",
+            "statusSelectPdf": "Нажмите на область выше, чтобы выбрать PDF",
+            "statusLoading": "Загрузка PDF...",
+            "statusExtracting": "Извлечение текста...",
+            "statusReady": "Готово к чтению!",
+            "statusPlaying": "Играет...",
+            "statusPaused": "Приостановлено",
+            "statusCompleted": "Чтение завершено",
+            "statusError": "Произошла ошибка",
+            "progressExtracting": "Извлечение текста: ",
+            "progressSentence": "Предложение: ",
+            "progressComplete": "Завершено",
+            "alertSelectPdf": "Пожалуйста, сначала выберите файл PDF",
+            "alertNoText": "Читаемый текст в PDF не найден",
+            "alertSpeechNotSupported": "Ваш браузер не поддерживает синтез речи",
+            "alertAlreadySpeaking": "Уже читается",
+            "alertNotSpeaking": "В данный момент не читается",
+            "alertFirstSentence": "Вы на первом предложении",
+            "alertLastSentence": "Вы на последнем предложении",
+            "languageDetected": "Обнаружен язык: "
+        },
+        "zh": {
+            "pageTitle": "语音朗读",
+            "selectPdfTitle": "选择PDF文件",
+            "selectPdfSubtitle": "选择PDF文件进行语音朗读",
+            "btnPrev": "上一句",
+            "btnPlayPause": "播放",
+            "btnNext": "下一句",
+            "btnRestart": "重新开始",
+            "btnSpeed": "1.0x",
+            "btnStop": "停止",
+            "emptyStateText": "选择PDF文件进行语音朗读",
+            "selectPdf": "选择PDF",
+            "statusSelectPdf": "点击上方区域选择PDF",
+            "statusLoading": "正在加载PDF...",
+            "statusExtracting": "正在提取文本...",
+            "statusReady": "准备朗读!",
+            "statusPlaying": "正在播放...",
+            "statusPaused": "已暂停",
+            "statusCompleted": "朗读完成",
+            "statusError": "发生错误",
+            "progressExtracting": "提取文本: ",
+            "progressSentence": "句子: ",
+            "progressComplete": "完成",
+            "alertSelectPdf": "请先选择PDF文件",
+            "alertNoText": "PDF中未找到可读文本",
+            "alertSpeechNotSupported": "您的浏览器不支持语音合成",
+            "alertAlreadySpeaking": "已经在朗读",
+            "alertNotSpeaking": "当前未朗读",
+            "alertFirstSentence": "您在第一句",
+            "alertLastSentence": "您在最后一句",
+            "languageDetected": "检测到语言: "
+        },
+        "ja": {
+            "pageTitle": "音声読み上げ",
+            "selectPdfTitle": "PDFファイルを選択",
+            "selectPdfSubtitle": "音声読み上げ用のPDFファイルを選択",
+            "btnPrev": "前へ",
+            "btnPlayPause": "再生",
+            "btnNext": "次へ",
+            "btnRestart": "最初から",
+            "btnSpeed": "1.0x",
+            "btnStop": "停止",
+            "emptyStateText": "音声読み上げ用のPDFファイルを選択",
+            "selectPdf": "PDFを選択",
+            "statusSelectPdf": "上の領域をクリックしてPDFを選択",
+            "statusLoading": "PDFを読み込み中...",
+            "statusExtracting": "テキストを抽出中...",
+            "statusReady": "読み上げの準備ができました!",
+            "statusPlaying": "再生中...",
+            "statusPaused": "一時停止中",
+            "statusCompleted": "読み上げ完了",
+            "statusError": "エラーが発生しました",
+            "progressExtracting": "テキスト抽出中: ",
+            "progressSentence": "文: ",
+            "progressComplete": "完了",
+            "alertSelectPdf": "まずPDFファイルを選択してください",
+            "alertNoText": "PDFに読み取り可能なテキストが見つかりません",
+            "alertSpeechNotSupported": "お使いのブラウザは音声合成をサポートしていません",
+            "alertAlreadySpeaking": "すでに読み上げ中です",
+            "alertNotSpeaking": "現在読み上げていません",
+            "alertFirstSentence": "最初の文です",
+            "alertLastSentence": "最後の文です",
+            "languageDetected": "検出された言語: "
+        },
+        "ko": {
+            "pageTitle": "텍스트 음성 변환",
+            "selectPdfTitle": "PDF 파일 선택",
+            "selectPdfSubtitle": "텍스트 음성 변환을 위한 PDF 파일 선택",
+            "btnPrev": "이전",
+            "btnPlayPause": "재생",
+            "btnNext": "다음",
+            "btnRestart": "다시 시작",
+            "btnSpeed": "1.0x",
+            "btnStop": "중지",
+            "emptyStateText": "텍스트 음성 변환을 위한 PDF 파일 선택",
+            "selectPdf": "PDF 선택",
+            "statusSelectPdf": "위 영역을 클릭하여 PDF 선택",
+            "statusLoading": "PDF 로드 중...",
+            "statusExtracting": "텍스트 추출 중...",
+            "statusReady": "읽기 준비 완료!",
+            "statusPlaying": "재생 중...",
+            "statusPaused": "일시정지됨",
+            "statusCompleted": "읽기 완료",
+            "statusError": "오류 발생",
+            "progressExtracting": "텍스트 추출 중: ",
+            "progressSentence": "문장: ",
+            "progressComplete": "완료",
+            "alertSelectPdf": "먼저 PDF 파일을 선택하세요",
+            "alertNoText": "PDF에서 읽을 수 있는 텍스트를 찾을 수 없음",
+            "alertSpeechNotSupported": "브라우저가 음성 합성을 지원하지 않습니다",
+            "alertAlreadySpeaking": "이미 읽는 중입니다",
+            "alertNotSpeaking": "현재 읽지 않음",
+            "alertFirstSentence": "첫 번째 문장입니다",
+            "alertLastSentence": "마지막 문장입니다",
+            "languageDetected": "감지된 언어: "
+        },
+        "pt": {
+            "pageTitle": "Leitura em voz alta",
+            "selectPdfTitle": "Selecionar arquivo PDF",
+            "selectPdfSubtitle": "Selecione um arquivo PDF para leitura em voz alta",
+            "btnPrev": "ANTERIOR",
+            "btnPlayPause": "REPRODUZIR",
+            "btnNext": "PRÓXIMO",
+            "btnRestart": "REINICIAR",
+            "btnSpeed": "1.0x",
+            "btnStop": "PARAR",
+            "emptyStateText": "Selecione um arquivo PDF para leitura em voz alta",
+            "selectPdf": "SELECIONAR PDF",
+            "statusSelectPdf": "Clique na área acima para selecionar um PDF",
+            "statusLoading": "Carregando PDF...",
+            "statusExtracting": "Extraindo texto...",
+            "statusReady": "Pronto para ler!",
+            "statusPlaying": "Reproduzindo...",
+            "statusPaused": "Pausado",
+            "statusCompleted": "Leitura concluída",
+            "statusError": "Ocorreu um erro",
+            "progressExtracting": "Extraindo texto: ",
+            "progressSentence": "Sentença: ",
+            "progressComplete": "Completo",
+            "alertSelectPdf": "Por favor, selecione um arquivo PDF primeiro",
+            "alertNoText": "Nenhum texto legível encontrado no PDF",
+            "alertSpeechNotSupported": "Seu navegador não suporta síntese de voz",
+            "alertAlreadySpeaking": "Já está falando",
+            "alertNotSpeaking": "Não está falando atualmente",
+            "alertFirstSentence": "Você está na primeira sentença",
+            "alertLastSentence": "Você está na última sentença",
+            "languageDetected": "Idioma detectado: "
+        },
+        "it": {
+            "pageTitle": "Lettura vocale",
+            "selectPdfTitle": "Seleziona file PDF",
+            "selectPdfSubtitle": "Seleziona un file PDF per la lettura vocale",
+            "btnPrev": "PRECEDENTE",
+            "btnPlayPause": "RIPRODUCI",
+            "btnNext": "SUCCESSIVO",
+            "btnRestart": "RIAVVIA",
+            "btnSpeed": "1.0x",
+            "btnStop": "FERMA",
+            "emptyStateText": "Seleziona un file PDF per la lettura vocale",
+            "selectPdf": "SELEZIONA PDF",
+            "statusSelectPdf": "Clicca sull'area sopra per selezionare un PDF",
+            "statusLoading": "Caricamento PDF...",
+            "statusExtracting": "Estrazione testo...",
+            "statusReady": "Pronto per leggere!",
+            "statusPlaying": "Riproducendo...",
+            "statusPaused": "In pausa",
+            "statusCompleted": "Lettura completata",
+            "statusError": "Si è verificato un errore",
+            "progressExtracting": "Estrazione testo: ",
+            "progressSentence": "Frase: ",
+            "progressComplete": "Completo",
+            "alertSelectPdf": "Si prega di selezionare prima un file PDF",
+            "alertNoText": "Nessun testo leggibile trovato nel PDF",
+            "alertSpeechNotSupported": "Il tuo browser non supporta la sintesi vocale",
+            "alertAlreadySpeaking": "Già in lettura",
+            "alertNotSpeaking": "Attualmente non in lettura",
+            "alertFirstSentence": "Sei alla prima frase",
+            "alertLastSentence": "Sei all'ultima frase",
+            "languageDetected": "Lingua rilevata: "
+        },
+        "nl": {
+            "pageTitle": "Spraakherkenning",
+            "selectPdfTitle": "Selecteer PDF-bestand",
+            "selectPdfSubtitle": "Selecteer een PDF-bestand voor spraakherkenning",
+            "btnPrev": "VORIGE",
+            "btnPlayPause": "AFSPELEN",
+            "btnNext": "VOLGENDE",
+            "btnRestart": "OPNIEUW",
+            "btnSpeed": "1.0x",
+            "btnStop": "STOP",
+            "emptyStateText": "Selecteer een PDF-bestand voor spraakherkenning",
+            "selectPdf": "SELECTEER PDF",
+            "statusSelectPdf": "Klik op het gebied hierboven om een PDF te selecteren",
+            "statusLoading": "PDF laden...",
+            "statusExtracting": "Tekst extraheren...",
+            "statusReady": "Klaar om te lezen!",
+            "statusPlaying": "Wordt afgespeeld...",
+            "statusPaused": "Gepauzeerd",
+            "statusCompleted": "Lezen voltooid",
+            "statusError": "Er is een fout opgetreden",
+            "progressExtracting": "Tekst extraheren: ",
+            "progressSentence": "Zin: ",
+            "progressComplete": "Voltooid",
+            "alertSelectPdf": "Selecteer eerst een PDF-bestand",
+            "alertNoText": "Geen leesbare tekst gevonden in PDF",
+            "alertSpeechNotSupported": "Uw browser ondersteunt geen spraaksynthese",
+            "alertAlreadySpeaking": "Leest al",
+            "alertNotSpeaking": "Momenteel niet aan het lezen",
+            "alertFirstSentence": "U bent bij de eerste zin",
+            "alertLastSentence": "U bent bij de laatste zin",
+            "languageDetected": "Taal gedetecteerd: "
+        },
+        "pl": {
+            "pageTitle": "Czytanie na głos",
+            "selectPdfTitle": "Wybierz plik PDF",
+            "selectPdfSubtitle": "Wybierz plik PDF do czytania na głos",
+            "btnPrev": "POPRZEDNI",
+            "btnPlayPause": "ODTWÓRZ",
+            "btnNext": "NASTĘPNY",
+            "btnRestart": "PONÓW",
+            "btnSpeed": "1.0x",
+            "btnStop": "STOP",
+            "emptyStateText": "Wybierz plik PDF do czytania na głos",
+            "selectPdf": "WYBIERZ PDF",
+            "statusSelectPdf": "Kliknij obszar powyżej, aby wybrać PDF",
+            "statusLoading": "Ładowanie PDF...",
+            "statusExtracting": "Ekstrakcja tekstu...",
+            "statusReady": "Gotowy do czytania!",
+            "statusPlaying": "Odtwarzanie...",
+            "statusPaused": "Wstrzymano",
+            "statusCompleted": "Czytanie zakończone",
+            "statusError": "Wystąpił błąd",
+            "progressExtracting": "Ekstrakcja tekstu: ",
+            "progressSentence": "Zdanie: ",
+            "progressComplete": "Zakończono",
+            "alertSelectPdf": "Najpierw wybierz plik PDF",
+            "alertNoText": "Nie znaleziono czytelnego tekstu w PDF",
+            "alertSpeechNotSupported": "Twoja przeglądarka nie obsługuje syntezy mowy",
+            "alertAlreadySpeaking": "Już czyta",
+            "alertNotSpeaking": "Obecnie nie czyta",
+            "alertFirstSentence": "Jesteś przy pierwszym zdaniu",
+            "alertLastSentence": "Jesteś przy ostatnim zdaniu",
+            "languageDetected": "Wykryty język: "
+        },
+        "sw": {
+            "pageTitle": "Kusoma kwa sauti",
+            "selectPdfTitle": "Chagua faili ya PDF",
+            "selectPdfSubtitle": "Chagua faili ya PDF kwa kusoma kwa sauti",
+            "btnPrev": "NYUMA",
+            "btnPlayPause": "CHEZA",
+            "btnNext": "INAYOFUATA",
+            "btnRestart": "ANZA UPYA",
+            "btnSpeed": "1.0x",
+            "btnStop": "SIMAMISHA",
+            "emptyStateText": "Chagua faili ya PDF kwa kusoma kwa sauti",
+            "selectPdf": "CHAGUA PDF",
+            "statusSelectPdf": "Bonyeza eneo hapo juu kuchagua PDF",
+            "statusLoading": "Inapakia PDF...",
+            "statusExtracting": "Inatoa maandishi...",
+            "statusReady": "Tayari kusoma!",
+            "statusPlaying": "Inacheza...",
+            "statusPaused": "Imezimwa",
+            "statusCompleted": "Kusoma kumekamilika",
+            "statusError": "Hitilafu imetokea",
+            "progressExtracting": "Inatoa maandishi: ",
+            "progressSentence": "Sentensi: ",
+            "progressComplete": "Kamili",
+            "alertSelectPdf": "Tafadhali chagua faili ya PDF kwanza",
+            "alertNoText": "Hakuna maandishi yanayoweza kusomwa yaliyopatikana kwenye PDF",
+            "alertSpeechNotSupported": "Kivinjari chako hakiungii mkono usanisi wa sauti",
+            "alertAlreadySpeaking": "Tayari inasoma",
+            "alertNotSpeaking": "Haikusomi kwa sasa",
+            "alertFirstSentence": "Uko kwenye sentensi ya kwanza",
+            "alertLastSentence": "Uko kwenye sentensi ya mwisho",
+            "languageDetected": "Lugha imegunduliwa: "
+        },
+        "hi": {
+            "pageTitle": "टेक्स्ट-टू-स्पीच",
+            "selectPdfTitle": "PDF फ़ाइल चुनें",
+            "selectPdfSubtitle": "टेक्स्ट-टू-स्पीच के लिए एक PDF फ़ाइल चुनें",
+            "btnPrev": "पिछला",
+            "btnPlayPause": "चलाएँ",
+            "btnNext": "अगला",
+            "btnRestart": "पुनः आरंभ",
+            "btnSpeed": "1.0x",
+            "btnStop": "रोकें",
+            "emptyStateText": "टेक्स्ट-टू-स्पीच के लिए एक PDF फ़ाइल चुनें",
+            "selectPdf": "PDF चुनें",
+            "statusSelectPdf": "PDF चुनने के लिए ऊपर के क्षेत्र पर क्लिक करें",
+            "statusLoading": "PDF लोड हो रहा है...",
+            "statusExtracting": "टेक्स्ट निकाला जा रहा है...",
+            "statusReady": "पढ़ने के लिए तैयार!",
+            "statusPlaying": "चल रहा है...",
+            "statusPaused": "रुका हुआ",
+            "statusCompleted": "पढ़ना पूरा हुआ",
+            "statusError": "एक त्रुटि हुई",
+            "progressExtracting": "टेक्स्ट निकाल रहा है: ",
+            "progressSentence": "वाक्य: ",
+            "progressComplete": "पूर्ण",
+            "alertSelectPdf": "कृपया पहले एक PDF फ़ाइल चुनें",
+            "alertNoText": "PDF में कोई पठनीय टेक्स्ट नहीं मिला",
+            "alertSpeechNotSupported": "आपका ब्राउज़र स्पीच सिंथेसिस का समर्थन नहीं करता",
+            "alertAlreadySpeaking": "पहले से ही पढ़ रहा है",
+            "alertNotSpeaking": "वर्तमान में नहीं पढ़ रहा",
+            "alertFirstSentence": "आप पहले वाक्य पर हैं",
+            "alertLastSentence": "आप अंतिम वाक्य पर हैं",
+            "languageDetected": "भाषा पाई गई: "
+        }
+    };
+    
+    // ==================== DİL ALGILAMA ====================
+    const languageDetection = {
+        detect: function(text) {
+            if (!text || text.length < 10) return 'en';
+            
+            const sample = text.substring(0, 500).toLowerCase();
+            
+            // Türkçe
+            const turkishChars = /[çğıöşüâîû]/;
+            if (turkishChars.test(sample)) return 'tr';
+            
+            // İngilizce
+            const englishCommon = /\b(the|and|you|that|have|for|with|this|are|was)\b/i;
+            if (englishCommon.test(sample)) return 'en';
+            
+            // Almanca
+            const germanCommon = /\b(der|die|das|und|ist|nicht|mit|von|auf|für)\b/i;
+            if (germanCommon.test(sample)) return 'de';
+            
+            // Fransızca
+            const frenchCommon = /\b(le|la|les|et|est|pas|avec|pour|dans|sur)\b/i;
+            if (frenchCommon.test(sample)) return 'fr';
+            
+            // İspanyolca
+            const spanishCommon = /\b(el|la|los|las|y|es|no|con|por|para)\b/i;
+            if (spanishCommon.test(sample)) return 'es';
+            
+            // Arapça
+            const arabicChars = /[\u0600-\u06FF]/;
+            if (arabicChars.test(sample)) return 'ar';
+            
+            // Rusça
+            const russianChars = /[\u0400-\u04FF]/;
+            if (russianChars.test(sample)) return 'ru';
+            
+            // Çince
+            const chineseChars = /[\u4e00-\u9fff]/;
+            if (chineseChars.test(sample)) return 'zh';
+            
+            // Japonca
+            const japaneseChars = /[\u3040-\u309f\u30a0-\u30ff]/;
+            if (japaneseChars.test(sample)) return 'ja';
+            
+            // Korece
+            const koreanChars = /[\uac00-\ud7af]/;
+            if (koreanChars.test(sample)) return 'ko';
+            
+            // Portekizce
+            const portugueseCommon = /\b(o|a|os|as|e|é|não|com|para|por)\b/i;
+            if (portugueseCommon.test(sample)) return 'pt';
+            
+            // İtalyanca
+            const italianCommon = /\b(il|la|lo|i|gli|le|e|è|non|con)\b/i;
+            if (italianCommon.test(sample)) return 'it';
+            
+            // Hollandaca
+            const dutchCommon = /\b(de|het|een|en|is|niet|met|van|op|voor)\b/i;
+            if (dutchCommon.test(sample)) return 'nl';
+            
+            // Lehçe
+            const polishCommon = /\b(i|w|na|z|do|się|że|o|nie|jest)\b/i;
+            if (polishCommon.test(sample)) return 'pl';
+            
+            // Hintçe
+            const hindiCommon = /[\u0900-\u097F]/;
+            if (hindiCommon.test(sample)) return 'hi';
+            
+            return 'en';
+        },
+        
+        getSpeechLangCode: function(langCode) {
+            const langMap = {
+                'tr': 'tr-TR', 'en': 'en-US', 'de': 'de-DE', 'fr': 'fr-FR', 
+                'es': 'es-ES', 'ar': 'ar-SA', 'ru': 'ru-RU', 'zh': 'zh-CN',
+                'ja': 'ja-JP', 'ko': 'ko-KR', 'pt': 'pt-BR', 'it': 'it-IT',
+                'nl': 'nl-NL', 'pl': 'pl-PL', 'hi': 'hi-IN', 'sw': 'sw-KE'
+            };
+            return langMap[langCode] || 'en-US';
+        },
+        
+        getLanguageName: function(langCode) {
+            const names = {
+                'tr': 'Türkçe', 'en': 'İngilizce', 'de': 'Almanca', 'fr': 'Fransızca',
+                'es': 'İspanyolca', 'ar': 'Arapça', 'ru': 'Rusça', 'zh': 'Çince',
+                'ja': 'Japonca', 'ko': 'Korece', 'pt': 'Portekizce', 'it': 'İtalyanca',
+                'nl': 'Flemenkçe', 'pl': 'Lehçe', 'hi': 'Hintçe', 'sw': 'Svahili'
+            };
+            return names[langCode] || langCode;
+        },
+        
+        getFlag: function(langCode) {
+            const flags = {
+                'tr': '🇹🇷', 'en': '🇺🇸', 'de': '🇩🇪', 'fr': '🇫🇷',
+                'es': '🇪🇸', 'ar': '🇸🇦', 'ru': '🇷🇺', 'zh': '🇨🇳',
+                'ja': '🇯🇵', 'ko': '🇰🇷', 'pt': '🇵🇹', 'it': '🇮🇹',
+                'nl': '🇳🇱', 'pl': '🇵🇱', 'hi': '🇮🇳', 'sw': '🇹🇿'
+            };
+            return flags[langCode] || '🌐';
+        }
+    };
+    
+    // ==================== TEMEL FONKSİYONLAR ====================
+    function getTranslation(key) {
+        try {
+            const currentLang = languageConfig ? languageConfig.getCurrent() : 'tr';
+            const t = translations[currentLang] || translations['tr'];
+            return t[key] || key;
+        } catch (e) {
+            return key;
+        }
+    }
+    
+    function updateUIText() {
+        try {
+            // Başlık ve metinler
+            document.getElementById('pageTitle').textContent = getTranslation('pageTitle');
+            document.getElementById('selectPdfTitle').textContent = getTranslation('selectPdfTitle');
+            document.getElementById('selectPdfSubtitle').textContent = getTranslation('selectPdfSubtitle');
+            document.getElementById('emptyStateText').textContent = getTranslation('emptyStateText');
+            
+            // Buton metinleri
+            document.getElementById('btnPrev').querySelector('.button-text').textContent = getTranslation('btnPrev');
+            document.getElementById('btnPlayPause').querySelector('.button-text').textContent = getTranslation('btnPlayPause');
+            document.getElementById('btnNext').querySelector('.button-text').textContent = getTranslation('btnNext');
+            document.getElementById('btnRestart').querySelector('.button-text').textContent = getTranslation('btnRestart');
+            document.getElementById('btnStop').querySelector('.button-text').textContent = getTranslation('btnStop');
+            
+            // Boş durum butonu
+            const emptyBtn = document.querySelector('.empty-state .control-button');
+            if (emptyBtn) {
+                emptyBtn.querySelector('span:last-child').textContent = getTranslation('selectPdf');
+            }
+            
+        } catch (e) {
+            console.error('UI metinleri güncellenemedi:', e);
+        }
+    }
+    
+    function goBack() {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+    
+    function refreshPDFList() {
+        // Sayfayı yenile
+        window.location.reload();
+    }
+    
+    // ==================== PDF SEÇİMİ ====================
+    function selectPDFFile() {
+        const fileInput = document.getElementById('fileInput');
+        fileInput.click();
+    }
+    
+    document.getElementById('fileInput').addEventListener('change', async function(e) {
+        if (e.target.files.length === 0) return;
+        
+        const file = e.target.files[0];
+        if (!file.type.includes('pdf')) {
+            showStatus(getTranslation('alertSelectPdf'), 'error');
+            return;
+        }
+        
+        await loadPDFFile(file);
+        this.value = '';
+    });
+    
+    async function loadPDFFile(file) {
+        try {
+            showStatus(getTranslation('statusLoading'), 'info');
+            
+            currentPdfFile = file;
+            
+            // PDF bilgilerini göster
+            document.getElementById('currentPdfName').textContent = file.name;
+            document.getElementById('currentPdfSize').textContent = formatBytes(file.size);
+            document.getElementById('currentPdfDate').textContent = new Date(file.lastModified).toLocaleDateString();
+            
+            // UI güncelle
+            document.getElementById('pdfSelectSection').style.display = 'none';
+            document.getElementById('pdfInfoCard').classList.add('visible');
+            document.getElementById('emptyState').classList.remove('visible');
+            
+            // PDF yükle
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            
+            // Metni çıkar
+            await extractTextFromPDF();
+            
+        } catch (error) {
+            console.error('PDF yükleme hatası:', error);
+            showStatus(getTranslation('statusError'), 'error');
+            clearSelection();
+        }
+    }
+    
+    // ==================== METİN ÇIKARMA ====================
+    async function extractTextFromPDF() {
+        try {
+            showStatus(getTranslation('statusExtracting'), 'info');
+            document.getElementById('progressText').textContent = getTranslation('progressExtracting') + '0%';
+            
+            let fullText = '';
+            sentences = [];
+            textPositions = [];
+            
+            // PDF'teki tüm sayfaları işle
+            for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+                const page = await pdfDocument.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                
+                // Sayfa metnini birleştir
+                let pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n\n';
+                
+                // İlerleme güncelle
+                const progress = Math.round((pageNum / pdfDocument.numPages) * 100);
+                document.getElementById('progressText').textContent = getTranslation('progressExtracting') + progress + '%';
+                document.getElementById('progressFill').style.width = progress + '%';
+                
+                // Küçük bir gecikme (UI güncellemesi için)
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            if (!fullText.trim()) {
+                throw new Error('No text found');
+            }
+            
+            // Dili algıla
+            const detectedLang = languageDetection.detect(fullText);
+            detectedLanguage = languageDetection.getSpeechLangCode(detectedLang);
+            
+            // Dil bilgisini göster
+            const languageName = languageDetection.getLanguageName(detectedLang);
+            const languageFlag = languageDetection.getFlag(detectedLang);
+            
+            document.getElementById('languageFlag').textContent = languageFlag;
+            document.getElementById('languageText').textContent = getTranslation('languageDetected') + languageName;
+            
+            // Cümlelere ayır
+            sentences = splitIntoSentences(fullText);
+            
+            // Metni göster
+            document.getElementById('textContent').innerHTML = highlightCurrentSentence();
+            document.getElementById('textDisplay').classList.add('visible');
+            
+            // Kontrolleri göster
+            document.getElementById('speechControls').classList.add('visible');
+            
+            // İlerlemeyi sıfırla
+            currentSentenceIndex = 0;
+            updateProgress();
+            showStatus(getTranslation('statusReady'), 'success');
+            
+        } catch (error) {
+            console.error('Metin çıkarma hatası:', error);
+            showStatus(getTranslation('alertNoText'), 'error');
+        }
+    }
+    
+    function splitIntoSentences(text) {
+        // Basit cümle bölme algoritması
+        const sentenceRegex = /[^.!?…]+[.!?…]+/g;
+        const matches = text.match(sentenceRegex) || [];
+        
+        return matches
+            .map(s => s.trim())
+            .filter(s => s.length > 5) // Çok kısa cümleleri filtrele
+            .filter(s => !s.match(/^\d+$/)) // Sadece sayıları filtrele
+            .slice(0, 500); // Maksimum 500 cümle
+    }
+    
+    function highlightCurrentSentence() {
+        if (sentences.length === 0) return getTranslation('alertNoText');
+        
+        let html = '';
+        for (let i = 0; i < sentences.length; i++) {
+            const sentence = sentences[i];
+            if (i === currentSentenceIndex) {
+                html += `<span class="text-highlight current-sentence">${sentence}</span> `;
+            } else {
+                html += `<span>${sentence}</span> `;
+            }
+        }
+        return html;
+    }
+    
+    // ==================== SESLİ OKUMA KONTROLLERİ ====================
+    function togglePlayPause() {
+        if (!speechSynthesis) {
+            showStatus(getTranslation('alertSpeechNotSupported'), 'error');
+            return;
+        }
+        
+        if (!sentences.length) {
+            showStatus(getTranslation('alertSelectPdf'), 'error');
+            return;
+        }
+        
+        if (isSpeaking) {
+            if (isPaused) {
+                resumeReading();
+            } else {
+                pauseReading();
+            }
+        } else {
+            startReading();
+        }
+    }
+    
+    function startReading() {
+        if (isSpeaking) {
+            showStatus(getTranslation('alertAlreadySpeaking'), 'warning');
+            return;
+        }
+        
+        if (currentSentenceIndex >= sentences.length) {
+            currentSentenceIndex = 0;
+        }
+        
+        isSpeaking = true;
+        isPaused = false;
+        updateButtonStates();
+        showStatus(getTranslation('statusPlaying'), 'info');
+        speakCurrentSentence();
+    }
+    
+    function pauseReading() {
+        if (!isSpeaking || isPaused) return;
+        
+        speechSynthesis.pause();
+        isPaused = true;
+        updateButtonStates();
+        showStatus(getTranslation('statusPaused'), 'warning');
+    }
+    
+    function resumeReading() {
+        if (!isSpeaking || !isPaused) return;
+        
+        speechSynthesis.resume();
+        isPaused = false;
+        updateButtonStates();
+        showStatus(getTranslation('statusPlaying'), 'info');
+    }
+    
+    function stopReading() {
+        if (!isSpeaking) {
+            showStatus(getTranslation('alertNotSpeaking'), 'warning');
+            return;
+        }
+        
+        speechSynthesis.cancel();
+        isSpeaking = false;
+        isPaused = false;
+        updateButtonStates();
+        showStatus(getTranslation('statusCompleted'), 'success');
+    }
+    
+    function restartReading() {
+        stopReading();
+        currentSentenceIndex = 0;
+        updateProgress();
+        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
+        showStatus(getTranslation('statusReady'), 'success');
+    }
+    
+    function prevSentence() {
+        if (currentSentenceIndex <= 0) {
+            showStatus(getTranslation('alertFirstSentence'), 'warning');
+            return;
+        }
+        
+        stopReading();
+        currentSentenceIndex--;
+        updateProgress();
+        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
+        showStatus(getTranslation('progressSentence') + (currentSentenceIndex + 1), 'info');
+    }
+    
+    function nextSentence() {
+        if (currentSentenceIndex >= sentences.length - 1) {
+            showStatus(getTranslation('alertLastSentence'), 'warning');
+            return;
+        }
+        
+        stopReading();
+        currentSentenceIndex++;
+        updateProgress();
+        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
+        showStatus(getTranslation('progressSentence') + (currentSentenceIndex + 1), 'info');
+    }
+    
+    function speakCurrentSentence() {
+        if (currentSentenceIndex >= sentences.length) {
+            stopReading();
+            showStatus(getTranslation('statusCompleted'), 'success');
+            return;
+        }
+        
+        const sentence = sentences[currentSentenceIndex];
+        
+        // Metni güncelle
+        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
+        updateProgress();
+        
+        // Konuşma oluştur
+        if (currentUtterance) {
+            speechSynthesis.cancel();
+        }
+        
+        currentUtterance = new SpeechSynthesisUtterance(sentence);
+        currentUtterance.lang = detectedLanguage;
+        currentUtterance.rate = speechRate;
+        currentUtterance.volume = 1.0;
+        currentUtterance.pitch = 1.0;
+        
+        currentUtterance.onstart = function() {
+            console.log('Cümle başladı:', currentSentenceIndex + 1);
+        };
+        
+        currentUtterance.onend = function() {
+            console.log('Cümle bitti:', currentSentenceIndex + 1);
+            
+            if (isSpeaking && !isPaused) {
+                currentSentenceIndex++;
+                
+                if (currentSentenceIndex < sentences.length) {
+                    setTimeout(speakCurrentSentence, 300);
+                } else {
+                    stopReading();
+                    showStatus(getTranslation('statusCompleted'), 'success');
+                }
+            }
+        };
+        
+        currentUtterance.onerror = function(event) {
+            console.error('Okuma hatası:', event);
+            showStatus(getTranslation('statusError'), 'error');
+            
+            if (isSpeaking && !isPaused) {
+                currentSentenceIndex++;
+                if (currentSentenceIndex < sentences.length) {
+                    setTimeout(speakCurrentSentence, 300);
+                }
+            }
+        };
+        
+        speechSynthesis.speak(currentUtterance);
+    }
+    
+    // ==================== HIZ KONTROLLERİ ====================
+    function cycleSpeed() {
+        const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+        const currentIndex = speeds.indexOf(speechRate);
+        const nextIndex = (currentIndex + 1) % speeds.length;
+        setSpeed(speeds[nextIndex]);
+    }
+    
+    function setSpeed(speed) {
+        speechRate = speed;
+        
+        // Aktif butonu güncelle
+        document.querySelectorAll('.speed-button').forEach(btn => {
+            btn.classList.remove('active');
+            if (parseFloat(btn.dataset.speed) === speed) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Hız metnini güncelle
+        document.getElementById('speedText').textContent = speed.toFixed(1) + 'x';
+        
+        // Mevcut konuşmayı güncelle
+        if (currentUtterance) {
+            currentUtterance.rate = speed;
+        }
+    }
+    
+    // ==================== UI GÜNCELLEMELERİ ====================
+    function updateProgress() {
+        if (sentences.length === 0) return;
+        
+        const progress = Math.round(((currentSentenceIndex + 1) / sentences.length) * 100);
+        document.getElementById('progressText').textContent = 
+            getTranslation('progressSentence') + (currentSentenceIndex + 1) + '/' + sentences.length + 
+            ' (' + progress + '%)';
+        document.getElementById('progressFill').style.width = progress + '%';
+    }
+    
+    function updateButtonStates() {
+        const playPauseBtn = document.getElementById('btnPlayPause');
+        const playPauseIcon = document.getElementById('playPauseIcon');
+        const playPauseText = document.getElementById('playPauseText');
+        
+        if (isSpeaking) {
+            if (isPaused) {
+                playPauseIcon.textContent = 'play_arrow';
+                playPauseText.textContent = getTranslation('btnPlayPause');
+                playPauseBtn.classList.remove('success');
+                playPauseBtn.classList.add('warning');
+            } else {
+                playPauseIcon.textContent = 'pause';
+                playPauseText.textContent = 'DURDUR';
+                playPauseBtn.classList.remove('warning');
+                playPauseBtn.classList.add('success');
+            }
+        } else {
+            playPauseIcon.textContent = 'play_arrow';
+            playPauseText.textContent = getTranslation('btnPlayPause');
+            playPauseBtn.classList.remove('warning');
+            playPauseBtn.classList.add('success');
+        }
+    }
+    
+    function showStatus(message, type = 'info') {
+        const statusElement = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        
+        statusText.textContent = message;
+        statusElement.className = 'status-message visible ' + type;
+        
+        // 3 saniye sonra gizle
+        setTimeout(() => {
+            statusElement.classList.remove('visible');
+        }, 3000);
+    }
+    
+    function clearSelection() {
+        // Okumayı durdur
+        stopReading();
+        
+        // Değişkenleri sıfırla
+        currentPdfFile = null;
+        pdfTextContent = "";
+        sentences = [];
+        currentSentenceIndex = 0;
+        pdfDocument = null;
+        textPositions = [];
+        
+        // UI'ı sıfırla
+        document.getElementById('pdfSelectSection').style.display = 'block';
+        document.getElementById('pdfInfoCard').classList.remove('visible');
+        document.getElementById('speechControls').classList.remove('visible');
+        document.getElementById('textDisplay').classList.remove('visible');
+        document.getElementById('emptyState').classList.add('visible');
+        document.getElementById('statusMessage').classList.remove('visible');
+        
+        // File input'u temizle
+        document.getElementById('fileInput').value = '';
+    }
+    
+    // ==================== YARDIMCI FONKSİYONLAR ====================
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    // ==================== SAYFA YÜKLENDİĞİNDE ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        // UI metinlerini güncelle
+        updateUIText();
+        
+        // Tema ayarı
+        const savedTheme = localStorage.getItem('pdfTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // Dil değişikliklerini dinle
+        if (languageConfig && languageConfig.onLanguageChange) {
+            languageConfig.onLanguageChange(updateUIText);
+        }
+        
+        // Speech synthesis kontrolü
+        if (!('speechSynthesis' in window)) {
+            showStatus(getTranslation('alertSpeechNotSupported'), 'error');
+            document.getElementById('speechControls').style.display = 'none';
+        }
+        
+        // Hız butonlarını aktif et
+        document.querySelectorAll('.speed-button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const speed = parseFloat(this.dataset.speed);
+                setSpeed(speed);
+            });
+        });
+        
+        // Varsayılan hız
+        setSpeed(1.0);
+    });
+    
+    // ==================== SAYFA KAPATILIRKEN ====================
+    window.addEventListener('beforeunload', function() {
+        stopReading();
+    });
+    
+    // ==================== ANDROID BRIDGE FONKSİYONLARI ====================
+    window.goBack = goBack;
+    window.refreshPDFList = refreshPDFList;
+    window.selectPDFFile = selectPDFFile;
+    window.clearSelection = clearSelection;
+    window.togglePlayPause = togglePlayPause;
+    window.prevSentence = prevSentence;
+    window.nextSentence = nextSentence;
+    window.restartReading = restartReading;
+    window.stopReading = stopReading;
+    window.cycleSpeed = cycleSpeed;
+    window.setSpeed = setSpeed;
+    
+  </script>
+</body>
+</html>

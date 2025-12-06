@@ -12,8 +12,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
@@ -27,12 +25,6 @@ class MainActivity : AppCompatActivity() {
     private var backPressedTime: Long = 0
     private val appFolderName = "PDF Reader"
     private var isInViewer = false
-
-    // Medya izni için sabitler
-    companion object {
-        private const val REQUEST_MEDIA_PERMISSION = 1001
-        private const val REQUEST_MANAGE_MEDIA = 1002
-    }
 
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -157,119 +149,6 @@ class MainActivity : AppCompatActivity() {
                 Environment.isExternalStorageManager()
             } else {
                 true
-            }
-        }
-
-        /** Medya izni kontrolü (birlestirme.html için) */
-        @JavascriptInterface
-        fun checkMediaPermission(): String {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // Android 13+ için medya izni kontrolü
-                val hasMediaPermission = ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    android.Manifest.permission.READ_MEDIA_IMAGES
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                
-                if (hasMediaPermission) "full" else "denied"
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Android 11-12 için depolama yöneticisi kontrolü
-                if (Environment.isExternalStorageManager()) {
-                    "full"
-                } else {
-                    "denied"
-                }
-            } else {
-                // Android 10 ve altı için depolama izni
-                val hasStoragePermission = ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                
-                if (hasStoragePermission) "full" else "denied"
-            }
-        }
-
-        /** Medya izni iste (birlestirme.html için) */
-        @JavascriptInterface
-        fun requestMediaPermission(permissionType: String): String {
-            return try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // Android 13+ için medya izni iste
-                    val permissions = if (permissionType == "full") {
-                        arrayOf(
-                            android.Manifest.permission.READ_MEDIA_IMAGES,
-                            android.Manifest.permission.READ_MEDIA_VIDEO
-                        )
-                    } else {
-                        // Sınırlı erişim için yalnızca görsel izni
-                        arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)
-                    }
-                    
-                    ActivityCompat.requestPermissions(
-                        this@MainActivity,
-                        permissions,
-                        REQUEST_MEDIA_PERMISSION
-                    )
-                    
-                    // İstek yapıldı, sonucu WebView'a bildir
-                    runOnUiThread {
-                        webView.evaluateJavascript("""
-                            try {
-                                if (typeof onMediaPermissionRequested === 'function') {
-                                    onMediaPermissionRequested('$permissionType');
-                                }
-                            } catch(e) {
-                                console.log('onMediaPermissionRequested error: ' + e);
-                            }
-                        """.trimIndent(), null)
-                    }
-                    
-                    "requested"
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    // Android 11-12 için depolama yöneticisi izni
-                    if (permissionType == "full") {
-                        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                        intent.data = Uri.parse("package:$packageName")
-                        startActivity(intent)
-                        "requested"
-                    } else {
-                        // Sınırlı erişim için eski depolama izni
-                        ActivityCompat.requestPermissions(
-                            this@MainActivity,
-                            arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                            REQUEST_MEDIA_PERMISSION
-                        )
-                        "requested"
-                    }
-                } else {
-                    // Android 10 ve altı için depolama izni
-                    ActivityCompat.requestPermissions(
-                        this@MainActivity,
-                        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                        REQUEST_MEDIA_PERMISSION
-                    )
-                    "requested"
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                "error:${e.message}"
-            }
-        }
-
-        /** Dosyayı Base64 olarak al (birlestirme.html için) */
-        @JavascriptInterface
-        fun getFileAsBase64(filePath: String): String {
-            return try {
-                val file = File(filePath)
-                if (file.exists() && file.canRead()) {
-                    val bytes = file.readBytes()
-                    android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
-                } else {
-                    ""
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                ""
             }
         }
 
@@ -580,65 +459,6 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }
-        
-        /** Formatlanmış dosya boyutu (birlestirme.html için) */
-        @JavascriptInterface
-        fun getFormattedFileSize(path: String): String {
-            return try {
-                val file = File(path)
-                formatFileSize(file.length())
-            } catch (e: Exception) {
-                "0 B"
-            }
-        }
-        
-        private fun formatFileSize(size: Long): String {
-            if (size <= 0) return "0 B"
-            
-            val units = arrayOf("B", "KB", "MB", "GB", "TB")
-            val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
-            
-            return String.format(
-                "%.1f %s",
-                size / Math.pow(1024.0, digitGroups.toDouble()),
-                units[digitGroups]
-            )
-        }
-    }
-
-    /** İzin sonuçlarını işle */
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        
-        when (requestCode) {
-            REQUEST_MEDIA_PERMISSION -> {
-                val granted = grantResults.isNotEmpty() && 
-                             grantResults.all { it == android.content.pm.PackageManager.PERMISSION_GRANTED }
-                
-                // WebView'a izin sonucunu bildir
-                webView.post {
-                    webView.evaluateJavascript("""
-                        try {
-                            if (typeof onMediaPermissionResult === 'function') {
-                                onMediaPermissionResult(${granted});
-                            }
-                        } catch(e) {
-                            console.log('onMediaPermissionResult error: ' + e);
-                        }
-                    """.trimIndent(), null)
-                }
-                
-                if (granted) {
-                    Toast.makeText(this, "İzin verildi", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "İzin reddedildi", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
     }
 
     /** İzin ekranından dönünce çağrılır */
@@ -728,3 +548,4 @@ class MainActivity : AppCompatActivity() {
         webView.destroy()
     }
 }
+

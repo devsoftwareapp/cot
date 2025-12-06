@@ -1,19 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Android 13+ için medya izinleri (birlestirme.html için) -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.devsoftware.pdfreader">
     
-    <!-- Android 11+ All Files Access izni -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
+    <!-- İzinler -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    
+    <!-- Android 11+ için tüm dosya erişimi -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
     
+    <!-- FileProvider için -->
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:usesCleartextTraffic="true">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <!-- FileProvider -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        
+    </application>
+</manifest>
+
+//res/xml/file_paths.xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- PDF Reader klasörü -->
+    <external-path
+        name="pdf_reader"
+        path="Download/PDF Reader/" />
+    
+    <!-- Tüm harici depolama -->
+    <external-path
+        name="external_files"
+        path="." />
+    
+    <!-- Downloads klasörü -->
+    <external-path
+        name="downloads"
+        path="Download/" />
+</paths>
+
+//AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Android 11+ All Files Access izni -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
+    
     <!-- Android 10 ve altı için depolama izinleri -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
         android:maxSdkVersion="28" />
     
@@ -22,30 +83,6 @@
     
     <!-- USB depolama erişimi (opsiyonel) -->
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
-    
-    <!-- Kamera erişimi (belge tarama için) -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    
-    <!-- Mikrofon erişimi (sesli okuma için) -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    
-    <!-- Ağ durumu kontrolü -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
-    <!-- WiFi durumu kontrolü -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
-    <!-- Gerekli özellikler -->
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false" />
-    
-    <!-- Android 14 için gerekli -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" 
-        android:maxSdkVersion="32" />
 
     <application
         android:allowBackup="true"
@@ -58,15 +95,14 @@
         android:theme="@style/Theme.PDFReader"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
-        tools:targetApi="34">
+        tools:targetApi="31">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|screenLayout|smallestScreenSize"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait">
+            android:launchMode="singleTask">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -89,7 +125,7 @@
         <!-- FileProvider - PDF dosya paylaşımı için -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

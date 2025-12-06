@@ -3,17 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.devsoftware.pdfreader">
 
-    <!-- Android 11+ için tüm dosya erişimi -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
-    
-    <!-- Android 10 ve altı için depolama izinleri -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
-        android:maxSdkVersion="28" />
-    
-    <!-- İnternet erişimi (WebView için) -->
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -21,35 +15,30 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.PDFReader"
         android:usesCleartextTraffic="true"
-        android:requestLegacyExternalStorage="true"
-        tools:targetApi="31">
+        android:requestLegacyExternalStorage="true">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:windowSoftInputMode="adjustResize"
-            android:launchMode="singleTask">
+            android:windowSoftInputMode="adjustResize">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- PDF dosyalarını açma desteği -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="file" />
                 <data android:mimeType="application/pdf" />
-                <data android:host="*" />
                 <data android:pathPattern=".*\\.pdf" />
             </intent-filter>
 
         </activity>
 
-        <!-- FileProvider - PDF dosya paylaşımı için -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

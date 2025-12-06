@@ -493,6 +493,13 @@
         </div>
       </div>
 
+
+   <!-- Butonlar -->
+      <div class="button-group">
+        <button class="btn" id="mergeBtn" disabled onclick="mergePDFs()">PDF BİRLEŞTİR</button>
+        <button class="btn btn-secondary" id="clearBtn" onclick="clearSelection()">SEÇİMİ TEMİZLE</button>
+        <button class="btn btn-success" id="saveBtn" style="display: none;" onclick="saveMergedPDF()">KAYDET</button>
+      </div>
       <!-- Cihaz PDF Listesi -->
       <div class="pdf-list-container">
         <div class="pdf-list" id="pdfList">
@@ -519,12 +526,7 @@
         <p id="savedToText">Download/PDF Reader klasörüne kaydedildi</p>
       </div>
 
-      <!-- Butonlar -->
-      <div class="button-group">
-        <button class="btn" id="mergeBtn" disabled onclick="mergePDFs()">PDF BİRLEŞTİR</button>
-        <button class="btn btn-secondary" id="clearBtn" onclick="clearSelection()">SEÇİMİ TEMİZLE</button>
-        <button class="btn btn-success" id="saveBtn" style="display: none;" onclick="saveMergedPDF()">KAYDET</button>
-      </div>
+   
     </div>
   </main>
 

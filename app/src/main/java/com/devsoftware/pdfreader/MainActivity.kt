@@ -163,22 +163,87 @@ class MainActivity : AppCompatActivity() {
         
         when (requestCode) {
             REQUEST_SELECT_FILE -> {
-                if (filePathCallback == null) return
-                
-                var results: Array<Uri>? = null
-                
-                if (resultCode == RESULT_OK) {
-                    if (data != null) {
-                        val dataString = data.dataString
-                        if (dataString != null) {
-                            results = arrayOf(Uri.parse(dataString))
+                // 1. Önce WebChromeClient file chooser'ı kontrol et
+                if (filePathCallback != null) {
+                    var results: Array<Uri>? = null
+                    
+                    if (resultCode == RESULT_OK) {
+                        if (data != null) {
+                            val dataString = data.dataString
+                            if (dataString != null) {
+                                results = arrayOf(Uri.parse(dataString))
+                            }
                         }
+                    }
+                    
+                    filePathCallback?.onReceiveValue(results)
+                    filePathCallback = null
+                } 
+                // 2. Sesli okuma için PDF seçildi mi kontrol et (AndroidBridge.selectSpeechPDF()'den geldi)
+                else if (resultCode == RESULT_OK && data != null) {
+                    val uri = data.data
+                    if (uri != null) {
+                        handleSpeechPDFSelection(uri)
+                    }
+                }
+            }
+        }
+    }
+    
+    /** Sesli okuma için seçilen PDF'i işle */
+    private fun handleSpeechPDFSelection(uri: Uri) {
+        try {
+            // URI'dan dosya yolunu al
+            val filePath = getFilePathFromUri(uri)
+            
+            // JavaScript'e dosya yolunu gönder
+            webView.post {
+                webView.evaluateJavascript("""
+                    try {
+                        // onPDFSelectedForSpeech fonksiyonu var mı kontrol et
+                        if (typeof onPDFSelectedForSpeech === 'function') {
+                            onPDFSelectedForSpeech('$filePath');
+                        } else {
+                            // Yoksa URL parametresi ile sesli_okuma.html'yi aç
+                            window.location.href = 'file:///android_asset/web/sesli_okuma.html?file=' + encodeURIComponent('$filePath');
+                        }
+                    } catch(e) {
+                        console.log('PDF seçme hatası: ' + e);
+                        // Hata durumunda direkt yönlendir
+                        window.location.href = 'file:///android_asset/web/sesli_okuma.html?file=' + encodeURIComponent('$filePath');
+                    }
+                """.trimIndent(), null)
+            }
+            
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "PDF yüklenirken hata oluştu", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /** URI'dan dosya yolunu al */
+    private fun getFilePathFromUri(uri: Uri): String {
+        return try {
+            // content:// URI'si ise
+            if (uri.scheme == "content") {
+                // Önce dosyayı geçici olarak kopyala
+                val inputStream = contentResolver.openInputStream(uri)
+                val tempFile = File(cacheDir, "temp_speech_pdf_${System.currentTimeMillis()}.pdf")
+                
+                inputStream?.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
                     }
                 }
                 
-                filePathCallback?.onReceiveValue(results)
-                filePathCallback = null
+                tempFile.absolutePath
+            } else {
+                // file:// URI'si ise direkt yol
+                uri.path ?: ""
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            uri.toString()
         }
     }
 
@@ -257,6 +322,12 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, "Dosya seçici açılamadı", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+        
+        /** Sesli okuma için dosya seç (alternatif isim) */
+        @JavascriptInterface
+        fun selectSpeechPDF() {
+            selectPDFForSpeech()
         }
 
         /** İzin kontrolü */
@@ -695,12 +766,6 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        }
-        
-        /** Sesli okuma için Android'den dosya seç */
-        @JavascriptInterface
-        fun selectSpeechPDF() {
-            selectPDFForSpeech()
         }
     }
 

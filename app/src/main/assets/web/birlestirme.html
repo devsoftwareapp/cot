@@ -42,7 +42,6 @@
       --secondary: #B71C1C;
       --success: #4cc9f0;
       --error: #f94144;
-      --warning: #FF9800;
       --text-primary: #0f172a;
       --text-secondary: #64748b;
       --border: #d4d4d4; 
@@ -154,39 +153,154 @@
         padding: 20px;
     }
 
-    /* --- 5. YÜKLEME ALANI --- */
-    .upload-area {
-        border: 2px dashed var(--primary);
-        border-radius: var(--radius-lg);
-        padding: 40px 20px;
-        text-align: center;
-        margin: 20px 0;
+    /* --- 5. SEÇİM ALANI --- */
+    .selection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 16px;
         background: var(--surface);
-        cursor: pointer;
-        transition: all var(--transition-normal);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
     }
-    .upload-area:active {
-        background: rgba(229, 57, 53, 0.05);
-        transform: scale(0.98);
-    }
-    .upload-area h3 {
-        font-size: 18px;
-        margin-bottom: 8px;
+    
+    .selection-info {
+        font-size: 14px;
         color: var(--text-primary);
     }
-    .upload-area p {
-        font-size: 14px;
-        color: var(--text-secondary);
-        margin-bottom: 4px;
+    
+    .selection-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .selection-action-btn {
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all var(--transition-fast);
+    }
+    
+    .selection-action-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .selection-action-btn.primary {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .selection-action-btn.primary:hover {
+        background: var(--secondary);
     }
 
-    /* --- 6. DOSYA LİSTESİ --- */
-    .file-list {
+    /* --- 6. PDF LİSTESİ --- */
+    .pdf-list-container {
         margin: 20px 0;
-        max-height: 300px;
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+    }
+    
+    .pdf-list {
+        padding: 16px;
+    }
+    
+    .pdf-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        margin: 8px 0;
+        background: var(--surface);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    
+    .pdf-item:hover {
+        background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .pdf-item.selected {
+        background: rgba(229, 57, 53, 0.1);
+        border-color: var(--primary);
+    }
+    
+    .pdf-checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--text-secondary);
+        border-radius: 4px;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .pdf-item.selected .pdf-checkbox {
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    .pdf-item.selected .pdf-checkbox::after {
+        content: '✓';
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    .pdf-info {
+        flex-grow: 1;
+        min-width: 0;
+    }
+    
+    .pdf-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+    }
+    
+    .pdf-meta {
+        font-size: 11px;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 8px;
+    }
+
+    /* --- 7. SEÇİLEN DOSYA LİSTESİ --- */
+    .selected-files-container {
+        margin: 20px 0;
+    }
+    
+    .selected-header {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+    
+    .selected-list {
+        margin: 12px 0;
+        max-height: 200px;
         overflow-y: auto;
     }
-    .file-item {
+    
+    .selected-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -197,12 +311,14 @@
         background: var(--surface);
         transition: all var(--transition-fast);
     }
-    .file-name {
+    
+    .selected-name {
         flex-grow: 1;
         font-size: 14px;
         word-break: break-all;
         color: var(--text-primary);
     }
+    
     .remove-btn {
         background: var(--error);
         color: white;
@@ -214,17 +330,19 @@
         margin-left: 10px;
         font-weight: 500;
     }
+    
     .remove-btn:active {
         opacity: 0.8;
     }
 
-    /* --- 7. BUTONLAR --- */
+    /* --- 8. BUTONLAR --- */
     .button-group {
         display: flex;
         flex-direction: column;
         gap: 12px;
         margin-top: 24px;
     }
+    
     .btn {
         background: var(--primary);
         color: white;
@@ -238,26 +356,27 @@
         text-align: center;
         width: 100%;
     }
+    
     .btn:disabled {
         background: var(--text-secondary);
         cursor: not-allowed;
         opacity: 0.5;
     }
+    
     .btn:active:not(:disabled) {
         transform: scale(0.98);
         background: var(--secondary);
     }
+    
     .btn-secondary {
         background: var(--text-secondary);
     }
+    
     .btn-success {
         background: var(--success);
     }
-    .btn-warning {
-        background: var(--warning);
-    }
 
-    /* --- 8. İLERLEME VE BAŞARI MESAJLARI --- */
+    /* --- 9. İLERLEME VE BAŞARI MESAJLARI --- */
     .progress {
         margin: 20px 0;
         text-align: center;
@@ -267,6 +386,7 @@
         color: var(--text-primary);
         border: 1px solid var(--border);
     }
+    
     .success {
         margin: 20px 0;
         text-align: center;
@@ -276,373 +396,84 @@
         color: var(--success);
         border: 1px solid var(--success);
     }
+    
     .success h3 {
         margin-bottom: 8px;
         font-size: 16px;
     }
+    
     .success p {
         font-size: 12px;
         color: var(--text-secondary);
         margin-top: 4px;
     }
 
-    /* --- 9. PERMISSION DIALOG (MEDYA İZNİ) --- */
-    .permission-dialog {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-    .permission-dialog.show {
-        display: flex;
-    }
-    .permission-content {
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        padding: 24px;
-        width: 90%;
-        max-width: 400px;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--border);
-        animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-        from { transform: translateY(50px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    .permission-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-    .permission-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: rgba(255, 152, 0, 0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--warning);
-        font-size: 24px;
-    }
-    .permission-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-    .permission-message {
-        font-size: 14px;
-        color: var(--text-secondary);
-        line-height: 1.5;
-        margin-bottom: 20px;
-    }
-    .permission-options {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .permission-option {
-        padding: 16px;
-        border: 2px solid var(--border);
-        border-radius: var(--radius-md);
-        background: var(--surface);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        text-align: center;
-        font-weight: 500;
-    }
-    .permission-option:active {
-        transform: scale(0.98);
-    }
-    .permission-option.full {
-        border-color: var(--success);
-        color: var(--success);
-        background: rgba(76, 201, 240, 0.05);
-    }
-    .permission-option.limited {
-        border-color: var(--warning);
-        color: var(--warning);
-        background: rgba(255, 152, 0, 0.05);
-    }
-    .permission-option.deny {
-        border-color: var(--error);
-        color: var(--error);
-        background: rgba(249, 65, 68, 0.05);
-    }
-    .permission-option.selected {
-        background: rgba(76, 201, 240, 0.15);
-        border-color: var(--success);
-    }
-
-    /* --- 10. CİHAZDAN PDF SEÇME DIALOG --- */
-    .device-picker-dialog {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1001;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-    .device-picker-dialog.show {
-        display: flex;
-    }
-    .device-picker-content {
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        padding: 24px;
-        width: 90%;
-        max-width: 500px;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--border);
-        max-height: 80vh;
-        display: flex;
-        flex-direction: column;
-    }
-    .device-picker-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 12px;
-    }
-    .device-picker-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-    .device-picker-close {
-        background: none;
-        border: none;
-        color: var(--text-secondary);
-        cursor: pointer;
-        padding: 8px;
-    }
-    .device-picker-search {
-        margin-bottom: 16px;
-    }
-    .search-input-wrapper {
-        display: flex;
-        align-items: center;
-        background: var(--background);
-        border-radius: var(--radius-md);
-        padding: 8px 16px;
-        border: 1px solid var(--border);
-    }
-    .device-search-input {
-        flex: 1;
-        border: none;
-        background: transparent;
-        color: var(--text-primary);
-        font-size: 14px;
-        padding: 8px;
-        outline: none;
-    }
-    .device-picker-list {
-        flex: 1;
-        overflow-y: auto;
-        max-height: 300px;
-        margin-bottom: 20px;
-    }
-    .device-file-item {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        background: var(--surface);
-    }
-    .device-file-item:active {
-        background: rgba(229, 57, 53, 0.05);
-    }
-    .device-file-item.selected {
-        background: rgba(229, 57, 53, 0.1);
-        border-color: var(--primary);
-    }
-    .device-file-icon {
-        margin-right: 12px;
-        color: var(--primary);
-    }
-    .device-file-info {
-        flex: 1;
-    }
-    .device-file-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-primary);
-        margin-bottom: 2px;
-    }
-    .device-file-meta {
-        font-size: 11px;
-        color: var(--text-secondary);
-        display: flex;
-        gap: 8px;
-    }
-    .device-file-checkbox {
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--border);
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 12px;
-    }
-    .device-file-checkbox.selected {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: white;
-    }
-    .device-picker-actions {
-        display: flex;
-        gap: 12px;
-    }
-    .device-picker-empty {
+    /* --- 10. BOŞ DURUM MESAJI --- */
+    .empty-state {
         text-align: center;
         padding: 40px 20px;
         color: var(--text-secondary);
     }
-    .device-picker-loading {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--text-secondary);
+    
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    .empty-text {
+        font-size: 14px;
     }
 
     /* --- 11. DARK MOD ADJUSTMENTS --- */
-    [data-theme="dark"] .upload-area {
-        border-color: #FF6961;
-        background: rgba(255, 105, 97, 0.05);
+    [data-theme="dark"] .pdf-item:hover {
+        background: rgba(255, 255, 255, 0.05);
     }
+    
     [data-theme="dark"] .btn {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
+    
     [data-theme="dark"] .progress {
         background: rgba(255, 105, 97, 0.1);
     }
+    
     [data-theme="dark"] .success {
         background: rgba(76, 201, 240, 0.15);
-    }
-    [data-theme="dark"] .device-picker-content {
-        background: var(--surface);
-    }
-    [data-theme="dark"] .search-input-wrapper {
-        background: rgba(255, 255, 255, 0.05);
     }
 
     @media (min-width: 768px) {
         .container {
             max-width: 500px;
         }
+        
         .button-group {
             flex-direction: row;
         }
+        
         .btn {
             width: auto;
             flex: 1;
-        }
-        .device-picker-actions {
-            flex-direction: row;
         }
     }
   </style>
 </head>
 <body>
 
-  <!-- Medya İzni Dialog -->
-  <div class="permission-dialog" id="permissionDialog">
-    <div class="permission-content">
-      <div class="permission-header">
-        <div class="permission-icon">
-          <span class="material-symbols-rounded">folder</span>
-        </div>
-        <h3 class="permission-title" id="permissionTitle">Medya Erişim İzni</h3>
-      </div>
-      
-      <p class="permission-message" id="permissionMessage">
-        PDF dosyalarını birleştirmek için medya dosyalarına erişim izni gerekli. Lütfen erişim seviyenizi seçin:
-      </p>
-      
-      <div class="permission-options">
-        <div class="permission-option full" onclick="handlePermissionOption('full')">
-          Tüm Medyaya İzin Ver
-        </div>
-        <div class="permission-option limited selected" onclick="handlePermissionOption('limited')">
-          Sınırlı Erişim İzni Ver
-        </div>
-        <div class="permission-option deny" onclick="handlePermissionOption('deny')">
-          Reddet
-        </div>
-      </div>
-      
-      <p class="text-sm text-secondary mt-3" id="permissionNote">
-        *Sınırlı erişim: Yalnızca seçtiğiniz PDF dosyalarına erişim sağlar
-      </p>
-    </div>
-  </div>
-
-  <!-- Cihazdan PDF Seçme Dialog -->
-  <div class="device-picker-dialog" id="devicePickerDialog">
-    <div class="device-picker-content">
-      <div class="device-picker-header">
-        <h3 class="device-picker-title" id="devicePickerTitle">PDF Dosyaları Seçin</h3>
-        <button class="device-picker-close" onclick="hideDevicePicker()">
-          <span class="material-symbols-rounded">close</span>
-        </button>
-      </div>
-      
-      <div class="device-picker-search">
-        <div class="search-input-wrapper">
-          <span class="material-symbols-rounded text-secondary">search</span>
-          <input type="text" class="device-search-input" id="deviceSearchInput" 
-                 placeholder="PDF ara..." oninput="filterDeviceFiles()">
-        </div>
-      </div>
-      
-      <div class="device-picker-list" id="devicePickerList">
-        <div class="device-picker-loading" id="devicePickerLoading">
-          <span class="material-symbols-rounded">hourglass_empty</span>
-          <p>PDF dosyaları yükleniyor...</p>
-        </div>
-        <!-- PDF dosyaları buraya eklenecek -->
-      </div>
-      
-      <div class="device-picker-actions">
-        <button class="btn btn-secondary" onclick="hideDevicePicker()" style="flex: 1;">
-          İPTAL
-        </button>
-        <button class="btn" onclick="selectDeviceFiles()" id="deviceSelectBtn" disabled style="flex: 1;">
-          SEÇ (0)
-        </button>
-      </div>
-    </div>
-  </div>
-
   <div class="top-bar-container" id="topBar">
     <header class="app-header">
       <div class="flex items-center gap-sm">
+        <button class="icon-button" onclick="goBack()">
+          <span class="material-symbols-rounded">arrow_back</span>
+        </button>
         <div class="logo">
             <img src="logo/logo.png" alt="PDF Reader Logo">
         </div>
         <h1 class="app-title" id="pageTitle">PDF Birleştirme</h1>
       </div>
       <div class="flex items-center gap-sm">
-        <button class="icon-button" onclick="goBack()">
-          <span class="material-symbols-rounded">arrow_back</span>
+        <button class="icon-button" onclick="refreshPDFList()">
+          <span class="material-symbols-rounded">refresh</span>
         </button>
       </div>
     </header>
@@ -650,16 +481,29 @@
 
   <main class="main-content" id="mainContent">
     <div class="container">
-      <!-- Dosya Seçme Alanı -->
-      <div class="upload-area" id="uploadArea" onclick="handleUploadClick()">
-        <h3 id="selectPdfFilesText">PDF Dosyalarını Seçin</h3>
-        <p id="clickToSelectText">Tıklayarak PDF dosyalarını seçin</p>
-        <p><small id="multiplePdfText">Birden fazla PDF seçebilirsiniz</small></p>
-        <input type="file" id="fileInput" multiple accept=".pdf" class="hidden">
+      <!-- Seçim Header -->
+      <div class="selection-header">
+        <div class="selection-info" id="selectionInfo">PDF seçin (en az 2)</div>
+        <div class="selection-actions">
+          <button class="selection-action-btn" onclick="selectAllPDFs()" id="selectAllBtn">Tümünü Seç</button>
+          <button class="selection-action-btn" onclick="deselectAllPDFs()" id="deselectAllBtn">Seçimi Temizle</button>
+        </div>
       </div>
 
-      <!-- Seçilen Dosya Listesi -->
-      <div class="file-list" id="fileList"></div>
+      <!-- Cihaz PDF Listesi -->
+      <div class="pdf-list-container">
+        <div class="pdf-list" id="pdfList">
+          <!-- PDF'ler buraya eklenecek -->
+        </div>
+      </div>
+
+      <!-- Seçilen Dosyalar Listesi -->
+      <div class="selected-files-container">
+        <div class="selected-header" id="selectedHeader">Seçilen PDF'ler: <span id="selectedCount">0</span></div>
+        <div class="selected-list" id="selectedList">
+          <!-- Seçilen PDF'ler buraya eklenecek -->
+        </div>
+      </div>
 
       <!-- İlerleme Durumu -->
       <div class="progress" id="progress" style="display: none;">
@@ -675,14 +519,8 @@
       <!-- Butonlar -->
       <div class="button-group">
         <button class="btn" id="mergeBtn" disabled onclick="mergePDFs()">PDF BİRLEŞTİR</button>
-        <button class="btn btn-secondary" id="clearBtn" disabled onclick="clearList()">LİSTEYİ TEMİZLE</button>
+        <button class="btn btn-secondary" id="clearBtn" onclick="clearSelection()">SEÇİMİ TEMİZLE</button>
         <button class="btn btn-success" id="saveBtn" style="display: none;" onclick="saveMergedPDF()">KAYDET</button>
-        <button class="btn btn-warning" id="permissionBtn" onclick="showPermissionDialog()" style="display: none;">
-          İZİN AYARLARI
-        </button>
-        <button class="btn" id="deviceSelectBtnMain" onclick="showDevicePicker()" style="display: none;">
-          CİHAZDAN PDF SEÇ
-        </button>
       </div>
     </div>
   </main>
@@ -691,673 +529,413 @@
   <script src="lang.js"></script>
   <script>
     // --- DEĞİŞKENLER ---
-    let selectedFiles = [];
+    let devicePDFs = []; // Cihazdaki PDF'ler
+    let selectedPDFs = []; // Seçilen PDF'ler
     let mergedPdfBlob = null;
-    let mediaPermission = null;
-    let isFirstUpload = true;
-    let deviceFiles = [];
-    let selectedDeviceFiles = new Set();
 
-    // --- TÜM DİL ÇEVİRİLERİ (EKSİKSİZ) ---
+    // --- TÜM DİL ÇEVİRİLERİ ---
     const translations = {
-        "ar": { 
+        "ar": {
             "pageTitle": "دمج PDF",
-            "selectPdfFiles": "اختر ملفات PDF",
-            "clickToSelect": "انقر لاختيار ملفات PDF",
-            "multiplePdf": "يمكنك اختيار عدة ملفات PDF",
-            "mergePdf": "دمج PDF",
-            "clearList": "مسح القائمة",
-            "save": "حفظ",
+            "selectInfo": "اختر ملفات PDF (اثنان على الأقل)",
+            "selectAll": "اختر الكل",
+            "deselectAll": "مسح التحديد",
+            "selectedPDFs": "ملفات PDF المحددة:",
             "mergingPdf": "جاري دمج ملفات PDF...",
             "mergeSuccess": "تم دمج PDF بنجاح!",
             "saveSuccess": "تم حفظ PDF بنجاح",
             "remove": "إزالة",
             "selectAtLeast2": "اختر ملفين PDF على الأقل!",
-            "savedTo": "تم الحفظ في مجلد Download/PDF Reader",
-            "permissionTitle": "تصريح الوصول إلى الوسائط",
-            "permissionMessage": "مطلوب تصريح الوصول إلى ملفات الوسائط لدمج ملفات PDF. الرجاء تحديد مستوى وصولك:",
-            "permissionNote": "*الوصول المحدود: يسمح فقط بالوصول إلى ملفات PDF المحددة",
-            "fullPermission": "السماح بجميع الوسائط",
-            "limitedPermission": "السماح بالوصول المحدود",
-            "denyPermission": "رفض",
-            "permissionBtn": "إعدادات التصريح",
-            "permissionGranted": "تم منح التصريح",
-            "permissionDenied": "تم رفض التصريح",
-            "noPermission": "التصريح مطلوب",
-            "requestPermission": "طلب التصريح",
-            "checkingPermission": "جاري التحقق من التصريح...",
-            "devicePickerTitle": "اختر ملفات PDF",
-            "deviceSelect": "اختر",
-            "deviceCancel": "إلغاء",
-            "deviceSearch": "ابحث عن PDF...",
-            "deviceLoading": "جاري تحميل ملفات PDF...",
-            "deviceEmpty": "لم يتم العثور على ملفات PDF",
-            "deviceSelectBtn": "اختر ({0})",
-            "deviceSelectBtnMain": "اختر PDF من الجهاز"
+            "savedTo": "تم الحفظ في مجلد التنزيلات/PDF Reader",
+            "mergeBtn": "دمج PDF",
+            "clearBtn": "مسح التحديد",
+            "saveBtn": "حفظ",
+            "noPDFs": "لم يتم العثور على ملفات PDF في جهازك",
+            "refresh": "تحديث",
+            "loadingPDFs": "جاري تحميل ملفات PDF...",
+            "errorLoading": "خطأ في تحميل ملفات PDF",
+            "permissionRequired": "يتطلب الوصول إلى ملفات PDF إذنًا",
+            "grantPermission": "منح الإذن"
         },
-        "bn": { 
+        "bn": {
             "pageTitle": "PDF মার্জ",
-            "selectPdfFiles": "PDF ফাইল নির্বাচন করুন",
-            "clickToSelect": "PDF ফাইল নির্বাচন করতে ক্লিক করুন",
-            "multiplePdf": "আপনি একাধিক PDF নির্বাচন করতে পারেন",
-            "mergePdf": "PDF মার্জ করুন",
-            "clearList": "তালিকা সাফ করুন",
-            "save": "সংরক্ষণ করুন",
+            "selectInfo": "PDF নির্বাচন করুন (অন্তত 2)",
+            "selectAll": "সব নির্বাচন করুন",
+            "deselectAll": "নির্বাচন পরিষ্কার করুন",
+            "selectedPDFs": "নির্বাচিত PDF:",
             "mergingPdf": "PDF মার্জ করা হচ্ছে...",
             "mergeSuccess": "PDF সফলভাবে মার্জ হয়েছে!",
             "saveSuccess": "PDF সফলভাবে সংরক্ষিত হয়েছে",
             "remove": "অপসারণ",
             "selectAtLeast2": "অন্তত 2টি PDF ফাইল নির্বাচন করুন!",
             "savedTo": "ডাউনলোড/PDF রিডার ফোল্ডারে সংরক্ষিত",
-            "permissionTitle": "মিডিয়া অ্যাক্সেস পারমিশন",
-            "permissionMessage": "PDF ফাইল মার্জ করতে মিডিয়া ফাইল অ্যাক্সেস পারমিশন প্রয়োজন। অনুগ্রহ করে আপনার অ্যাক্সেস স্তর নির্বাচন করুন:",
-            "permissionNote": "*সীমিত অ্যাক্সেস: শুধুমাত্র নির্বাচিত PDF ফাইলে অ্যাক্সেস দেয়",
-            "fullPermission": "সমস্ত মিডিয়া অনুমতি দিন",
-            "limitedPermission": "সীমিত অ্যাক্সেস অনুমতি দিন",
-            "denyPermission": "অস্বীকার করুন",
-            "permissionBtn": "পারমিশন সেটিংস",
-            "permissionGranted": "পারমিশন মঞ্জুর হয়েছে",
-            "permissionDenied": "পারমিশন অস্বীকৃত হয়েছে",
-            "noPermission": "পারমিশন প্রয়োজন",
-            "requestPermission": "পারমিশন অনুরোধ করুন",
-            "checkingPermission": "পারমিশন চেক করা হচ্ছে...",
-            "devicePickerTitle": "PDF ফাইল নির্বাচন করুন",
-            "deviceSelect": "নির্বাচন করুন",
-            "deviceCancel": "বাতিল",
-            "deviceSearch": "PDF খুঁজুন...",
-            "deviceLoading": "PDF ফাইল লোড হচ্ছে...",
-            "deviceEmpty": "কোনো PDF ফাইল পাওয়া যায়নি",
-            "deviceSelectBtn": "নির্বাচন করুন ({0})",
-            "deviceSelectBtnMain": "ডিভাইস থেকে PDF নির্বাচন করুন"
+            "mergeBtn": "PDF মার্জ করুন",
+            "clearBtn": "নির্বাচন পরিষ্কার করুন",
+            "saveBtn": "সংরক্ষণ করুন",
+            "noPDFs": "আপনার ডিভাইসে কোন PDF পাওয়া যায়নি",
+            "refresh": "রিফ্রেশ করুন",
+            "loadingPDFs": "PDF লোড হচ্ছে...",
+            "errorLoading": "PDF লোড করতে ত্রুটি",
+            "permissionRequired": "PDF ফাইল অ্যাক্সেসের জন্য অনুমতি প্রয়োজন",
+            "grantPermission": "অনুমতি দিন"
         },
-        "de": { 
+        "de": {
             "pageTitle": "PDF Zusammenführen",
-            "selectPdfFiles": "PDF-Dateien auswählen",
-            "clickToSelect": "Klicken Sie, um PDF-Dateien auszuwählen",
-            "multiplePdf": "Sie können mehrere PDFs auswählen",
-            "mergePdf": "PDF ZUSAMMENFÜHREN",
-            "clearList": "LISTE LÖSCHEN",
-            "save": "SPEICHERN",
+            "selectInfo": "PDFs auswählen (mindestens 2)",
+            "selectAll": "Alle auswählen",
+            "deselectAll": "Auswahl löschen",
+            "selectedPDFs": "Ausgewählte PDFs:",
             "mergingPdf": "PDFs werden zusammengeführt...",
             "mergeSuccess": "PDF erfolgreich zusammengeführt!",
             "saveSuccess": "PDF erfolgreich gespeichert",
             "remove": "Entfernen",
             "selectAtLeast2": "Wählen Sie mindestens 2 PDF-Dateien aus!",
             "savedTo": "Im Download/PDF Reader-Ordner gespeichert",
-            "permissionTitle": "Medienzugriffsberechtigung",
-            "permissionMessage": "Für das Zusammenführen von PDF-Dateien ist eine Medienzugriffsberechtigung erforderlich. Bitte wählen Sie Ihre Zugriffsebene:",
-            "permissionNote": "*Eingeschränkter Zugriff: Ermöglicht nur Zugriff auf ausgewählte PDF-Dateien",
-            "fullPermission": "Alle Medien erlauben",
-            "limitedPermission": "Eingeschränkten Zugriff erlauben",
-            "denyPermission": "Ablehnen",
-            "permissionBtn": "BERECHTIGUNGSEINSTELLUNGEN",
-            "permissionGranted": "Berechtigung erteilt",
-            "permissionDenied": "Berechtigung abgelehnt",
-            "noPermission": "Berechtigung erforderlich",
-            "requestPermission": "Berechtigung anfordern",
-            "checkingPermission": "Berechtigung wird überprüft...",
-            "devicePickerTitle": "PDF-Dateien auswählen",
-            "deviceSelect": "Auswählen",
-            "deviceCancel": "Abbrechen",
-            "deviceSearch": "PDF suchen...",
-            "deviceLoading": "PDF-Dateien werden geladen...",
-            "deviceEmpty": "Keine PDF-Dateien gefunden",
-            "deviceSelectBtn": "AUSWÄHLEN ({0})",
-            "deviceSelectBtnMain": "PDF VOM GERÄT AUSWÄHLEN"
+            "mergeBtn": "PDF ZUSAMMENFÜHREN",
+            "clearBtn": "AUSWAHL LÖSCHEN",
+            "saveBtn": "SPEICHERN",
+            "noPDFs": "Keine PDFs auf Ihrem Gerät gefunden",
+            "refresh": "Aktualisieren",
+            "loadingPDFs": "PDFs werden geladen...",
+            "errorLoading": "Fehler beim Laden der PDFs",
+            "permissionRequired": "Zugriff auf PDF-Dateien erfordert Berechtigung",
+            "grantPermission": "Berechtigung erteilen"
         },
-        "en": { 
+        "en": {
             "pageTitle": "PDF Merge",
-            "selectPdfFiles": "Select PDF Files",
-            "clickToSelect": "Click to select PDF files",
-            "multiplePdf": "You can select multiple PDFs",
-            "mergePdf": "MERGE PDF",
-            "clearList": "CLEAR LIST",
-            "save": "SAVE",
+            "selectInfo": "Select PDFs (at least 2)",
+            "selectAll": "Select All",
+            "deselectAll": "Clear Selection",
+            "selectedPDFs": "Selected PDFs:",
             "mergingPdf": "Merging PDFs...",
             "mergeSuccess": "PDF merged successfully!",
             "saveSuccess": "PDF Successfully Saved",
             "remove": "Remove",
             "selectAtLeast2": "Select at least 2 PDF files!",
             "savedTo": "Saved to Download/PDF Reader folder",
-            "permissionTitle": "Media Access Permission",
-            "permissionMessage": "Media file access permission is required to merge PDF files. Please select your access level:",
-            "permissionNote": "*Limited access: Only allows access to selected PDF files",
-            "fullPermission": "Allow All Media",
-            "limitedPermission": "Allow Limited Access",
-            "denyPermission": "Deny",
-            "permissionBtn": "PERMISSION SETTINGS",
-            "permissionGranted": "Permission granted",
-            "permissionDenied": "Permission denied",
-            "noPermission": "Permission required",
-            "requestPermission": "Request permission",
-            "checkingPermission": "Checking permission...",
-            "devicePickerTitle": "Select PDF Files",
-            "deviceSelect": "Select",
-            "deviceCancel": "Cancel",
-            "deviceSearch": "Search PDF...",
-            "deviceLoading": "Loading PDF files...",
-            "deviceEmpty": "No PDF files found",
-            "deviceSelectBtn": "SELECT ({0})",
-            "deviceSelectBtnMain": "SELECT PDF FROM DEVICE"
+            "mergeBtn": "MERGE PDF",
+            "clearBtn": "CLEAR SELECTION",
+            "saveBtn": "SAVE",
+            "noPDFs": "No PDFs found on your device",
+            "refresh": "Refresh",
+            "loadingPDFs": "Loading PDFs...",
+            "errorLoading": "Error loading PDFs",
+            "permissionRequired": "PDF file access requires permission",
+            "grantPermission": "Grant Permission"
         },
-        "es": { 
+        "es": {
             "pageTitle": "Combinar PDF",
-            "selectPdfFiles": "Seleccionar archivos PDF",
-            "clickToSelect": "Haga clic para seleccionar archivos PDF",
-            "multiplePdf": "Puede seleccionar varios PDF",
-            "mergePdf": "COMBINAR PDF",
-            "clearList": "LIMPIAR LISTA",
-            "save": "GUARDAR",
+            "selectInfo": "Seleccionar PDFs (al menos 2)",
+            "selectAll": "Seleccionar todo",
+            "deselectAll": "Limpiar selección",
+            "selectedPDFs": "PDFs seleccionados:",
             "mergingPdf": "Combinando PDFs...",
             "mergeSuccess": "¡PDF combinado exitosamente!",
             "saveSuccess": "PDF guardado exitosamente",
             "remove": "Eliminar",
             "selectAtLeast2": "¡Seleccione al menos 2 archivos PDF!",
             "savedTo": "Guardado en carpeta Descargar/PDF Reader",
-            "permissionTitle": "Permiso de acceso a medios",
-            "permissionMessage": "Se requiere permiso de acceso a archivos multimedia para combinar archivos PDF. Seleccione su nivel de acceso:",
-            "permissionNote": "*Acceso limitado: Solo permite acceso a archivos PDF seleccionados",
-            "fullPermission": "Permitir todos los medios",
-            "limitedPermission": "Permitir acceso limitado",
-            "denyPermission": "Denegar",
-            "permissionBtn": "CONFIGURACIÓN DE PERMISOS",
-            "permissionGranted": "Permiso concedido",
-            "permissionDenied": "Permiso denegado",
-            "noPermission": "Permiso requerido",
-            "requestPermission": "Solicitar permiso",
-            "checkingPermission": "Verificando permiso...",
-            "devicePickerTitle": "Seleccionar archivos PDF",
-            "deviceSelect": "Seleccionar",
-            "deviceCancel": "Cancelar",
-            "deviceSearch": "Buscar PDF...",
-            "deviceLoading": "Cargando archivos PDF...",
-            "deviceEmpty": "No se encontraron archivos PDF",
-            "deviceSelectBtn": "SELECCIONAR ({0})",
-            "deviceSelectBtnMain": "SELECCIONAR PDF DEL DISPOSITIVO"
+            "mergeBtn": "COMBINAR PDF",
+            "clearBtn": "LIMPIAR SELECCIÓN",
+            "saveBtn": "GUARDAR",
+            "noPDFs": "No se encontraron PDFs en su dispositivo",
+            "refresh": "Actualizar",
+            "loadingPDFs": "Cargando PDFs...",
+            "errorLoading": "Error al cargar PDFs",
+            "permissionRequired": "El acceso a archivos PDF requiere permiso",
+            "grantPermission": "Conceder permiso"
         },
-        "fr": { 
+        "fr": {
             "pageTitle": "Fusionner PDF",
-            "selectPdfFiles": "Sélectionner les fichiers PDF",
-            "clickToSelect": "Cliquez pour sélectionner les fichiers PDF",
-            "multiplePdf": "Vous pouvez sélectionner plusieurs PDF",
-            "mergePdf": "FUSIONNER PDF",
-            "clearList": "EFFACER LA LISTE",
-            "save": "ENREGISTRER",
+            "selectInfo": "Sélectionner des PDF (au moins 2)",
+            "selectAll": "Tout sélectionner",
+            "deselectAll": "Effacer la sélection",
+            "selectedPDFs": "PDFs sélectionnés:",
             "mergingPdf": "Fusion des PDF...",
             "mergeSuccess": "PDF fusionné avec succès !",
             "saveSuccess": "PDF enregistré avec succès",
             "remove": "Supprimer",
             "selectAtLeast2": "Sélectionnez au moins 2 fichiers PDF !",
             "savedTo": "Enregistré dans le dossier Télécharger/PDF Reader",
-            "permissionTitle": "Autorisation d'accès aux médias",
-            "permissionMessage": "L'autorisation d'accès aux fichiers multimédias est requise pour fusionner les fichiers PDF. Veuillez sélectionner votre niveau d'accès :",
-            "permissionNote": "*Accès limité : Permet uniquement l'accès aux fichiers PDF sélectionnés",
-            "fullPermission": "Autoriser tous les médias",
-            "limitedPermission": "Autoriser l'accès limité",
-            "denyPermission": "Refuser",
-            "permissionBtn": "PARAMÈTRES D'AUTORISATION",
-            "permissionGranted": "Autorisation accordée",
-            "permissionDenied": "Autorisation refusée",
-            "noPermission": "Autorisation requise",
-            "requestPermission": "Demander l'autorisation",
-            "checkingPermission": "Vérification de l'autorisation...",
-            "devicePickerTitle": "Sélectionner les fichiers PDF",
-            "deviceSelect": "Sélectionner",
-            "deviceCancel": "Annuler",
-            "deviceSearch": "Rechercher PDF...",
-            "deviceLoading": "Chargement des fichiers PDF...",
-            "deviceEmpty": "Aucun fichier PDF trouvé",
-            "deviceSelectBtn": "SÉLECTIONNER ({0})",
-            "deviceSelectBtnMain": "SÉLECTIONNER PDF DEPUIS L'APPAREIL"
+            "mergeBtn": "FUSIONNER PDF",
+            "clearBtn": "EFFACER SÉLECTION",
+            "saveBtn": "ENREGISTRER",
+            "noPDFs": "Aucun PDF trouvé sur votre appareil",
+            "refresh": "Actualiser",
+            "loadingPDFs": "Chargement des PDF...",
+            "errorLoading": "Erreur de chargement des PDF",
+            "permissionRequired": "L'accès aux fichiers PDF nécessite une autorisation",
+            "grantPermission": "Accorder l'autorisation"
         },
-        "hi": { 
+        "hi": {
             "pageTitle": "PDF मर्ज",
-            "selectPdfFiles": "PDF फ़ाइलें चुनें",
-            "clickToSelect": "PDF फ़ाइलें चुनने के लिए क्लिक करें",
-            "multiplePdf": "आप एक से अधिक PDF चुन सकते हैं",
-            "mergePdf": "PDF मर्ज करें",
-            "clearList": "सूची साफ करें",
-            "save": "सहेजें",
+            "selectInfo": "PDF चुनें (कम से कम 2)",
+            "selectAll": "सभी चुनें",
+            "deselectAll": "चयन साफ करें",
+            "selectedPDFs": "चयनित PDF:",
             "mergingPdf": "PDF मर्ज किए जा रहे हैं...",
             "mergeSuccess": "PDF सफलतापूर्वक मर्ज हो गया!",
             "saveSuccess": "PDF सफलतापूर्वक सहेजा गया",
             "remove": "हटाएं",
             "selectAtLeast2": "कम से कम 2 PDF फ़ाइलें चुनें!",
             "savedTo": "डाउनलोड/PDF रीडर फोल्डर में सहेजा गया",
-            "permissionTitle": "मीडिया एक्सेस अनुमति",
-            "permissionMessage": "PDF फ़ाइलों को मर्ज करने के लिए मीडिया फ़ाइल एक्सेस अनुमति आवश्यक है। कृपया अपना एक्सेस स्तर चुनें:",
-            "permissionNote": "*सीमित पहुंच: केवल चयनित PDF फ़ाइलों तक पहुंच की अनुमति देता है",
-            "fullPermission": "सभी मीडिया की अनुमति दें",
-            "limitedPermission": "सीमित पहुंच की अनुमति दें",
-            "denyPermission": "अस्वीकार करें",
-            "permissionBtn": "अनुमति सेटिंग्स",
-            "permissionGranted": "अनुमति प्रदान की गई",
-            "permissionDenied": "अनुमति अस्वीकृत",
-            "noPermission": "अनुमति आवश्यक",
-            "requestPermission": "अनुमति अनुरोध करें",
-            "checkingPermission": "अनुमति जांची जा रही है...",
-            "devicePickerTitle": "PDF फ़ाइलें चुनें",
-            "deviceSelect": "चुनें",
-            "deviceCancel": "रद्द करें",
-            "deviceSearch": "PDF खोजें...",
-            "deviceLoading": "PDF फ़ाइलें लोड हो रही हैं...",
-            "deviceEmpty": "कोई PDF फ़ाइल नहीं मिली",
-            "deviceSelectBtn": "चुनें ({0})",
-            "deviceSelectBtnMain": "डिवाइस से PDF चुनें"
+            "mergeBtn": "PDF मर्ज करें",
+            "clearBtn": "चयन साफ करें",
+            "saveBtn": "सहेजें",
+            "noPDFs": "आपके डिवाइस पर कोई PDF नहीं मिला",
+            "refresh": "ताज़ा करें",
+            "loadingPDFs": "PDF लोड हो रहे हैं...",
+            "errorLoading": "PDF लोड करने में त्रुटि",
+            "permissionRequired": "PDF फ़ाइल पहुंच के लिए अनुमति आवश्यक है",
+            "grantPermission": "अनुमति दें"
         },
-        "id": { 
+        "id": {
             "pageTitle": "Gabungkan PDF",
-            "selectPdfFiles": "Pilih File PDF",
-            "clickToSelect": "Klik untuk memilih file PDF",
-            "multiplePdf": "Anda dapat memilih beberapa PDF",
-            "mergePdf": "GABUNGKAN PDF",
-            "clearList": "HAPUS DAFTAR",
-            "save": "SIMPAN",
+            "selectInfo": "Pilih PDF (minimal 2)",
+            "selectAll": "Pilih Semua",
+            "deselectAll": "Hapus Pilihan",
+            "selectedPDFs": "PDF Terpilih:",
             "mergingPdf": "Menggabungkan PDF...",
             "mergeSuccess": "PDF berhasil digabungkan!",
             "saveSuccess": "PDF Berhasil Disimpan",
             "remove": "Hapus",
             "selectAtLeast2": "Pilih setidaknya 2 file PDF!",
-            "savedTo": "Disimpan di folder Download/PDF Reader",
-            "permissionTitle": "Izin Akses Media",
-            "permissionMessage": "Izin akses file media diperlukan untuk menggabungkan file PDF. Silakan pilih level akses Anda:",
-            "permissionNote": "*Akses terbatas: Hanya mengizinkan akses ke file PDF yang dipilih",
-            "fullPermission": "Izinkan Semua Media",
-            "limitedPermission": "Izinkan Akses Terbatas",
-            "denyPermission": "Tolak",
-            "permissionBtn": "PENGATURAN IZIN",
-            "permissionGranted": "Izin diberikan",
-            "permissionDenied": "Izin ditolak",
-            "noPermission": "Izin diperlukan",
-            "requestPermission": "Minta izin",
-            "checkingPermission": "Memeriksa izin...",
-            "devicePickerTitle": "Pilih File PDF",
-            "deviceSelect": "Pilih",
-            "deviceCancel": "Batal",
-            "deviceSearch": "Cari PDF...",
-            "deviceLoading": "Memuat file PDF...",
-            "deviceEmpty": "Tidak ada file PDF ditemukan",
-            "deviceSelectBtn": "PILIH ({0})",
-            "deviceSelectBtnMain": "PILIH PDF DARI PERANGKAT"
+            "savedTo": "Disimpan di folder Unduh/PDF Reader",
+            "mergeBtn": "GABUNGKAN PDF",
+            "clearBtn": "HAPUS PILIHAN",
+            "saveBtn": "SIMPAN",
+            "noPDFs": "Tidak ada PDF ditemukan di perangkat Anda",
+            "refresh": "Segarkan",
+            "loadingPDFs": "Memuat PDF...",
+            "errorLoading": "Kesalahan memuat PDF",
+            "permissionRequired": "Akses file PDF memerlukan izin",
+            "grantPermission": "Berikan Izin"
         },
-        "ja": { 
+        "ja": {
             "pageTitle": "PDF結合",
-            "selectPdfFiles": "PDFファイルを選択",
-            "clickToSelect": "クリックしてPDFファイルを選択",
-            "multiplePdf": "複数のPDFを選択できます",
-            "mergePdf": "PDFを結合",
-            "clearList": "リストをクリア",
-            "save": "保存",
+            "selectInfo": "PDFを選択 (少なくとも2つ)",
+            "selectAll": "すべて選択",
+            "deselectAll": "選択をクリア",
+            "selectedPDFs": "選択されたPDF:",
             "mergingPdf": "PDFを結合中...",
             "mergeSuccess": "PDFの結合に成功しました！",
-            "saveSuccess": "PDFの保存に成功しました",
+            "saveSuccess": "PDFが正常に保存されました",
             "remove": "削除",
             "selectAtLeast2": "少なくとも2つのPDFファイルを選択してください！",
             "savedTo": "ダウンロード/PDFリーダーフォルダーに保存されました",
-            "permissionTitle": "メディアアクセス許可",
-            "permissionMessage": "PDFファイルを結合するにはメディアファイルへのアクセス許可が必要です。アクセスレベルを選択してください：",
-            "permissionNote": "*制限付きアクセス：選択したPDFファイルのみにアクセスを許可します",
-            "fullPermission": "すべてのメディアを許可",
-            "limitedPermission": "制限付きアクセスを許可",
-            "denyPermission": "拒否",
-            "permissionBtn": "許可設定",
-            "permissionGranted": "許可が付与されました",
-            "permissionDenied": "許可が拒否されました",
-            "noPermission": "許可が必要です",
-            "requestPermission": "許可をリクエスト",
-            "checkingPermission": "許可を確認中...",
-            "devicePickerTitle": "PDFファイルを選択",
-            "deviceSelect": "選択",
-            "deviceCancel": "キャンセル",
-            "deviceSearch": "PDFを検索...",
-            "deviceLoading": "PDFファイルを読み込み中...",
-            "deviceEmpty": "PDFファイルが見つかりません",
-            "deviceSelectBtn": "選択 ({0})",
-            "deviceSelectBtnMain": "デバイスからPDFを選択"
+            "mergeBtn": "PDFを結合",
+            "clearBtn": "選択をクリア",
+            "saveBtn": "保存",
+            "noPDFs": "デバイスにPDFが見つかりません",
+            "refresh": "更新",
+            "loadingPDFs": "PDFを読み込み中...",
+            "errorLoading": "PDFの読み込みエラー",
+            "permissionRequired": "PDFファイルへのアクセスには許可が必要です",
+            "grantPermission": "許可を与える"
         },
-        "ku": { 
-            "pageTitle": "Tevlîhevkirina PDF",
-            "selectPdfFiles": "Pelê PDF-ê hilbijêrin",
-            "clickToSelect": "Ji bo hilbijartina pelê PDF-ê bikirtînin",
-            "multiplePdf": "Hûn dikarin çend PDF-ê hilbijêrin",
-            "mergePdf": "PDF-Ê TEVLÎ HEV BIKE",
-            "clearList": "LÎSTEYÊ PAK BIKE",
-            "save": "TOMAR BIKE",
-            "mergingPdf": "PDF-ê têne tevlîhevkirin...",
-            "mergeSuccess": "PDF bi serketî hate tevlîhevkirin!",
-            "saveSuccess": "PDF bi serketî hate tomarkirin",
-            "remove": "Rakê",
+        "ku": {
+            "pageTitle": "PDF-ê Pêşkêş bike",
+            "selectInfo": "PDF-ê hilbijêre (bi kêmî 2)",
+            "selectAll": "Hemû Hilbijêre",
+            "deselectAll": "Hilbijartinê Paqij bike",
+            "selectedPDFs": "PDF-ên Hilbijartî:",
+            "mergingPdf": "PDF-ê têne pêk anîn...",
+            "mergeSuccess": "PDF bi serkeftî hate pêk anîn!",
+            "saveSuccess": "PDF bi serkeftî hate tomarkirin",
+            "remove": "Jê bibe",
             "selectAtLeast2": "Bi kêmî 2 pelê PDF-ê hilbijêrin!",
             "savedTo": "Li qeşa Daxistin/PDF Reader-ê hate tomarkirin",
-            "permissionTitle": "Destûra Gihîştina Medyayê",
-            "permissionMessage": "Ji bo tevlîhevkirina pelê PDF-ê destûra gihîştina pelê medyayê pêwîst e. Ji kerema xwe asta gihîştina xwe hilbijêrin:",
-            "permissionNote": "*Gihîştina sînordar: Tenê gihîştina pelê PDF-ya hilbijartî destûrê dide",
-            "fullPermission": "Hemû Medyayê Destûr Bide",
-            "limitedPermission": "Gihîştina Sînordar Destûr Bide",
-            "denyPermission": "Ref bike",
-            "permissionBtn": "MÎHENGÊN DESTÛRÊ",
-            "permissionGranted": "Destûr hate dayîn",
-            "permissionDenied": "Destûr hate redkirin",
-            "noPermission": "Destûr pêwîst e",
-            "requestPermission": "Destûrê bixwaze",
-            "checkingPermission": "Destûr tê kontrolkirin...",
-            "devicePickerTitle": "Pelê PDF-ê Hilbijêrin",
-            "deviceSelect": "Hilbijêre",
-            "deviceCancel": "Betal bike",
-            "deviceSearch": "PDF-ê bigere...",
-            "deviceLoading": "Pelê PDF-ê têne barkirin...",
-            "deviceEmpty": "Tu pelê PDF-ê nehat dîtin",
-            "deviceSelectBtn": "HILBIJÊRE ({0})",
-            "deviceSelectBtnMain": "JI AMÛRÊ PDF HILBIJÊRE"
+            "mergeBtn": "PDF-Ê PÊK BİNE",
+            "clearBtn": "HILBIJARTINÊ PAQIJ BIKE",
+            "saveBtn": "TOMAR BIKE",
+            "noPDFs": "Li cîhaza we PDF-ek nehat dîtin",
+            "refresh": "Nû bike",
+            "loadingPDFs": "PDF-ê têne barkirin...",
+            "errorLoading": "Çewtiya barkirina PDF-ê",
+            "permissionRequired": "Gihiştina pelê PDF-ê destûrê dixwaze",
+            "grantPermission": "Destûrê bide"
         },
-        "pt": { 
+        "pt": {
             "pageTitle": "Mesclar PDF",
-            "selectPdfFiles": "Selecionar arquivos PDF",
-            "clickToSelect": "Clique para seleccionar archivos PDF",
-            "multiplePdf": "Você pode seleccionar vários PDFs",
-            "mergePdf": "MESCLAR PDF",
-            "clearList": "LIMPAR LISTA",
-            "save": "SALVAR",
+            "selectInfo": "Selecionar PDFs (pelo menos 2)",
+            "selectAll": "Selecionar Todos",
+            "deselectAll": "Limpar Seleção",
+            "selectedPDFs": "PDFs Selecionados:",
             "mergingPdf": "Mesclando PDFs...",
             "mergeSuccess": "PDF mesclado com sucesso!",
             "saveSuccess": "PDF salvo com sucesso",
             "remove": "Remover",
             "selectAtLeast2": "Selecione pelo menos 2 arquivos PDF!",
             "savedTo": "Salvo na pasta Download/PDF Reader",
-            "permissionTitle": "Permissão de Acesso à Mídia",
-            "permissionMessage": "É necessária permissão de acesso a arquivos de mídia para mesclar arquivos PDF. Selecione seu nível de acesso:",
-            "permissionNote": "*Acesso limitado: Permite acesso apenas a arquivos PDF selecionados",
-            "fullPermission": "Permitir Todas as Mídias",
-            "limitedPermission": "Permitir Acesso Limitado",
-            "denyPermission": "Negar",
-            "permissionBtn": "CONFIGURAÇÕES DE PERMISSÃO",
-            "permissionGranted": "Permissão concedida",
-            "permissionDenied": "Permissão negada",
-            "noPermission": "Permissão necessária",
-            "requestPermission": "Solicitar permissão",
-            "checkingPermission": "Verificando permissão...",
-            "devicePickerTitle": "Selecionar arquivos PDF",
-            "deviceSelect": "Selecionar",
-            "deviceCancel": "Cancelar",
-            "deviceSearch": "Pesquisar PDF...",
-            "deviceLoading": "Carregando arquivos PDF...",
-            "deviceEmpty": "Nenhum arquivo PDF encontrado",
-            "deviceSelectBtn": "SELECIONAR ({0})",
-            "deviceSelectBtnMain": "SELECIONAR PDF DO DISPOSITIVO"
+            "mergeBtn": "MESCLAR PDF",
+            "clearBtn": "LIMPAR SELEÇÃO",
+            "saveBtn": "SALVAR",
+            "noPDFs": "Nenhum PDF encontrado em seu dispositivo",
+            "refresh": "Atualizar",
+            "loadingPDFs": "Carregando PDFs...",
+            "errorLoading": "Erro ao carregar PDFs",
+            "permissionRequired": "Acesso a arquivos PDF requer permissão",
+            "grantPermission": "Conceder Permissão"
         },
-        "ru": { 
+        "ru": {
             "pageTitle": "Объединение PDF",
-            "selectPdfFiles": "Выберите PDF файлы",
-            "clickToSelect": "Нажмите, чтобы выбрать PDF файлы",
-            "multiplePdf": "Вы можете выбрать несколько PDF",
-            "mergePdf": "ОБЪЕДИНИТЬ PDF",
-            "clearList": "ОЧИСТИТЬ СПИСОК",
-            "save": "СОХРАНИТЬ",
+            "selectInfo": "Выберите PDF (минимум 2)",
+            "selectAll": "Выбрать все",
+            "deselectAll": "Очистить выбор",
+            "selectedPDFs": "Выбранные PDF:",
             "mergingPdf": "Объединение PDF...",
             "mergeSuccess": "PDF успешно объединен!",
             "saveSuccess": "PDF успешно сохранен",
             "remove": "Удалить",
-            "selectAtLeast2": "Выберите хотя бы 2 PDF файла!",
+            "selectAtLeast2": "Выберите хотя бы 2 файла PDF!",
             "savedTo": "Сохранено в папке Загрузки/PDF Reader",
-            "permissionTitle": "Разрешение доступа к медиа",
-            "permissionMessage": "Для объединения PDF файлов требуется разрешение на доступ к медиафайлам. Пожалуйста, выберите уровень доступа:",
-            "permissionNote": "*Ограниченный доступ: Разрешает доступ только к выбранным PDF файлам",
-            "fullPermission": "Разрешить все медиа",
-            "limitedPermission": "Разрешить ограниченный доступ",
-            "denyPermission": "Отказать",
-            "permissionBtn": "НАСТРОЙКИ РАЗРЕШЕНИЙ",
-            "permissionGranted": "Разрешение предоставлено",
-            "permissionDenied": "В разрешении отказано",
-            "noPermission": "Требуется разрешение",
-            "requestPermission": "Запросить разрешение",
-            "checkingPermission": "Проверка разрешения...",
-            "devicePickerTitle": "Выберите PDF файлы",
-            "deviceSelect": "Выбрать",
-            "deviceCancel": "Отмена",
-            "deviceSearch": "Поиск PDF...",
-            "deviceLoading": "Загрузка PDF файлов...",
-            "deviceEmpty": "PDF файлы не найдены",
-            "deviceSelectBtn": "ВЫБРАТЬ ({0})",
-            "deviceSelectBtnMain": "ВЫБРАТЬ PDF С УСТРОЙСТВА"
+            "mergeBtn": "ОБЪЕДИНИТЬ PDF",
+            "clearBtn": "ОЧИСТИТЬ ВЫБОР",
+            "saveBtn": "СОХРАНИТЬ",
+            "noPDFs": "PDF не найдены на вашем устройстве",
+            "refresh": "Обновить",
+            "loadingPDFs": "Загрузка PDF...",
+            "errorLoading": "Ошибка загрузки PDF",
+            "permissionRequired": "Доступ к файлам PDF требует разрешения",
+            "grantPermission": "Предоставить разрешение"
         },
-        "sw": { 
+        "sw": {
             "pageTitle": "Unganisha PDF",
-            "selectPdfFiles": "Chagua faili za PDF",
-            "clickToSelect": "Bonyeza kuchagua faili za PDF",
-            "multiplePdf": "Unaweza kuchagua PDF nyingi",
-            "mergePdf": "UNGA PDF",
-            "clearList": "FUTA ORODHA",
-            "save": "HIFADHI",
+            "selectInfo": "Chagua PDF (angalau 2)",
+            "selectAll": "Chagua Zote",
+            "deselectAll": "Futa Uchaguzi",
+            "selectedPDFs": "PDF Zilizochaguliwa:",
             "mergingPdf": "Inaunganisha PDF...",
             "mergeSuccess": "PDF imeunganishwa kikamilifu!",
             "saveSuccess": "PDF imehifadhiwa kikamilifu",
             "remove": "Ondoa",
             "selectAtLeast2": "Chagua angalau faili 2 za PDF!",
             "savedTo": "Imehifadhiwa kwenye folda ya Pakua/PDF Reader",
-            "permissionTitle": "Kibali cha Ufikiaji wa Media",
-            "permissionMessage": "Kibali cha ufikiaji wa faili za media kinahitajika kuunganisha faili za PDF. Tafadhali chagua kiwango chako cha ufikiaji:",
-            "permissionNote": "*Ufikiaji mdogo: Inaruhusu ufikiaji wa faili za PDF zilizochaguliwa tu",
-            "fullPermission": "Ruhusu Media Zote",
-            "limitedPermission": "Ruhusu Ufikiaji Mdogo",
-            "denyPermission": "Kataa",
-            "permissionBtn": "MIHENGENYO YA KIBALI",
-            "permissionGranted": "Kibali kimetolewa",
-            "permissionDenied": "Kibali kimekataliwa",
-            "noPermission": "Kibali kinahitajika",
-            "requestPermission": "Omba kibali",
-            "checkingPermission": "Inakagua kibali...",
-            "devicePickerTitle": "Chagua faili za PDF",
-            "deviceSelect": "Chagua",
-            "deviceCancel": "Ghairi",
-            "deviceSearch": "Tafuta PDF...",
-            "deviceLoading": "Inapakia faili za PDF...",
-            "deviceEmpty": "Hakuna faili za PDF zilizopatikana",
-            "deviceSelectBtn": "CHAGUA ({0})",
-            "deviceSelectBtnMain": "CHAGUA PDF KUTOKA KIFAA"
+            "mergeBtn": "UNGANISHA PDF",
+            "clearBtn": "FUTA UCHAGUZI",
+            "saveBtn": "HIFADHI",
+            "noPDFs": "Hakuna PDF zilizopatikana kwenye kifaa chako",
+            "refresh": "Sasisha",
+            "loadingPDFs": "Inapakia PDF...",
+            "errorLoading": "Hitilafu katika kupakia PDF",
+            "permissionRequired": "Ufikiaji wa faili za PDF unahitaji idhini",
+            "grantPermission": "Toa Idhini"
         },
-        "tr": { 
+        "tr": {
             "pageTitle": "PDF Birleştirme",
-            "selectPdfFiles": "PDF Dosyalarını Seçin",
-            "clickToSelect": "Tıklayarak PDF dosyalarını seçin",
-            "multiplePdf": "Birden fazla PDF seçebilirsiniz",
-            "mergePdf": "PDF BİRLEŞTİR",
-            "clearList": "LİSTEYİ TEMİZLE",
-            "save": "KAYDET",
+            "selectInfo": "PDF seçin (en az 2)",
+            "selectAll": "Tümünü Seç",
+            "deselectAll": "Seçimi Temizle",
+            "selectedPDFs": "Seçilen PDF'ler:",
             "mergingPdf": "PDF'ler birleştiriliyor...",
             "mergeSuccess": "PDF başarıyla birleştirildi!",
             "saveSuccess": "PDF Başarıyla Kaydedildi",
             "remove": "Kaldır",
             "selectAtLeast2": "En az 2 PDF dosyası seçin!",
             "savedTo": "Download/PDF Reader klasörüne kaydedildi",
-            "permissionTitle": "Medya Erişim İzni",
-            "permissionMessage": "PDF dosyalarını birleştirmek için medya dosyalarına erişim izni gerekli. Lütfen erişim seviyenizi seçin:",
-            "permissionNote": "*Sınırlı erişim: Yalnızca seçtiğiniz PDF dosyalarına erişim sağlar",
-            "fullPermission": "Tüm Medyaya İzin Ver",
-            "limitedPermission": "Sınırlı Erişim İzni Ver",
-            "denyPermission": "Reddet",
-            "permissionBtn": "İZİN AYARLARI",
-            "permissionGranted": "İzin verildi",
-            "permissionDenied": "İzin reddedildi",
-            "noPermission": "İzin gerekli",
-            "requestPermission": "İzin iste",
-            "checkingPermission": "İzin kontrol ediliyor...",
-            "devicePickerTitle": "PDF Dosyaları Seçin",
-            "deviceSelect": "Seç",
-            "deviceCancel": "İptal",
-            "deviceSearch": "PDF ara...",
-            "deviceLoading": "PDF dosyaları yükleniyor...",
-            "deviceEmpty": "PDF dosyası bulunamadı",
-            "deviceSelectBtn": "SEÇ ({0})",
-            "deviceSelectBtnMain": "CİHAZDAN PDF SEÇ"
+            "mergeBtn": "PDF BİRLEŞTİR",
+            "clearBtn": "SEÇİMİ TEMİZLE",
+            "saveBtn": "KAYDET",
+            "noPDFs": "Cihazınızda PDF bulunamadı",
+            "refresh": "Yenile",
+            "loadingPDFs": "PDF'ler yükleniyor...",
+            "errorLoading": "PDF'ler yüklenirken hata oluştu",
+            "permissionRequired": "PDF dosyalarına erişim için izin gerekli",
+            "grantPermission": "İzin Ver"
         },
-        "ur": { 
-            "pageTitle": "PDF ملاوٹ",
-            "selectPdfFiles": "PDF فائلیں منتخب کریں",
-            "clickToSelect": "PDF فائلیں منتخب کرنے کے لیے کلک کریں",
-            "multiplePdf": "آپ ایک سے زیادہ PDF منتخب کر سکتے ہیں",
-            "mergePdf": "PDF ملا دیں",
-            "clearList": "فہرست صاف کریں",
-            "save": "محفوظ کریں",
+        "ur": {
+            "pageTitle": "PDF ملا دیں",
+            "selectInfo": "PDF منتخب کریں (کم از کم 2)",
+            "selectAll": "سب منتخب کریں",
+            "deselectAll": "انتخاب صاف کریں",
+            "selectedPDFs": "منتخب شدہ PDF:",
             "mergingPdf": "PDF ملائے جا رہے ہیں...",
             "mergeSuccess": "PDF کامیابی سے ملا دیا گیا!",
             "saveSuccess": "PDF کامیابی سے محفوظ ہو گیا",
             "remove": "ہٹا دیں",
             "selectAtLeast2": "کم از کم 2 PDF فائلیں منتخب کریں!",
             "savedTo": "ڈاؤن لوڈ/PDF ریڈر فولڈر میں محفوظ ہو گیا",
-            "permissionTitle": "میڈیا رسائی کی اجازت",
-            "permissionMessage": "PDF فائلوں کو ملا کرنے کے لیے میڈیا فائل تک رسائی کی اجازت درکار ہے۔ براہ کرم اپنی رسائی کی سطح منتخب کریں:",
-            "permissionNote": "*محدود رسائی: صرف منتخب کردہ PDF فائلوں تک رسائی کی اجازت دیتی ہے",
-            "fullPermission": "تمام میڈیا کی اجازت دیں",
-            "limitedPermission": "محدود رسائی کی اجازت دیں",
-            "denyPermission": "مسترد کریں",
-            "permissionBtn": "اجازت کی ترتیبات",
-            "permissionGranted": "اجازت دی گئی",
-            "permissionDenied": "اجازت مسترد",
-            "noPermission": "اجازت درکار ہے",
-            "requestPermission": "اجازت کی درخواست کریں",
-            "checkingPermission": "اجازت چیک کی جا رہی ہے...",
-            "devicePickerTitle": "PDF فائلیں منتخب کریں",
-            "deviceSelect": "منتخب کریں",
-            "deviceCancel": "منسوخ کریں",
-            "deviceSearch": "PDF تلاش کریں...",
-            "deviceLoading": "PDF فائلیں لوڈ ہو رہی ہیں...",
-            "deviceEmpty": "کوئی PDF فائل نہیں ملی",
-            "deviceSelectBtn": "منتخب کریں ({0})",
-            "deviceSelectBtnMain": "ڈیوائس سے PDF منتخب کریں"
+            "mergeBtn": "PDF ملا دیں",
+            "clearBtn": "انتخاب صاف کریں",
+            "saveBtn": "محفوظ کریں",
+            "noPDFs": "آپ کے آلہ پر کوئی PDF نہیں ملا",
+            "refresh": "تازہ کریں",
+            "loadingPDFs": "PDF لوڈ ہو رہے ہیں...",
+            "errorLoading": "PDF لوڈ کرنے میں خرابی",
+            "permissionRequired": "PDF فائل تک رسائی کے لیے اجازت درکار ہے",
+            "grantPermission": "اجازت دیں"
         },
-        "za": { 
-            "pageTitle": "PDFyan pêro pê kerdış",
-            "selectPdfFiles": "PDF dosyayan weçiné",
-            "clickToSelect": "PDF dosyayan weçiné ra tiknayé",
-            "multiplePdf": "Şima şené PDFyé zaféri weçiné",
-            "mergePdf": "PDFYAN PÊRO PÊ KERÉ",
-            "clearList": "LÎSTE PAK KE",
-            "save": "QEYD KE",
+        "za": {
+            "pageTitle": "PDFyan Pêro Pê kerdış",
+            "selectInfo": "PDFyan weçiné (taybetî 2)",
+            "selectAll": "Pêro Weçiné",
+            "deselectAll": "Weçinayışê Pak Ke",
+            "selectedPDFs": "PDFyé Weçinayî:",
             "mergingPdf": "PDFyan pêro pê bené...",
             "mergeSuccess": "PDFyan bi serkewteyî pêro pê biy!",
             "saveSuccess": "PDF bi serkewteyî qeyd biy",
             "remove": "Jê bibe",
             "selectAtLeast2": "Taybetî 2 dosyayé PDFyan weçiné!",
             "savedTo": "Li qeşa Daxistin/PDF Reader-ê hate qeydkirin",
-            "permissionTitle": "Destûra Gihîştina Medyayê",
-            "permissionMessage": "Ji bo tevlîhevkirina pelê PDF-ê destûra gihîştina pelê medyayê pêwîst e. Ji kerema xwe asta gihîştina xwe hilbijêrin:",
-            "permissionNote": "*Gihîştina sînordar: Tenê gihîştina pelê PDF-ya hilbijartî destûrê dide",
-            "fullPermission": "Hemû Medyayê Destûr Bide",
-            "limitedPermission": "Gihîştina Sînordar Destûr Bide",
-            "denyPermission": "Ref bike",
-            "permissionBtn": "MÎHENGÊN DESTÛRÊ",
-            "permissionGranted": "Destûr hate dayîn",
-            "permissionDenied": "Destûr hate redkirin",
-            "noPermission": "Destûr pêwîst e",
-            "requestPermission": "Destûrê bixwaze",
-            "checkingPermission": "Destûr tê kontrolkirin...",
-            "devicePickerTitle": "PDF dosyayan weçiné",
-            "deviceSelect": "Weçiné",
-            "deviceCancel": "Betal ke",
-            "deviceSearch": "PDF cı geyré...",
-            "deviceLoading": "PDF dosyayan bar bené...",
-            "deviceEmpty": "PDF dosya nêvêniya",
-            "deviceSelectBtn": "WECINÉ ({0})",
-            "deviceSelectBtnMain": "HELETRA PDF WECINÉ"
+            "mergeBtn": "PDFYAN PÊRO PÊ KE",
+            "clearBtn": "WEÇINAYIŞÊ PAK KE",
+            "saveBtn": "QEYD KE",
+            "noPDFs": "Li cîhaza we PDF çinê",
+            "refresh": "Nû ke",
+            "loadingPDFs": "PDFyan têne barkirin...",
+            "errorLoading": "Xetaya barkirina PDFyan",
+            "permissionRequired": "Gihîştina dosyayé PDFyan destûré wazeno",
+            "grantPermission": "Destûr bide"
         },
-        "zh": { 
+        "zh": {
             "pageTitle": "PDF合并",
-            "selectPdfFiles": "选择PDF文件",
-            "clickToSelect": "点击选择PDF文件",
-            "multiplePdf": "您可以选择多个PDF文件",
-            "mergePdf": "合并PDF",
-            "clearList": "清空列表",
-            "save": "保存",
+            "selectInfo": "选择PDF (至少2个)",
+            "selectAll": "全选",
+            "deselectAll": "清除选择",
+            "selectedPDFs": "已选PDF:",
             "mergingPdf": "正在合并PDF...",
             "mergeSuccess": "PDF合并成功！",
             "saveSuccess": "PDF保存成功",
             "remove": "移除",
             "selectAtLeast2": "请选择至少2个PDF文件！",
             "savedTo": "已保存到下载/PDF阅读器文件夹",
-            "permissionTitle": "媒体访问权限",
-            "permissionMessage": "合并PDF文件需要媒体文件访问权限。请选择您的访问级别：",
-            "permissionNote": "*有限访问：仅允许访问选定的PDF文件",
-            "fullPermission": "允许所有媒体",
-            "limitedPermission": "允许有限访问",
-            "denyPermission": "拒绝",
-            "permissionBtn": "权限设置",
-            "permissionGranted": "权限已授予",
-            "permissionDenied": "权限被拒绝",
-            "noPermission": "需要权限",
-            "requestPermission": "请求权限",
-            "checkingPermission": "正在检查权限...",
-            "devicePickerTitle": "选择PDF文件",
-            "deviceSelect": "选择",
-            "deviceCancel": "取消",
-            "deviceSearch": "搜索PDF...",
-            "deviceLoading": "正在加载PDF文件...",
-            "deviceEmpty": "未找到PDF文件",
-            "deviceSelectBtn": "选择 ({0})",
-            "deviceSelectBtnMain": "从设备选择PDF"
+            "mergeBtn": "合并PDF",
+            "clearBtn": "清除选择",
+            "saveBtn": "保存",
+            "noPDFs": "在您的设备上未找到PDF",
+            "refresh": "刷新",
+            "loadingPDFs": "正在加载PDF...",
+            "errorLoading": "加载PDF时出错",
+            "permissionRequired": "访问PDF文件需要权限",
+            "grantPermission": "授予权限"
         }
     };
 
     // --- TEMEL FONKSİYONLAR ---
-    function updateUIText() {
+    function getTranslation(key) {
         try {
             const currentLang = languageConfig ? languageConfig.getCurrent() : 'tr';
             const t = translations[currentLang] || translations['tr'];
-            
-            // Ana sayfa metinleri
-            document.getElementById('pageTitle').textContent = t.pageTitle;
-            document.getElementById('selectPdfFilesText').textContent = t.selectPdfFiles;
-            document.getElementById('clickToSelectText').textContent = t.clickToSelect;
-            document.getElementById('multiplePdfText').textContent = t.multiplePdf;
-            document.getElementById('mergeBtn').textContent = t.mergePdf;
-            document.getElementById('clearBtn').textContent = t.clearList;
-            document.getElementById('saveBtn').textContent = t.save;
-            document.getElementById('mergingPdfText').innerHTML = t.mergingPdf + ' <span id="progressText">0%</span>';
-            document.getElementById('savedToText').textContent = t.savedTo;
-            document.getElementById('permissionBtn').textContent = t.permissionBtn;
-            document.getElementById('deviceSelectBtnMain').textContent = t.deviceSelectBtnMain;
-            
-            // İzin dialog metinleri
-            document.getElementById('permissionTitle').textContent = t.permissionTitle;
-            document.getElementById('permissionMessage').textContent = t.permissionMessage;
-            document.getElementById('permissionNote').textContent = t.permissionNote;
-            
-            const permissionOptions = document.querySelectorAll('.permission-option');
-            permissionOptions[0].textContent = t.fullPermission;
-            permissionOptions[1].textContent = t.limitedPermission;
-            permissionOptions[2].textContent = t.denyPermission;
-            
-            // Cihaz seçme dialog metinleri
-            document.getElementById('devicePickerTitle').textContent = t.devicePickerTitle;
-            document.getElementById('deviceSearchInput').placeholder = t.deviceSearch;
-            document.getElementById('devicePickerLoading').innerHTML = `
-                <span class="material-symbols-rounded">hourglass_empty</span>
-                <p>${t.deviceLoading}</p>
-            `;
-            
-            // Dosya listesi butonları
-            document.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.textContent = t.remove;
-            });
-            
+            return t[key] || key;
         } catch (e) {
-            console.log('Çeviri yüklenemedi:', e);
+            return key;
         }
     }
 
-    function getTranslation(key, params = []) {
+    function updateUIText() {
         try {
-            const currentLang = languageConfig ? languageConfig.getCurrent() : 'tr';
-            const t = translations[currentLang] || translations['tr'];
-            let text = t[key] || key;
-            
-            // Parametreleri yerleştir
-            params.forEach((param, index) => {
-                text = text.replace(`{${index}}`, param);
-            });
-            
-            return text;
+            document.getElementById('pageTitle').textContent = getTranslation('pageTitle');
+            document.getElementById('selectionInfo').textContent = getTranslation('selectInfo');
+            document.getElementById('selectAllBtn').textContent = getTranslation('selectAll');
+            document.getElementById('deselectAllBtn').textContent = getTranslation('deselectAll');
+            document.getElementById('selectedHeader').innerHTML = `${getTranslation('selectedPDFs')} <span id="selectedCount">0</span>`;
+            document.getElementById('mergingPdfText').innerHTML = `${getTranslation('mergingPdf')} <span id="progressText">0%</span>`;
+            document.getElementById('savedToText').textContent = getTranslation('savedTo');
+            document.getElementById('mergeBtn').textContent = getTranslation('mergeBtn');
+            document.getElementById('clearBtn').textContent = getTranslation('clearBtn');
+            document.getElementById('saveBtn').textContent = getTranslation('saveBtn');
         } catch (e) {
-            return key;
+            console.log('UI metinleri güncellenemedi:', e);
         }
     }
 
@@ -1369,373 +947,241 @@
         }
     }
 
-    // --- MEDYA İZİN YÖNETİMİ ---
-    function checkMediaPermission() {
-        return new Promise((resolve) => {
-            try {
-                if (typeof Android !== 'undefined' && Android.checkMediaPermission) {
-                    const result = Android.checkMediaPermission();
-                    resolve(result || 'denied');
-                } else {
-                    // Web ortamı için simülasyon
-                    resolve(mediaPermission || 'denied');
-                }
-            } catch (e) {
-                console.error('İzin kontrol hatası:', e);
-                resolve('denied');
-            }
-        });
-    }
-
-    function requestMediaPermission(permissionType) {
-        return new Promise((resolve) => {
-            try {
-                if (typeof Android !== 'undefined' && Android.requestMediaPermission) {
-                    const result = Android.requestMediaPermission(permissionType);
-                    mediaPermission = result || permissionType;
-                    resolve(result || permissionType);
-                } else {
-                    // Web ortamı için simülasyon
-                    mediaPermission = permissionType;
-                    resolve(permissionType);
-                }
-            } catch (e) {
-                console.error('İzin isteği hatası:', e);
-                mediaPermission = 'denied';
-                resolve('denied');
-            }
-        });
-    }
-
-    function showPermissionDialog() {
-        const dialog = document.getElementById('permissionDialog');
-        dialog.classList.add('show');
-        
-        // Seçili izni güncelle
-        const options = document.querySelectorAll('.permission-option');
-        options.forEach(opt => opt.classList.remove('selected'));
-        
-        if (mediaPermission === 'full') {
-            options[0].classList.add('selected');
-        } else if (mediaPermission === 'limited' || mediaPermission === null) {
-            options[1].classList.add('selected');
-        } else {
-            options[2].classList.add('selected');
-        }
-    }
-
-    function hidePermissionDialog() {
-        document.getElementById('permissionDialog').classList.remove('show');
-    }
-
-    async function handlePermissionOption(option) {
-        hidePermissionDialog();
-        
-        if (option === 'deny') {
-            mediaPermission = 'denied';
-            alert(getTranslation('permissionDenied'));
-            updatePermissionButton();
-            return;
-        }
-        
-        const result = await requestMediaPermission(option);
-        
-        if (result === 'denied') {
-            alert(getTranslation('permissionDenied'));
-        } else {
-            alert(getTranslation('permissionGranted'));
-            mediaPermission = result;
-        }
-        
-        updatePermissionButton();
-    }
-
-    function updatePermissionButton() {
-        const permissionBtn = document.getElementById('permissionBtn');
-        const deviceSelectBtn = document.getElementById('deviceSelectBtnMain');
-        
-        if (mediaPermission === 'denied' || mediaPermission === null) {
-            permissionBtn.style.display = 'block';
-            deviceSelectBtn.style.display = 'none';
-            permissionBtn.textContent = getTranslation('noPermission');
-            permissionBtn.classList.remove('btn-success');
-            permissionBtn.classList.add('btn-warning');
-        } else {
-            permissionBtn.style.display = 'none';
-            deviceSelectBtn.style.display = 'block';
-        }
-    }
-
-    // --- CİHAZDAN PDF SEÇME YÖNETİMİ ---
-    async function showDevicePicker() {
-        // İzin kontrolü
-        if (!mediaPermission || mediaPermission === 'denied') {
-            showPermissionDialog();
-            return;
-        }
-        
-        const dialog = document.getElementById('devicePickerDialog');
-        dialog.classList.add('show');
-        
-        // PDF dosyalarını yükle
-        await loadDevicePDFs();
-    }
-
-    function hideDevicePicker() {
-        document.getElementById('devicePickerDialog').classList.remove('show');
-        selectedDeviceFiles.clear();
-        updateDeviceSelectButton();
-    }
-
-    async function loadDevicePDFs() {
-        const listElement = document.getElementById('devicePickerList');
-        const loadingElement = document.getElementById('devicePickerLoading');
-        
+    // --- ANDROID BRIDGE İŞLEMLERİ ---
+    function checkAndroidPermission() {
         try {
-            loadingElement.style.display = 'block';
-            listElement.innerHTML = '';
-            
+            if (typeof Android !== 'undefined' && Android.checkPermission) {
+                return Android.checkPermission();
+            }
+            return false;
+        } catch (e) {
+            console.error('Permission check error:', e);
+            return false;
+        }
+    }
+
+    function loadDevicePDFs() {
+        try {
+            const pdfList = document.getElementById('pdfList');
+            pdfList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon material-symbols-rounded">hourglass_empty</div>
+                    <div class="empty-text">${getTranslation('loadingPDFs')}</div>
+                </div>`;
+
+            // İzin kontrolü
+            if (!checkAndroidPermission()) {
+                showPermissionRequired();
+                return;
+            }
+
             // Android'den PDF listesini al
-            let pdfList = [];
+            let pdfPaths = [];
             if (typeof Android !== 'undefined' && Android.listPDFs) {
                 const result = Android.listPDFs();
                 if (result && result.trim().length > 0 && result !== "PERMISSION_DENIED") {
-                    const paths = result.split('||').filter(p => p && p.trim().length > 0);
-                    
-                    // Her bir PDF için bilgileri al
-                    pdfList = paths.map(path => {
-                        return {
-                            path: path,
-                            name: path.split('/').pop(),
-                            size: getFileSizeFromPath(path),
-                            date: getFileDateFromPath(path)
-                        };
-                    });
+                    pdfPaths = result.split('||').filter(p => p && p.trim().length > 0);
                 }
             }
-            
-            deviceFiles = pdfList;
-            
-            if (pdfList.length === 0) {
-                listElement.innerHTML = `
-                    <div class="device-picker-empty">
-                        <span class="material-symbols-rounded">folder_open</span>
-                        <p>${getTranslation('deviceEmpty')}</p>
-                    </div>
-                `;
-            } else {
-                // PDF listesini oluştur
-                pdfList.forEach((file, index) => {
-                    const fileElement = document.createElement('div');
-                    fileElement.className = 'device-file-item';
-                    fileElement.setAttribute('data-index', index);
-                    fileElement.onclick = () => toggleDeviceFile(index);
-                    
-                    fileElement.innerHTML = `
-                        <span class="material-symbols-rounded device-file-icon">picture_as_pdf</span>
-                        <div class="device-file-info">
-                            <div class="device-file-name">${file.name}</div>
-                            <div class="device-file-meta">
-                                <span>${file.size}</span>
-                                <span>•</span>
-                                <span>${file.date}</span>
-                            </div>
-                        </div>
-                        <div class="device-file-checkbox" id="deviceCheckbox${index}"></div>
-                    `;
-                    
-                    listElement.appendChild(fileElement);
-                });
-            }
-            
-        } catch (error) {
-            console.error('PDF yükleme hatası:', error);
-            listElement.innerHTML = `
-                <div class="device-picker-empty">
-                    <span class="material-symbols-rounded">error</span>
-                    <p>PDF yüklenirken hata oluştu</p>
-                </div>
-            `;
-        } finally {
-            loadingElement.style.display = 'none';
-        }
-    }
 
-    function toggleDeviceFile(index) {
-        if (selectedDeviceFiles.has(index)) {
-            selectedDeviceFiles.delete(index);
-            document.getElementById(`deviceCheckbox${index}`).classList.remove('selected');
-            document.querySelector(`.device-file-item[data-index="${index}"]`).classList.remove('selected');
-        } else {
-            selectedDeviceFiles.add(index);
-            document.getElementById(`deviceCheckbox${index}`).classList.add('selected');
-            document.querySelector(`.device-file-item[data-index="${index}"]`).classList.add('selected');
-        }
-        
-        updateDeviceSelectButton();
-    }
-
-    function filterDeviceFiles() {
-        const searchTerm = document.getElementById('deviceSearchInput').value.toLowerCase();
-        const items = document.querySelectorAll('.device-file-item');
-        
-        items.forEach(item => {
-            const fileName = item.querySelector('.device-file-name').textContent.toLowerCase();
-            if (fileName.includes(searchTerm)) {
-                item.style.display = 'flex';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    }
-
-    function updateDeviceSelectButton() {
-        const count = selectedDeviceFiles.size;
-        const button = document.getElementById('deviceSelectBtn');
-        button.textContent = getTranslation('deviceSelectBtn', [count]);
-        button.disabled = count === 0;
-    }
-
-    async function selectDeviceFiles() {
-        if (selectedDeviceFiles.size === 0) return;
-        
-        try {
-            // Seçilen dosyaları yükle
-            for (const index of selectedDeviceFiles) {
-                const fileInfo = deviceFiles[index];
+            devicePDFs = [];
+            pdfPaths.forEach((path, index) => {
+                const name = path.split('/').pop();
+                const size = Android.getFileSize ? formatBytes(Android.getFileSize(path)) : "~2.5 MB";
+                const date = Android.getFileDate ? Android.getFileDate(path) : getCurrentDate();
                 
-                // Android'den dosya içeriğini al
-                if (typeof Android !== 'undefined' && Android.getFileAsBase64) {
-                    const base64Data = Android.getFileAsBase64(fileInfo.path);
-                    
-                    if (base64Data) {
-                        // Base64'i File objesine çevir
-                        const byteCharacters = atob(base64Data);
-                        const byteNumbers = new Array(byteCharacters.length);
-                        for (let i = 0; i < byteCharacters.length; i++) {
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
-                        }
-                        const byteArray = new Uint8Array(byteNumbers);
-                        const blob = new Blob([byteArray], { type: 'application/pdf' });
-                        
-                        const file = new File([blob], fileInfo.name, { 
-                            type: 'application/pdf',
-                            lastModified: Date.now()
-                        });
-                        
-                        selectedFiles.push(file);
-                    }
-                }
-            }
+                devicePDFs.push({
+                    id: index,
+                    name: name,
+                    size: size,
+                    date: date,
+                    path: path,
+                    isSelected: false
+                });
+            });
+
+            renderPDFList();
             
-            // Listeyi güncelle
-            updateFileList();
-            updateButtons();
-            hideDevicePicker();
-            
-            alert(`${selectedDeviceFiles.size} PDF dosyası eklendi.`);
-            
-        } catch (error) {
-            console.error('Dosya ekleme hatası:', error);
-            alert('PDF dosyaları eklenirken hata oluştu.');
+        } catch (e) {
+            console.error('PDF yükleme hatası:', e);
+            showError(getTranslation('errorLoading'));
         }
     }
 
-    // --- DOSYA İŞLEMLERİ ---
-    async function handleUploadClick() {
-        const permission = await checkMediaPermission();
+    function showPermissionRequired() {
+        const pdfList = document.getElementById('pdfList');
+        pdfList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon material-symbols-rounded">lock</div>
+                <div class="empty-text">${getTranslation('permissionRequired')}</div>
+                <button class="btn" style="margin-top: 16px;" onclick="requestPermission()">
+                    ${getTranslation('grantPermission')}
+                </button>
+            </div>`;
+    }
+
+    function showError(message) {
+        const pdfList = document.getElementById('pdfList');
+        pdfList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon material-symbols-rounded">error</div>
+                <div class="empty-text">${message}</div>
+                <button class="btn" style="margin-top: 16px;" onclick="loadDevicePDFs()">
+                    ${getTranslation('refresh')}
+                </button>
+            </div>`;
+    }
+
+    function showEmptyState() {
+        const pdfList = document.getElementById('pdfList');
+        pdfList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon material-symbols-rounded">folder_open</div>
+                <div class="empty-text">${getTranslation('noPDFs')}</div>
+                <button class="btn" style="margin-top: 16px;" onclick="loadDevicePDFs()">
+                    ${getTranslation('refresh')}
+                </button>
+            </div>`;
+    }
+
+    function requestPermission() {
+        if (typeof Android !== 'undefined') {
+            // Android ayarlarına yönlendir
+            window.location.href = 'settings://all_files';
+        }
+    }
+
+    function refreshPDFList() {
+        loadDevicePDFs();
+    }
+
+    // --- PDF LİSTESİ RENDER ---
+    function renderPDFList() {
+        const pdfList = document.getElementById('pdfList');
         
-        if (permission === 'denied') {
-            showPermissionDialog();
+        if (devicePDFs.length === 0) {
+            showEmptyState();
             return;
         }
+
+        let html = '';
+        devicePDFs.forEach(pdf => {
+            const isSelected = selectedPDFs.some(selected => selected.path === pdf.path);
+            const selectedClass = isSelected ? 'selected' : '';
+            
+            html += `
+                <div class="pdf-item ${selectedClass}" 
+                     onclick="togglePDFSelection(${pdf.id})"
+                     data-path="${pdf.path}">
+                    <div class="pdf-checkbox"></div>
+                    <div class="pdf-info">
+                        <div class="pdf-name">${pdf.name}</div>
+                        <div class="pdf-meta">
+                            <span>${pdf.size}</span>
+                            <span>•</span>
+                            <span>${pdf.date}</span>
+                        </div>
+                    </div>
+                </div>`;
+        });
         
-        // Dosya inputunu tetikle
-        document.getElementById('fileInput').click();
+        pdfList.innerHTML = html;
     }
 
-    function addFilesToList(files) {
-        files.forEach(file => {
-            if (file.type === 'application/pdf') {
-                selectedFiles.push(file);
-            }
+    function renderSelectedList() {
+        const selectedList = document.getElementById('selectedList');
+        
+        if (selectedPDFs.length === 0) {
+            selectedList.innerHTML = `
+                <div class="empty-state" style="padding: 20px;">
+                    <div class="empty-icon material-symbols-rounded">description</div>
+                    <div class="empty-text">${getTranslation('selectInfo')}</div>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        selectedPDFs.forEach((pdf, index) => {
+            html += `
+                <div class="selected-item">
+                    <span class="selected-name">${pdf.name}</span>
+                    <button class="remove-btn" onclick="removeFromSelection(${index})">
+                        ${getTranslation('remove')}
+                    </button>
+                </div>`;
         });
-        updateFileList();
+        
+        selectedList.innerHTML = html;
+        document.getElementById('selectedCount').textContent = selectedPDFs.length;
+    }
+
+    // --- SEÇİM İŞLEMLERİ ---
+    function togglePDFSelection(id) {
+        const pdf = devicePDFs.find(p => p.id === id);
+        if (!pdf) return;
+
+        const index = selectedPDFs.findIndex(selected => selected.path === pdf.path);
+        
+        if (index === -1) {
+            // Seç
+            selectedPDFs.push(pdf);
+            pdf.isSelected = true;
+        } else {
+            // Seçimi kaldır
+            selectedPDFs.splice(index, 1);
+            pdf.isSelected = false;
+        }
+
+        // UI'ı güncelle
+        renderPDFList();
+        renderSelectedList();
         updateButtons();
     }
 
-    function updateFileList() {
-        const fileList = document.getElementById('fileList');
-        fileList.innerHTML = '';
-
-        selectedFiles.forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'file-item';
-            fileItem.innerHTML = `
-                <span class="file-name">${file.name}</span>
-                <button class="remove-btn" onclick="removeFile(${index})">${getTranslation('remove')}</button>
-            `;
-            fileList.appendChild(fileItem);
-        });
+    function selectAllPDFs() {
+        selectedPDFs = [...devicePDFs];
+        devicePDFs.forEach(pdf => pdf.isSelected = true);
+        
+        renderPDFList();
+        renderSelectedList();
+        updateButtons();
     }
 
-    function removeFile(index) {
-        selectedFiles.splice(index, 1);
-        updateFileList();
+    function deselectAllPDFs() {
+        selectedPDFs = [];
+        devicePDFs.forEach(pdf => pdf.isSelected = false);
+        
+        renderPDFList();
+        renderSelectedList();
         updateButtons();
+    }
+
+    function removeFromSelection(index) {
+        const removedPDF = selectedPDFs[index];
+        selectedPDFs.splice(index, 1);
+        
+        // Device PDF listesinde de güncelle
+        const devicePDF = devicePDFs.find(p => p.path === removedPDF.path);
+        if (devicePDF) {
+            devicePDF.isSelected = false;
+        }
+        
+        renderPDFList();
+        renderSelectedList();
+        updateButtons();
+    }
+
+    function clearSelection() {
+        deselectAllPDFs();
         hideSuccess();
     }
 
-    function clearList() {
-        selectedFiles = [];
-        updateFileList();
-        updateButtons();
-        hideSuccess();
-    }
-
-    // --- DOSYA BİLGİ FONKSİYONLARI ---
-    function getFileSizeFromPath(path) {
-        // Gerçek uygulamada Android'den dosya boyutu alınmalı
-        try {
-            if (typeof Android !== 'undefined' && Android.getFileSize) {
-                const size = Android.getFileSize(path);
-                return formatBytes(size || 0);
-            }
-        } catch (e) {
-            console.error('Dosya boyutu alma hatası:', e);
-        }
-        return "~2.5 MB";
-    }
-
-    function getFileDateFromPath(path) {
-        try {
-            if (typeof Android !== 'undefined' && Android.getFileDate) {
-                return Android.getFileDate(path) || "Bilinmiyor";
-            }
-        } catch (e) {
-            console.error('Dosya tarihi alma hatası:', e);
-        }
-        
-        const now = new Date();
-        return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
-    }
-
-    function formatBytes(bytes, decimals = 1) {
-        if (!+bytes) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-    }
-
-    // --- BUTON YÖNETİMİ ---
     function updateButtons() {
-        const hasPermission = mediaPermission && mediaPermission !== 'denied';
-        const hasFiles = selectedFiles.length >= 2;
+        const mergeBtn = document.getElementById('mergeBtn');
+        const clearBtn = document.getElementById('clearBtn');
         
-        document.getElementById('mergeBtn').disabled = !hasPermission || !hasFiles;
-        document.getElementById('clearBtn').disabled = selectedFiles.length === 0;
+        mergeBtn.disabled = selectedPDFs.length < 2;
+        clearBtn.disabled = selectedPDFs.length === 0;
     }
 
     function hideSuccess() {
@@ -1746,13 +1192,7 @@
 
     // --- PDF BİRLEŞTİRME ---
     async function mergePDFs() {
-        // İzin kontrolü
-        if (!mediaPermission || mediaPermission === 'denied') {
-            showPermissionDialog();
-            return;
-        }
-        
-        if (selectedFiles.length < 2) {
+        if (selectedPDFs.length < 2) {
             alert(getTranslation('selectAtLeast2'));
             return;
         }
@@ -1769,14 +1209,32 @@
             const { PDFDocument } = window.PDFLib || PDFLib;
             const mergedPdf = await PDFDocument.create();
 
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const file = selectedFiles[i];
-                const arrayBuffer = await file.arrayBuffer();
-                const pdfDoc = await PDFDocument.load(arrayBuffer);
-                const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
-                pages.forEach(page => mergedPdf.addPage(page));
+            for (let i = 0; i < selectedPDFs.length; i++) {
+                const pdf = selectedPDFs[i];
                 
-                const progressPercent = Math.round(((i + 1) / selectedFiles.length) * 100);
+                try {
+                    // Android'den dosya verisini al
+                    let pdfData;
+                    if (typeof Android !== 'undefined' && Android.getFileData) {
+                        pdfData = await getFileDataFromAndroid(pdf.path);
+                    } else {
+                        pdfData = await fetchPDFData(pdf.path);
+                    }
+                    
+                    if (!pdfData) {
+                        throw new Error(`PDF yüklenemedi: ${pdf.name}`);
+                    }
+                    
+                    const pdfDoc = await PDFDocument.load(pdfData);
+                    const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                    pages.forEach(page => mergedPdf.addPage(page));
+                    
+                } catch (error) {
+                    console.error(`PDF yükleme hatası (${pdf.name}):`, error);
+                    continue;
+                }
+                
+                const progressPercent = Math.round(((i + 1) / selectedPDFs.length) * 100);
                 progressText.textContent = `${progressPercent}%`;
                 
                 await new Promise(resolve => setTimeout(resolve, 10));
@@ -1799,6 +1257,42 @@
         }
     }
 
+    async function getFileDataFromAndroid(filePath) {
+        return new Promise((resolve, reject) => {
+            try {
+                if (typeof Android !== 'undefined' && Android.getPDFData) {
+                    const base64Data = Android.getPDFData(filePath);
+                    if (base64Data && base64Data.trim().length > 0) {
+                        const binaryString = atob(base64Data);
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        resolve(bytes.buffer);
+                    } else {
+                        reject(new Error('PDF data is empty'));
+                    }
+                } else {
+                    reject(new Error('Android bridge not available'));
+                }
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async function fetchPDFData(filePath) {
+        try {
+            const response = await fetch(`file://${filePath}`);
+            if (!response.ok) throw new Error('Dosya okunamadı');
+            const arrayBuffer = await response.arrayBuffer();
+            return arrayBuffer;
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return null;
+        }
+    }
+
     // --- KAYDET İŞLEMİ ---
     function saveMergedPDF() {
         if (!mergedPdfBlob) {
@@ -1810,17 +1304,17 @@
         reader.onload = function() {
             const base64data = reader.result.split(',')[1];
             
-            // Android Kotlin WebView için
             if (typeof Android !== 'undefined' && Android.saveMergedPDF) {
-                Android.saveMergedPDF(base64data, 'merged_' + Date.now() + '.pdf');
+                const fileName = `merged_${Date.now()}.pdf`;
+                Android.saveMergedPDF(base64data, fileName);
+                
                 document.getElementById('successMessage').textContent = getTranslation('saveSuccess');
                 document.getElementById('saveBtn').style.display = 'none';
             } else {
-                // Fallback: tarayıcıda indirme
                 const url = URL.createObjectURL(mergedPdfBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'merged_' + Date.now() + '.pdf';
+                a.download = 'merged.pdf';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1833,49 +1327,58 @@
         reader.readAsDataURL(mergedPdfBlob);
     }
 
+    // --- YARDIMCI FONKSİYONLAR ---
+    function formatBytes(bytes) {
+        if (typeof bytes !== 'number') return "~2.5 MB";
+        if (!+bytes) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+    }
+
+    function getCurrentDate() {
+        const now = new Date();
+        return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+    }
+
     // --- GERİ TUŞU İŞLEMİ ---
     window.androidBackPressed = function() {
-        const permissionDialog = document.getElementById('permissionDialog');
-        const devicePickerDialog = document.getElementById('devicePickerDialog');
-        
-        if (permissionDialog.classList.contains('show')) {
-            hidePermissionDialog();
-            return false;
-        }
-        
-        if (devicePickerDialog.classList.contains('show')) {
-            hideDevicePicker();
-            return false;
-        }
-        
         goBack();
         return false;
     };
 
+    // Android'den döndüğünde çağrılacak
+    function onAndroidResume() {
+        loadDevicePDFs();
+    }
+
     // --- SAYFA YÜKLENDİĞİNDE ---
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', function() {
         updateUIText();
         
-        // İzin durumunu kontrol et
-        mediaPermission = await checkMediaPermission();
-        updatePermissionButton();
+        const savedTheme = localStorage.getItem('pdfTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
         
-        // Dosya input event listener
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const files = Array.from(e.target.files);
-            addFilesToList(files);
-            this.value = ''; // Input'u temizle
-        });
-
-        // Dil değiştiğinde UI'ı güncelle
         if (languageConfig && languageConfig.onLanguageChange) {
             languageConfig.onLanguageChange(updateUIText);
         }
+        
+        loadDevicePDFs();
     });
 
-    // --- TEMA DEĞİŞİKLİĞİ ---
-    const savedTheme = localStorage.getItem('pdfTheme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
+    // Global fonksiyonlar
+    window.goBack = goBack;
+    window.refreshPDFList = refreshPDFList;
+    window.selectAllPDFs = selectAllPDFs;
+    window.deselectAllPDFs = deselectAllPDFs;
+    window.togglePDFSelection = togglePDFSelection;
+    window.removeFromSelection = removeFromSelection;
+    window.clearSelection = clearSelection;
+    window.mergePDFs = mergePDFs;
+    window.saveMergedPDF = saveMergedPDF;
+    window.requestPermission = requestPermission;
+    window.onAndroidResume = onAndroidResume;
   </script>
 </body>
 </html>

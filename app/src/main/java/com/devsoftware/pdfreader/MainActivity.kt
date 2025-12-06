@@ -12,7 +12,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -22,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var webView: WebView
     private var backPressedTime: Long = 0
     private val appFolderName = "PDF Reader"
+    private var isInViewer = false
 
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,6 +40,9 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             allowContentAccess = true
             allowUniversalAccessFromFileURLs = true
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
         }
 
         // Android Bridge
@@ -44,24 +50,50 @@ class MainActivity : AppCompatActivity() {
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                println("URL yükleme: $url")
+                
+                // Settings linki
                 if (url == "settings://all_files") {
                     openAllFilesPermission()
                     return true
                 }
                 
-                // Viewer.html'den index.html'ye dönüş
-                if (url.contains("file:///android_asset/web/index.html")) {
-                    // JavaScript'e geri dönüldü bilgisini gönder
+                // Viewer.html kontrolü
+                if (url.contains("viewer.html")) {
+                    isInViewer = true
+                } else if (url.contains("index.html")) {
+                    isInViewer = false
+                }
+                
+                // Harici bağlantıları engelle
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                    return true
+                }
+                
+                return false
+            }
+            
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                println("Sayfa yüklendi: $url")
+                
+                // Viewer'dan döndüğümüzde
+                if (url.contains("index.html") && isInViewer) {
+                    isInViewer = false
                     webView.postDelayed({
                         webView.evaluateJavascript("""
-                            if (typeof onReturnFromViewer === 'function') {
-                                onReturnFromViewer();
+                            try {
+                                if (typeof onReturnFromViewer === 'function') {
+                                    onReturnFromViewer();
+                                }
+                            } catch(e) {
+                                console.log('onReturnFromViewer error: ' + e);
                             }
                         """.trimIndent(), null)
                     }, 300)
                 }
-                
-                return false
             }
         }
 
@@ -270,6 +302,54 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        /** Birleştirilmiş PDF'yi kaydet */
+        @JavascriptInterface
+        fun saveMergedPDF(base64Data: String, fileName: String) {
+            try {
+                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val appFolder = File(downloadsDir, appFolderName)
+                
+                // Klasör yoksa oluştur
+                if (!appFolder.exists()) {
+                    appFolder.mkdirs()
+                }
+                
+                val file = File(appFolder, fileName)
+                FileOutputStream(file).use { fos ->
+                    fos.write(decodedBytes)
+                }
+                
+                // Başarı mesajı
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF kaydedildi: ${file.absolutePath}", 
+                        Toast.LENGTH_LONG).show()
+                }
+                
+                // Kaydedilen dosyayı bildir
+                webView.post {
+                    webView.evaluateJavascript("""
+                        try {
+                            if (typeof onPDFSaved === 'function') {
+                                onPDFSaved('${file.absolutePath}', '$fileName');
+                            }
+                        } catch(e) {
+                            console.log('onPDFSaved error: ' + e);
+                        }
+                    """.trimIndent(), null)
+                }
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF kaydedilemedi: ${e.message}", 
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        
         /** Dosyaları paylaş */
         @JavascriptInterface
         fun shareFiles(filePaths: String) {
@@ -280,18 +360,103 @@ class MainActivity : AppCompatActivity() {
             paths.forEach { path ->
                 val file = File(path)
                 if (file.exists()) {
-                    val uri = Uri.fromFile(file)
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${this@MainActivity.packageName}.provider",
+                            file
+                        )
+                    } else {
+                        Uri.fromFile(file)
+                    }
                     uris.add(uri)
                 }
             }
             
             if (uris.isNotEmpty()) {
-                val intent = Intent(Intent.ACTION_SEND_MULTIPLE)
-                intent.type = "application/pdf"
-                intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val intent = if (uris.size == 1) {
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                    }
+                } else {
+                    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                        type = "application/pdf"
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    }
+                }
                 
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 startActivity(Intent.createChooser(intent, "PDF'leri Paylaş"))
+            }
+        }
+        
+        /** PDF dosyasını aç */
+        @JavascriptInterface
+        fun openPDF(path: String) {
+            try {
+                val file = File(path)
+                if (file.exists()) {
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${this@MainActivity.packageName}.provider",
+                            file
+                        )
+                    } else {
+                        Uri.fromFile(file)
+                    }
+                    
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    
+                    startActivity(intent)
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, 
+                            "Dosya bulunamadı: $path", 
+                            Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF açılamadı: ${e.message}", 
+                        Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        
+        /** Yazdırma işlemi */
+        @JavascriptInterface
+        fun printPDF(path: String) {
+            try {
+                val file = File(path)
+                if (file.exists()) {
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${this@MainActivity.packageName}.provider",
+                            file
+                        )
+                    } else {
+                        Uri.fromFile(file)
+                    }
+                    
+                    val printIntent = Intent(Intent.ACTION_SEND).apply {
+                        setDataAndType(uri, "application/pdf")
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    
+                    startActivity(Intent.createChooser(printIntent, "PDF Yazdır"))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -302,7 +467,9 @@ class MainActivity : AppCompatActivity() {
         webView.post {
             webView.evaluateJavascript("""
                 try {
-                    onAndroidResume();
+                    if (typeof onAndroidResume === 'function') {
+                        onAndroidResume();
+                    }
                 } catch(e) {
                     console.log('onAndroidResume error: ' + e);
                 }
@@ -312,26 +479,72 @@ class MainActivity : AppCompatActivity() {
     
     // --- GERİ TUŞU İŞLEMİ ---
     override fun onBackPressed() {
+        // Viewer'da mıyız kontrol et
+        if (isInViewer) {
+            // Viewer'dan index.html'ye dön
+            webView.loadUrl("file:///android_asset/web/index.html")
+            return
+        }
+        
+        // JavaScript'e geri tuşu durumunu sor
         webView.evaluateJavascript("""
-            if (typeof androidBackPressed === 'function') {
-                var result = androidBackPressed();
-                result;
-            } else {
-                'exit_check';
-            }
+            (function() {
+                try {
+                    if (typeof androidBackPressed === 'function') {
+                        var result = androidBackPressed();
+                        return result;
+                    }
+                } catch(e) {
+                    console.log('androidBackPressed error: ' + e);
+                }
+                return 'exit_check';
+            })();
         """.trimIndent()) { result ->
             val jsResult = result?.trim('"')
+            println("JS Geri tuşu sonucu: $jsResult")
             
-            if (jsResult == "exit" || jsResult == "exit_check") {
-                // Ana sayfadaysa çift tıklama ile çıkış
-                if (backPressedTime + 2000 > System.currentTimeMillis()) {
+            when (jsResult) {
+                "exit" -> {
+                    // Uygulamadan çık
                     super.onBackPressed()
                     finish()
-                } else {
-                    Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
-                    backPressedTime = System.currentTimeMillis()
+                }
+                "exit_check" -> {
+                    // Çıkış kontrolü (çift tıklama)
+                    if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                        super.onBackPressed()
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
+                        backPressedTime = System.currentTimeMillis()
+                    }
+                }
+                "false", "no_exit" -> {
+                    // JavaScript işledi, çıkış yapma
+                    println("JavaScript geri tuşunu işledi")
+                }
+                else -> {
+                    // Default: WebView geçmişine git
+                    if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        // Çıkış kontrolü
+                        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                            super.onBackPressed()
+                            finish()
+                        } else {
+                            Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
+                            backPressedTime = System.currentTimeMillis()
+                        }
+                    }
                 }
             }
         }
+    }
+    
+    /** Bellek temizleme */
+    override fun onDestroy() {
+        super.onDestroy()
+        webView.destroy()
     }
 }

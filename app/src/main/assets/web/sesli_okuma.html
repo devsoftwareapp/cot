@@ -2,7 +2,8 @@
 
 <html dir="ltr" mozdisallowselectionprint>
   <head>
-
+          
+           
           
 <style>
 /* SESLİ OKUMA ÖZELLİKLERİ */
@@ -177,7 +178,7 @@
     <button id="customNext" title="Sonraki Kelime">İLERİ ▶</button>
     <button id="customSpeed" title="Okuma Hızı">HIZ: 1.0x</button>
     <button id="customSpeech" title="Baştan Oku">🔊 BAŞTAN OKU</button>
-    <button id="secondaryOpenFile" title="PDF Seç">📄 PDF SEÇ</button>
+   <button id="customPdfSelect" title="PDF Seç">📄 PDF SEÇ</button>
 </div>
 
 
@@ -2413,13 +2414,16 @@ const customToolbarTranslations = {
     }
 };
 
+
+// ==============================
+//   DİL VE TOOLBAR YÖNETİMİ
+// ==============================
+
 // Mevcut dili al
 function getCurrentLanguage() {
-    // Lang.js'den dili al
     if (typeof languageConfig !== 'undefined') {
         return languageConfig.getCurrent();
     }
-    // Fallback: Tarayıcı dili veya varsayılan
     const browserLang = navigator.language.split('-')[0];
     return Object.keys(customToolbarTranslations).includes(browserLang) ? browserLang : 'en';
 }
@@ -2429,7 +2433,6 @@ function updateCustomToolbarLanguage() {
     const lang = getCurrentLanguage();
     const translations = customToolbarTranslations[lang] || customToolbarTranslations['en'];
     
-    // Butonları güncelle
     const prevBtn = document.getElementById('customPrev');
     const playPauseBtn = document.getElementById('customPlayPause');
     const nextBtn = document.getElementById('customNext');
@@ -2437,6 +2440,7 @@ function updateCustomToolbarLanguage() {
     const speechBtn = document.getElementById('customSpeech');
     const openBtn = document.getElementById('secondaryOpenFile');
     const centerBtn = document.getElementById('centerPDFButton');
+    const customSelectBtn = document.getElementById('customPdfSelect');
     
     if (prevBtn) {
         prevBtn.textContent = `◀ ${translations.prev}`;
@@ -2444,7 +2448,6 @@ function updateCustomToolbarLanguage() {
     }
     
     if (playPauseBtn) {
-        // Duruma göre metni güncelle
         if (isPaused) {
             playPauseBtn.textContent = `▶ ${translations.resuming}`;
         } else if (isSpeaking) {
@@ -2474,13 +2477,18 @@ function updateCustomToolbarLanguage() {
         openBtn.textContent = `📄 ${translations.openFile}`;
         openBtn.title = translations.titleOpen;
     }
+
+    if (customSelectBtn) {
+        customSelectBtn.textContent = `📄 ${translations.openFile}`;
+        customSelectBtn.title = translations.titleOpen;
+    }
     
     if (centerBtn) {
         centerBtn.innerHTML = translations.centerButton.replace('<br>', '<br>');
     }
 }
 
-// Alert mesajlarını diline çevir
+// Alert mesajlarını çevir
 function getTranslatedAlert(type) {
     const lang = getCurrentLanguage();
     const translations = customToolbarTranslations[lang] || customToolbarTranslations['en'];
@@ -2494,36 +2502,26 @@ function getTranslatedAlert(type) {
     }
 }
 
-// Mevcut fonksiyonları override et (alert mesajlarını çevir)
+// ==============================
+//   OVERRIDE EDİLEN FONKSİYONLAR
+// ==============================
+
 const originalExtractAllTextAndSpeak = extractAllTextAndSpeak;
 extractAllTextAndSpeak = function() {
     if (!pdfTextExtracted || sentences.length === 0) {
         alert(getTranslatedAlert('noPdf'));
         return;
     }
-    
-    console.log("Sesli okuma başlatılıyor...");
-    console.log("Dil:", currentLanguage);
-    console.log("Cümle sayısı:", sentences.length);
-    
     currentSentenceIndex = 0;
     startReading();
 };
 
 const originalGoToPreviousSentence = goToPreviousSentence;
 goToPreviousSentence = function() {
-    if (!isSpeaking) {
-        alert(getTranslatedAlert('notActive'));
-        return;
-    }
-    
+    if (!isSpeaking) return alert(getTranslatedAlert('notActive'));
     if (isPaused || isSentenceComplete) {
         speechSynthesis.cancel();
-        if (speechTimeout) {
-            clearTimeout(speechTimeout);
-            speechTimeout = null;
-        }
-        
+        if (speechTimeout) clearTimeout(speechTimeout);
         if (currentSentenceIndex > 0) {
             currentSentenceIndex--;
             isSpeaking = true;
@@ -2539,18 +2537,10 @@ goToPreviousSentence = function() {
 
 const originalGoToNextSentence = goToNextSentence;
 goToNextSentence = function() {
-    if (!isSpeaking) {
-        alert(getTranslatedAlert('notActive'));
-        return;
-    }
-    
+    if (!isSpeaking) return alert(getTranslatedAlert('notActive'));
     if (isPaused || isSentenceComplete) {
         speechSynthesis.cancel();
-        if (speechTimeout) {
-            clearTimeout(speechTimeout);
-            speechTimeout = null;
-        }
-        
+        if (speechTimeout) clearTimeout(speechTimeout);
         if (currentSentenceIndex < sentences.length - 1) {
             currentSentenceIndex++;
             isSpeaking = true;
@@ -2566,210 +2556,67 @@ goToNextSentence = function() {
     }
 };
 
-// Button durumlarını güncellerken dili de güncelle
 const originalUpdateButtonStates = updateButtonStates;
 updateButtonStates = function() {
     originalUpdateButtonStates();
     updateCustomToolbarLanguage();
 };
 
-// Hız butonunu güncelle
 const originalChangeSpeechSpeed = changeSpeechSpeed;
 changeSpeechSpeed = function() {
     originalChangeSpeechSpeed();
     updateCustomToolbarLanguage();
 };
 
-// Dil değişikliklerini dinle
+// ==============================
+//   DİL DİNLEYİCİSİ
+// ==============================
+
 function setupLanguageListener() {
-    // Lang.js'deki dil değişimini dinle (eğer mümkünse)
     if (typeof languageConfig !== 'undefined') {
-        // Özgün setLanguage fonksiyonunu override et
         const originalSetLanguage = languageConfig.setLanguage;
         if (originalSetLanguage) {
             languageConfig.setLanguage = function(langCode) {
                 const result = originalSetLanguage.call(this, langCode);
-                if (result) {
-                    // UI güncelle
-                    updateCustomToolbarLanguage();
-                }
+                if (result) updateCustomToolbarLanguage();
                 return result;
             };
         }
     }
-    
-    // Sayfa yüklendiğinde toolbar'ı güncelle
     updateCustomToolbarLanguage();
-    
-    // Her 5 saniyede bir kontrol et (güvenlik için)
     setInterval(updateCustomToolbarLanguage, 5000);
 }
 
-// DOM yüklendiğinde dili ayarla
 document.addEventListener('DOMContentLoaded', function() {
-    // Mevcut initSpeechControls fonksiyonundan sonra çalıştır
-    setTimeout(() => {
-        setupLanguageListener();
-    }, 1000);
+    setTimeout(() => setupLanguageListener(), 1000);
 });
 
-// PDF yüklendiğinde dili güncelle
 if (typeof PDFViewerApplication !== 'undefined') {
-    PDFViewerApplication.eventBus.on('documentloaded', function() {
-        setTimeout(updateCustomToolbarLanguage, 500);
-    });
-    
-    PDFViewerApplication.eventBus.on('documentunloaded', function() {
-        setTimeout(updateCustomToolbarLanguage, 500);
-    });
+    PDFViewerApplication.eventBus.on('documentloaded', () =>
+        setTimeout(updateCustomToolbarLanguage, 500)
+    );
+    PDFViewerApplication.eventBus.on('documentunloaded', () =>
+        setTimeout(updateCustomToolbarLanguage, 500)
+    );
 }
 
+// ==============================
+//   *** PDF AÇMA DÜZELTMESİ ***
+// ==============================
+// PDF.js içindeki secondaryOpenFile → ALWAYS index 0
+// Senin yeni customPdfSelect → ayrı ID (karışma yok)
 
-// =============================================
-// ANDROID ENTEGRASYONU - PDF SEÇME VE YÜKLEME
-// =============================================
+document.addEventListener("DOMContentLoaded", function () {
+    const viewerOpenBtn = document.getElementById("secondaryOpenFile");
+    const customBtn = document.getElementById("customPdfSelect");
 
-// URL'den PDF parametresini kontrol et ve yükle
-function checkAndLoadPDFFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pdfFile = urlParams.get('file');
-    
-    if (pdfFile) {
-        console.log("📱 Android'den PDF alındı:", pdfFile);
-        
-        // PDF.js viewer hazır mı kontrol et
-        if (typeof PDFViewerApplication !== 'undefined' && PDFViewerApplication.open) {
-            // Hemen yükle
-            console.log("✅ PDF.js hazır, PDF açılıyor...");
-            PDFViewerApplication.open(pdfFile);
-            hideCenterButton();
-            
-            const toolbar = document.getElementById('customToolbar');
-            if (toolbar) {
-                toolbar.classList.add('visible');
-            }
-        } else {
-            // Değilse, event listener ekle
-            console.log("⏳ PDF.js henüz hazır değil, bekleniyor...");
-            if (typeof PDFViewerApplication !== 'undefined') {
-                PDFViewerApplication.eventBus.on('loaded', function() {
-                    console.log("✅ PDF.js yüklendi, şimdi PDF açılıyor...");
-                    setTimeout(() => {
-                        PDFViewerApplication.open(pdfFile);
-                        hideCenterButton();
-                        
-                        const toolbar = document.getElementById('customToolbar');
-                        if (toolbar) {
-                            toolbar.classList.add('visible');
-                        }
-                    }, 500);
-                });
-            }
-        }
-    }
-}
-
-// Butonları Android'e bağla
-function setupAndroidButtons() {
-    // Center butonunu Android'e bağla
-    const centerButton = document.getElementById('centerPDFButton');
-    if (centerButton) {
-        const originalOnClick = centerButton.onclick;
-        centerButton.onclick = function() {
-            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
-                Android.selectSpeechPDF();
-            } else if (originalOnClick) {
-                originalOnClick.call(this);
-            } else {
-                console.warn("Android bridge bulunamadı!");
-            }
-        };
-    }
-    
-    // Secondary Open butonunu Android'e bağla
-    const secondaryOpenBtn = document.getElementById('secondaryOpenFile');
-    if (secondaryOpenBtn) {
-        const originalOnClick = secondaryOpenBtn.onclick;
-        secondaryOpenBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
-                Android.selectSpeechPDF();
-            } else if (originalOnClick) {
-                originalOnClick.call(this, e);
-            }
-            return false;
-        };
-    }
-}
-
-// Android'den PDF seçildiğinde çağrılacak global fonksiyon
-window.onPDFSelectedForSpeech = function(filePath) {
-    console.log("📱 Android'den PDF seçildi:", filePath);
-    
-    // URL parametresi ekleyerek sayfayı yeniden yükle
-    const newUrl = window.location.pathname + '?file=' + encodeURIComponent(filePath);
-    window.location.href = newUrl;
-};
-
-// Mevcut initSpeechControls fonksiyonunu güncelle (Android butonlarını bağlamak için)
-const originalInitSpeechControls = initSpeechControls;
-initSpeechControls = function() {
-    // Önce orijinal fonksiyonu çalıştır
-    if (originalInitSpeechControls) {
-        originalInitSpeechControls();
-    }
-    
-    // Sonra Android butonlarını bağla
-    setupAndroidButtons();
-};
-
-// Mevcut setupPDFTextExtraction fonksiyonunu güncelle (PDF yükleme için)
-const originalSetupPDFTextExtraction = setupPDFTextExtraction;
-setupPDFTextExtraction = function() {
-    // Önce orijinal fonksiyonu çalıştır
-    if (originalSetupPDFTextExtraction) {
-        originalSetupPDFTextExtraction();
-    }
-    
-    // Sonra URL'den PDF kontrolü yap
-    if (typeof PDFViewerApplication !== 'undefined') {
-        PDFViewerApplication.eventBus.on('loaded', function() {
-            console.log("📄 PDF.js viewer tamamen yüklendi");
-            // Tekrar PDF kontrolü yap
-            setTimeout(() => {
-                checkAndLoadPDFFromURL();
-            }, 300);
+    if (viewerOpenBtn && customBtn) {
+        customBtn.addEventListener("click", () => {
+            viewerOpenBtn.click();
         });
     }
-};
-
-// Sayfa yüklendiğinde Android entegrasyonunu başlat
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 sesli_okuma.html yüklendi, Android entegrasyonu başlatılıyor...");
-    
-    // URL'den PDF'i kontrol et ve yükle
-    setTimeout(() => {
-        checkAndLoadPDFFromURL();
-    }, 1000); // 1 saniye bekle, her şeyin yüklenmesi için
 });
-
-// PDF yüklendiğinde dili güncelle (MEVCUT KOD - DEĞİŞMEDİ)
-if (typeof PDFViewerApplication !== 'undefined') {
-    PDFViewerApplication.eventBus.on('documentloaded', function() {
-        setTimeout(updateCustomToolbarLanguage, 500);
-    });
-    
-    PDFViewerApplication.eventBus.on('documentunloaded', function() {
-        setTimeout(updateCustomToolbarLanguage, 500);
-    });
-}
-
-
-
 </script>
-    
         <!-- EV çiye   -->
         
         

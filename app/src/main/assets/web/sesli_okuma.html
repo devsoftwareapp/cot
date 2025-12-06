@@ -1,1970 +1,2642 @@
-<!doctype html>
-<html lang="tr" data-theme="light">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sesli Okuma | PDF Reader</title>
+﻿<!doctype html>
+
+<html dir="ltr" mozdisallowselectionprint>
+  <head>
+          
+           
+          
+<style>
+/* SESLİ OKUMA ÖZELLİKLERİ */
+.speech-highlight {
+    background-color: rgba(255, 235, 59, 0.5) !important;
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.8);
+}
+
+/* CUSTOM TOOLBAR İÇİN ALT POZİSYON */
+.custom-toolbar {
+    position: fixed;
+    bottom: 10px; /* Aşağıda */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 15px;
+    border-radius: 20px;
+    display: flex; /* BURASI FLEX OLMALI */
+    gap: 8px;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    backdrop-filter: blur(10px);
+    min-width: 300px;
+    max-width: 90%;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.custom-toolbar button {
+    background: #4a6fa5;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    min-width: 70px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    box-shadow: 0 2px 8px rgba(74, 111, 165, 0.4);
+}
+
+.custom-toolbar button:hover {
+    background: #3a5985;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 111, 165, 0.6);
+}
+
+.custom-toolbar button:active {
+    transform: translateY(0);
+}
+
+/* Buton özel stilleri */
+#customSpeech {
+    background: linear-gradient(135deg, #27ae60, #219a52);
+}
+
+#customPlayPause {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    min-width: 80px;
+}
+
+#customPrev, #customNext {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    min-width: 60px;
+}
+
+#customSpeed {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+#customOpen {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+/* PDF viewer'ı toolbar için ayarla */
+#viewerContainer {
+    top: 0 !important;
+    height: calc(100vh - 80px) !important; /* Boşluk bırak */
+    bottom: 80px !important;
+}
+
+/* Mobil için responsive */
+@media (max-width: 768px) {
+    .custom-toolbar {
+        padding: 6px 10px;
+        gap: 5px;
+        min-width: 95%;
+        bottom: 5px;
+    }
+    
+    .custom-toolbar button {
+        padding: 6px 8px;
+        font-size: 10px;
+        min-width: 50px;
+        height: 30px;
+    }
+    
+    #customPlayPause {
+        min-width: 70px;
+    }
+    
+    #viewerContainer {
+        height: calc(100vh - 60px) !important;
+        bottom: 60px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-toolbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        bottom: 5px;
+    }
+    
+    .custom-toolbar button {
+        flex: 0 0 calc(33% - 5px);
+        margin-bottom: 5px;
+        font-size: 9px;
+        padding: 5px 6px;
+    }
+}
+
+
+
+
+
+
+
+
+</style>
+
+
+      
+      
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="google" content="notranslate" />
+    <title>PDF.js viewer</title>
+    
+    <script src="lang.js"></script>
+    
+    <script src="tesseract.min.js"></script>
+<script src="pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";</script>
+
+<link rel="resource" type="application/l10n" href="locale/locale.json" />
+<script src="../build/pdf.mjs" type="module"></script>
+
+    <link rel="stylesheet" href="viewer.css" />
+
+  <script src="viewer.mjs" type="module"></script>
   
-  <style>
-    /* Material Symbols Rounded */
-    @font-face {
-        font-family: 'Material Symbols Rounded';
-        src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
-        font-weight: 100 700;
-        font-style: normal;
-    }
+  
+  </head>
+  
 
-    .material-symbols-rounded {
-        font-family: 'Material Symbols Rounded';
-        font-weight: normal;
-        font-style: normal;
-        font-size: 24px;
-        display: inline-block;
-        line-height: 1;
-        text-transform: none;
-        letter-spacing: normal;
-        word-wrap: normal;
-        white-space: nowrap;
-        direction: ltr;
-        -webkit-font-smoothing: antialiased;
-        font-variation-settings:
-            'FILL' 0,
-            'wght' 400,
-            'GRAD' 0,
-            'opsz' 48;
-    }
-    
-    /* --- DEĞİŞKENLER --- */
-    :root {
-      --background: #e8e8e8;
-      --surface: #ffffff;
-      --primary: #4a6fa5;
-      --secondary: #3a5985;
-      --success: #27ae60;
-      --error: #e74c3c;
-      --warning: #f39c12;
-      --text-primary: #2c3e50;
-      --text-secondary: #7f8c8d;
-      --border: #d4d4d4; 
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      --transition-fast: 150ms ease;
-      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+   
+
+
+<!-- CUSTOM TOOLBAR - ALTTA MERKEZDE -->
+<div class="custom-toolbar" id="customToolbar">
+    <button id="customPrev" title="Önceki Kelime">◀ GERİ</button>
+    <button id="customPlayPause" title="Oynat/Durdur">⏸ DURDUR</button>
+    <button id="customNext" title="Sonraki Kelime">İLERİ ▶</button>
+    <button id="customSpeed" title="Okuma Hızı">HIZ: 1.0x</button>
+    <button id="customSpeech" title="Baştan Oku">🔊 BAŞTAN OKU</button>
+    <button id="secondaryOpenFile" title="PDF Seç">📄 PDF SEÇ</button>
+</div>
+
+
+
+
+
+
+
+
+
+  <body tabindex="0">
       
-      --header-height: 64px;
-      --spacing-sm: 8px;
-      --spacing-md: 16px;
-      --spacing-lg: 24px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-full: 9999px;
-    }
-
-    [data-theme="dark"] {
-      --background: #0f172a;
-      --surface: #1e293b;
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --border: #334155;
-      --primary: #4a6fa5;
-      --secondary: #3a5985;
-    }
-
-    /* --- TEMEL AYARLAR --- */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { 
-      height: 100%; 
-      font-family: 'Roboto', sans-serif; 
-      background-color: var(--background); 
-      color: var(--text-primary); 
-      overflow: hidden; 
-    }
-    body { display: flex; flex-direction: column; }
-    .material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; user-select: none; }
-    
-    /* Utility Classes */
-    .flex { display: flex; }
-    .items-center { align-items: center; }
-    .justify-center { justify-content: center; }
-    .justify-between { justify-content: space-between; }
-    .flex-col { flex-direction: column; }
-    .gap-sm { gap: var(--spacing-sm); }
-    .gap-md { gap: var(--spacing-md); }
-    .gap-lg { gap: var(--spacing-lg); }
-    .font-semibold { font-weight: 600; }
-    .font-bold { font-weight: 700; }
-    .text-secondary { color: var(--text-secondary); }
-    .text-sm { font-size: 14px; }
-    .text-lg { font-size: 18px; }
-    .text-xl { font-size: 20px; }
-    .mt-1 { margin-top: 4px; }
-    .mt-2 { margin-top: 8px; }
-    .mt-3 { margin-top: 12px; }
-    .mt-4 { margin-top: 16px; }
-    .mb-2 { margin-bottom: 8px; }
-    .mb-4 { margin-bottom: 16px; }
-    .p-3 { padding: 12px; }
-    .p-4 { padding: 16px; }
-    .text-center { text-align: center; }
-    .w-full { width: 100%; }
-    .hidden { display: none !important; }
-    .absolute { position: absolute; }
-    .relative { position: relative; }
-    .fixed { position: fixed; }
-    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-
-    /* --- ÜST BAR (HEADER) --- */
-    .top-bar-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: var(--header-height);
-        z-index: 100;
-        background: var(--surface);
-        transition: transform 0.3s ease, background-color 0.3s ease;
-        box-shadow: var(--shadow-md);
-    }
-    .app-header { 
-        height: var(--header-height); 
-        padding: 0 var(--spacing-lg); 
-        display: flex; 
-        align-items: center; 
-        justify-content: space-between; 
-        border-bottom: 1px solid var(--border);
-        position: relative; 
-    }
-
-    .logo { 
-        width: 36px; 
-        height: 36px; 
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        overflow: hidden; 
-        flex-shrink: 0;
-    } 
-    .logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .app-title { 
-      font-size: 20px; 
-      font-weight: 700; 
-      background: linear-gradient(to right, #4a6fa5, #3498db); 
-      -webkit-background-clip: text; 
-      -webkit-text-fill-color: transparent; 
-      background-clip: text; 
-    }
-    
-    .icon-button { 
-      width: 40px; 
-      height: 40px; 
-      border-radius: var(--radius-md); 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      background: transparent; 
-      border: none; 
-      color: var(--text-secondary); 
-      cursor: pointer; 
-      transition: all var(--transition-fast); 
-    }
-    .icon-button:hover { 
-      background: rgba(0, 0, 0, 0.05); 
-      color: var(--text-primary); 
-    }
-    .icon-button.primary { 
-      background: var(--primary); 
-      color: white; 
-    }
-
-    /* --- ANA İÇERİK ALANI --- */
-    .main-content {
-        padding-top: var(--header-height);
-        padding-bottom: 20px;
-        height: 100vh;
-        width: 100%;
-        overflow-y: auto; 
-        position: relative;
-        z-index: 1;
-        transition: padding 0.3s ease;
-    }
-    
-    .container {
-        max-width: 100%;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    /* --- PDF SEÇİM ALANI --- */
-    .pdf-select-section {
-        margin-bottom: 24px;
-        padding: var(--spacing-lg);
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        border: 2px dashed var(--border);
-        text-align: center;
-        transition: all var(--transition-normal);
-        cursor: pointer;
-    }
-    
-    .pdf-select-section:hover {
-        border-color: var(--primary);
-        background: rgba(74, 111, 165, 0.05);
-        transform: translateY(-2px);
-    }
-    
-    .select-pdf-icon {
-        font-size: 48px;
-        color: var(--primary);
-        margin-bottom: var(--spacing-md);
-    }
-    
-    .select-pdf-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 8px;
-    }
-    
-    .select-pdf-subtitle {
-        font-size: 14px;
-        color: var(--text-secondary);
-    }
-
-    /* --- PDF BİLGİ GÖSTERİMİ --- */
-    .pdf-info-card {
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: 24px;
-        border: 1px solid var(--border);
-        display: none;
-    }
-    
-    .pdf-info-card.visible {
-        display: block;
-        animation: slideIn 0.3s ease;
-    }
-    
-    .pdf-info-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-    
-    .pdf-name {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--text-primary);
-        word-break: break-all;
-    }
-    
-    .pdf-meta {
-        display: flex;
-        gap: 12px;
-        margin-top: 8px;
-        font-size: 12px;
-        color: var(--text-secondary);
-    }
-    
-    .language-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: rgba(74, 111, 165, 0.1);
-        border-radius: var(--radius-md);
-        margin-top: 12px;
-        font-size: 14px;
-    }
-    
-    .language-flag {
-        font-size: 20px;
-    }
-
-    /* --- SESLİ OKUMA KONTROLLERİ --- */
-    .speech-controls {
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: 24px;
-        border: 1px solid var(--border);
-        display: none;
-    }
-    
-    .speech-controls.visible {
-        display: block;
-        animation: fadeIn 0.5s ease;
-    }
-    
-    .progress-info {
-        margin-bottom: 20px;
-    }
-    
-    .progress-text {
-        font-size: 14px;
-        color: var(--text-secondary);
-        margin-bottom: 4px;
-    }
-    
-    .progress-bar {
-        width: 100%;
-        height: 6px;
-        background: var(--border);
-        border-radius: 3px;
-        overflow: hidden;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: var(--primary);
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-    
-    .controls-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-    
-    .control-button {
-        height: 50px;
-        border: none;
-        border-radius: var(--radius-md);
-        background: var(--primary);
-        color: white;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-    
-    .control-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(74, 111, 165, 0.3);
-    }
-    
-    .control-button:active {
-        transform: translateY(0);
-    }
-    
-    .control-button.secondary {
-        background: var(--text-secondary);
-    }
-    
-    .control-button.success {
-        background: var(--success);
-    }
-    
-    .control-button.warning {
-        background: var(--warning);
-    }
-    
-    .control-button.error {
-        background: var(--error);
-    }
-    
-    .speed-controls {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-    
-    .speed-button {
-        flex: 1;
-        padding: 10px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        color: var(--text-primary);
-        font-size: 14px;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-    
-    .speed-button:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    
-    .speed-button.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
-
-    /* --- TEXT GÖSTERİM ALANI --- */
-    .text-display {
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        padding: var(--spacing-lg);
-        margin-bottom: 24px;
-        border: 1px solid var(--border);
-        max-height: 300px;
-        overflow-y: auto;
-        display: none;
-    }
-    
-    .text-display.visible {
-        display: block;
-    }
-    
-    .text-display-title {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 12px;
-        color: var(--text-primary);
-    }
-    
-    .text-content {
-        font-size: 14px;
-        line-height: 1.6;
-        color: var(--text-primary);
-    }
-    
-    .text-highlight {
-        background: rgba(255, 235, 59, 0.5);
-        border-radius: 3px;
-        padding: 2px 0;
-        transition: background-color 0.3s ease;
-    }
-    
-    .current-sentence {
-        font-weight: 600;
-        color: var(--primary);
-    }
-
-    /* --- DURUM MESAJLARI --- */
-    .status-message {
-        padding: 16px;
-        border-radius: var(--radius-md);
-        margin-bottom: 16px;
-        text-align: center;
-        display: none;
-    }
-    
-    .status-message.visible {
-        display: block;
-        animation: fadeIn 0.5s ease;
-    }
-    
-    .status-message.info {
-        background: rgba(74, 111, 165, 0.1);
-        color: var(--primary);
-        border: 1px solid rgba(74, 111, 165, 0.3);
-    }
-    
-    .status-message.success {
-        background: rgba(39, 174, 96, 0.1);
-        color: var(--success);
-        border: 1px solid rgba(39, 174, 96, 0.3);
-    }
-    
-    .status-message.warning {
-        background: rgba(243, 156, 18, 0.1);
-        color: var(--warning);
-        border: 1px solid rgba(243, 156, 18, 0.3);
-    }
-    
-    .status-message.error {
-        background: rgba(231, 76, 60, 0.1);
-        color: var(--error);
-        border: 1px solid rgba(231, 76, 60, 0.3);
-    }
-
-    /* --- BOŞ DURUM MESAJI --- */
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--text-secondary);
-        display: none;
-    }
-    
-    .empty-state.visible {
-        display: block;
-    }
-    
-    .empty-icon {
-        font-size: 64px;
-        margin-bottom: 16px;
-        opacity: 0.5;
-    }
-    
-    .empty-text {
-        font-size: 16px;
-        margin-bottom: 24px;
-    }
-
-    /* --- ANDROID PDF SELECT BUTTON STYLE --- */
-    .android-file-button {
-        background: var(--primary);
-        color: white;
-        border: none;
-        padding: 16px 24px;
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 600;
-        transition: all var(--transition-fast);
-        text-align: center;
-        width: 100%;
-        margin-top: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-    }
-    
-    .android-file-button:hover {
-        background: var(--secondary);
-        transform: translateY(-2px);
-    }
-    
-    .android-file-button:active {
-        transform: translateY(0);
-    }
-
-    /* --- ANİMASYONLAR --- */
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    @keyframes slideIn {
-        from { 
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to { 
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-    }
-    
-    .pulse {
-        animation: pulse 1.5s infinite;
-    }
-
-    /* --- DARK MODE DÜZENLEMELERİ --- */
-    [data-theme="dark"] .pdf-select-section:hover {
-        background: rgba(74, 111, 165, 0.2);
-    }
-    
-    [data-theme="dark"] .control-button:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    
-    [data-theme="dark"] .speed-button:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    [data-theme="dark"] .text-highlight {
-        background: rgba(255, 235, 59, 0.3);
-    }
-
-    /* --- RESPONSIVE TASARIM --- */
-    @media (min-width: 768px) {
-        .container {
-            max-width: 600px;
-        }
-        
-        .controls-grid {
-            grid-template-columns: repeat(6, 1fr);
-        }
-        
-        .text-display {
-            max-height: 400px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .controls-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .container {
-            padding: 16px;
-        }
-        
-        .app-header {
-            padding: 0 var(--spacing-md);
-        }
-    }
-  </style>
-</head>
-<body>
-
-  <div class="top-bar-container" id="topBar">
-    <header class="app-header">
-      <div class="flex items-center gap-sm">
-        <button class="icon-button" onclick="goBack()">
-          <span class="material-symbols-rounded">arrow_back</span>
-        </button>
-        <div class="logo">
-          <img src="logo/logo.png" alt="PDF Reader Logo">
-        </div>
-        <h1 class="app-title" id="pageTitle">Sesli Okuma</h1>
-      </div>
-      <div class="flex items-center gap-sm">
-        <button class="icon-button" onclick="refreshPDFList()">
-          <span class="material-symbols-rounded">refresh</span>
-        </button>
-      </div>
-    </header>
-  </div>
-
-  <main class="main-content" id="mainContent">
-    <div class="container">
       
-      <!-- PDF Seçim Alanı -->
-      <div class="pdf-select-section" id="pdfSelectSection" onclick="selectPDFFile()">
-        <div class="select-pdf-icon material-symbols-rounded">upload_file</div>
-        <h2 class="select-pdf-title" id="selectPdfTitle">PDF Dosyası Seç</h2>
-        <p class="select-pdf-subtitle" id="selectPdfSubtitle">Sesli okuma için bir PDF dosyası seçin</p>
-      </div>
+   
+   
+
+
+
+
+
+
+
+
+
       
-      <!-- Android PDF Seç Butonu -->
-      <button class="android-file-button" onclick="selectPDFFile()">
-        <span class="material-symbols-rounded">upload_file</span>
-        <span id="androidSelectBtnText">PDF DOSYASI SEÇ</span>
-      </button>
-      
-      <!-- PDF Bilgi Kartı -->
-      <div class="pdf-info-card" id="pdfInfoCard">
-        <div class="pdf-info-header">
-          <div class="flex flex-col w-full">
-            <div class="pdf-name" id="currentPdfName">-</div>
-            <div class="pdf-meta">
-              <span id="currentPdfSize">-</span>
-              <span>•</span>
-              <span id="currentPdfDate">-</span>
+    <div id="outerContainer">
+      <span id="viewer-alert" class="visuallyHidden" role="alert"></span>
+
+      <div id="sidebarContainer">
+        <div id="toolbarSidebar" class="toolbarHorizontalGroup">
+          <div id="toolbarSidebarLeft">
+            <div id="sidebarViewButtons" class="toolbarHorizontalGroup toggled" role="radiogroup">
+              <button
+                id="viewThumbnail"
+                class="toolbarButton toggled"
+                type="button"
+                tabindex="0"
+                data-l10n-id="pdfjs-thumbs-button"
+                role="radio"
+                aria-checked="true"
+                aria-controls="thumbnailView"
+              >
+                <span data-l10n-id="pdfjs-thumbs-button-label"></span>
+              </button>
+              <button
+                id="viewOutline"
+                class="toolbarButton"
+                type="button"
+                tabindex="0"
+                data-l10n-id="pdfjs-document-outline-button"
+                role="radio"
+                aria-checked="false"
+                aria-controls="outlineView"
+              >
+                <span data-l10n-id="pdfjs-document-outline-button-label"></span>
+              </button>
+              <button
+                id="viewAttachments"
+                class="toolbarButton"
+                type="button"
+                tabindex="0"
+                data-l10n-id="pdfjs-attachments-button"
+                role="radio"
+                aria-checked="false"
+                aria-controls="attachmentsView"
+              >
+                <span data-l10n-id="pdfjs-attachments-button-label"></span>
+              </button>
+              <button
+                id="viewLayers"
+                class="toolbarButton"
+                type="button"
+                tabindex="0"
+                data-l10n-id="pdfjs-layers-button"
+                role="radio"
+                aria-checked="false"
+                aria-controls="layersView"
+              >
+                <span data-l10n-id="pdfjs-layers-button-label"></span>
+              </button>
             </div>
           </div>
-          <button class="icon-button" onclick="clearSelection()">
-            <span class="material-symbols-rounded">close</span>
-          </button>
-        </div>
-        <div class="language-info" id="languageInfo">
-          <span class="language-flag" id="languageFlag">🇺🇸</span>
-          <span id="languageText">Dil: İngilizce</span>
-        </div>
-      </div>
-      
-      <!-- Sesli Okuma Kontrolleri -->
-      <div class="speech-controls" id="speechControls">
-        <div class="progress-info">
-          <div class="progress-text" id="progressText">Hazırlanıyor...</div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
+
+          <div id="toolbarSidebarRight">
+            <div id="outlineOptionsContainer" class="toolbarHorizontalGroup">
+              <div class="verticalToolbarSeparator"></div>
+
+              <button
+                id="currentOutlineItem"
+                class="toolbarButton"
+                type="button"
+                disabled="disabled"
+                tabindex="0"
+                data-l10n-id="pdfjs-current-outline-item-button"
+              >
+                <span data-l10n-id="pdfjs-current-outline-item-button-label"></span>
+              </button>
+            </div>
           </div>
         </div>
-        
-        <div class="controls-grid">
-          <button class="control-button secondary" id="btnPrev" onclick="prevSentence()" title="Önceki cümle">
-            <span class="material-symbols-rounded">skip_previous</span>
-            <span class="button-text">GERİ</span>
+        <div id="sidebarContent">
+          <div id="thumbnailView"></div>
+          <div id="outlineView" class="hidden"></div>
+          <div id="attachmentsView" class="hidden"></div>
+          <div id="layersView" class="hidden"></div>
+        </div>
+        <div id="sidebarResizer"></div>
+      </div>
+      <!-- sidebarContainer -->
+
+      <div id="mainContainer">
+        <div class="toolbar">
+          <div id="toolbarContainer">
+            <div id="toolbarViewer" class="toolbarHorizontalGroup">
+              <div id="toolbarViewerLeft" class="toolbarHorizontalGroup">
+                <button
+                  id="sidebarToggleButton"
+                  class="toolbarButton"
+                  type="button"
+                  tabindex="0"
+                  data-l10n-id="pdfjs-toggle-sidebar-button"
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-controls="sidebarContainer"
+                >
+                  <span data-l10n-id="pdfjs-toggle-sidebar-button-label"></span>
+                </button>
+                <div class="toolbarButtonSpacer"></div>
+                <div class="toolbarButtonWithContainer">
+                  <button
+                    id="viewFindButton"
+                    class="toolbarButton"
+                    type="button"
+                    tabindex="0"
+                    data-l10n-id="pdfjs-findbar-button"
+                    aria-expanded="false"
+                    aria-controls="findbar"
+                  >
+                    <span data-l10n-id="pdfjs-findbar-button-label"></span>
+                  </button>
+                  <div class="hidden doorHanger toolbarHorizontalGroup" id="findbar">
+                    <div id="findInputContainer" class="toolbarHorizontalGroup">
+                      <span class="loadingInput end toolbarHorizontalGroup">
+                        <input id="findInput" class="toolbarField" tabindex="0" data-l10n-id="pdfjs-find-input" aria-invalid="false" />
+                      </span>
+                      <div class="toolbarHorizontalGroup">
+                        <button id="findPreviousButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-find-previous-button">
+                          <span data-l10n-id="pdfjs-find-previous-button-label"></span>
+                        </button>
+                        <div class="splitToolbarButtonSeparator"></div>
+                        <button id="findNextButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-find-next-button">
+                          <span data-l10n-id="pdfjs-find-next-button-label"></span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div id="findbarOptionsOneContainer" class="toolbarHorizontalGroup">
+                      <div class="toggleButton toolbarLabel">
+                        <input type="checkbox" id="findHighlightAll" tabindex="0" />
+                        <label for="findHighlightAll" data-l10n-id="pdfjs-find-highlight-checkbox"></label>
+                      </div>
+                      <div class="toggleButton toolbarLabel">
+                        <input type="checkbox" id="findMatchCase" tabindex="0" />
+                        <label for="findMatchCase" data-l10n-id="pdfjs-find-match-case-checkbox-label"></label>
+                      </div>
+                    </div>
+                    <div id="findbarOptionsTwoContainer" class="toolbarHorizontalGroup">
+                      <div class="toggleButton toolbarLabel">
+                        <input type="checkbox" id="findMatchDiacritics" tabindex="0" />
+                        <label for="findMatchDiacritics" data-l10n-id="pdfjs-find-match-diacritics-checkbox-label"></label>
+                      </div>
+                      <div class="toggleButton toolbarLabel">
+                        <input type="checkbox" id="findEntireWord" tabindex="0" />
+                        <label for="findEntireWord" data-l10n-id="pdfjs-find-entire-word-checkbox-label"></label>
+                      </div>
+                    </div>
+
+                    <div id="findbarMessageContainer" class="toolbarHorizontalGroup" aria-live="polite">
+                      <span id="findResultsCount" class="toolbarLabel"></span>
+                      <span id="findMsg" class="toolbarLabel"></span>
+                    </div>
+                  </div>
+                  <!-- findbar -->
+                </div>
+                <div class="toolbarHorizontalGroup hiddenSmallView">
+                  <button class="toolbarButton" type="button" id="previous" tabindex="0" data-l10n-id="pdfjs-previous-button">
+                    <span data-l10n-id="pdfjs-previous-button-label"></span>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button class="toolbarButton" type="button" id="next" tabindex="0" data-l10n-id="pdfjs-next-button">
+                    <span data-l10n-id="pdfjs-next-button-label"></span>
+                  </button>
+                </div>
+                <div class="toolbarHorizontalGroup">
+                  <span class="loadingInput start toolbarHorizontalGroup">
+                    <input
+                      type="number"
+                      id="pageNumber"
+                      class="toolbarField"
+                      value="1"
+                      min="1"
+                      tabindex="0"
+                      data-l10n-id="pdfjs-page-input"
+                      autocomplete="off"
+                    />
+                  </span>
+                  <span id="numPages" class="toolbarLabel"></span>
+                </div>
+              </div>
+              <div id="toolbarViewerMiddle" class="toolbarHorizontalGroup">
+                <div class="toolbarHorizontalGroup">
+                  <button id="zoomOutButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-zoom-out-button">
+                    <span data-l10n-id="pdfjs-zoom-out-button-label"></span>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button id="zoomInButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-zoom-in-button">
+                    <span data-l10n-id="pdfjs-zoom-in-button-label"></span>
+                  </button>
+                </div>
+                <span id="scaleSelectContainer" class="dropdownToolbarButton">
+                  <select id="scaleSelect" tabindex="0" data-l10n-id="pdfjs-zoom-select">
+                    <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="pdfjs-page-scale-auto"></option>
+                    <option id="pageActualOption" value="page-actual" data-l10n-id="pdfjs-page-scale-actual"></option>
+                    <option id="pageFitOption" value="page-fit" data-l10n-id="pdfjs-page-scale-fit"></option>
+                    <option id="pageWidthOption" value="page-width" data-l10n-id="pdfjs-page-scale-width"></option>
+                    <option
+                      id="customScaleOption"
+                      value="custom"
+                      disabled="disabled"
+                      hidden="true"
+                      data-l10n-id="pdfjs-page-scale-percent"
+                      data-l10n-args='{ "scale": 0 }'
+                    ></option>
+                    <option value="0.5" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 50 }'></option>
+                    <option value="0.75" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 75 }'></option>
+                    <option value="1" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 100 }'></option>
+                    <option value="1.25" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 125 }'></option>
+                    <option value="1.5" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 150 }'></option>
+                    <option value="2" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 200 }'></option>
+                    <option value="3" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 300 }'></option>
+                    <option value="4" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 400 }'></option>
+                  </select>
+                </span>
+              </div>
+              <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
+                <div id="editorModeButtons" class="toolbarHorizontalGroup">
+                  <div id="editorComment" class="toolbarButtonWithContainer" hidden="true">
+                    <button
+                      id="editorCommentButton"
+                      class="toolbarButton"
+                      type="button"
+                      tabindex="0"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="editorCommentParamsToolbar"
+                      data-l10n-id="pdfjs-editor-comment-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-comment-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden menu" id="editorCommentParamsToolbar">
+                      <div id="editorCommentsSidebar" class="menuContainer comment sidebar" role="landmark" aria-labelledby="editorCommentsSidebarHeader">
+                        <div id="editorCommentsSidebarResizer" class="sidebarResizer" role="separator" aria-controls="editorCommentsSidebar" tabindex="0"></div>
+                        <div id="editorCommentsSidebarHeader" role="heading" aria-level="2">
+                          <span class="commentCount">
+                            <span id="editorCommentsSidebarTitle" data-l10n-id="pdfjs-editor-comments-sidebar-title" data-l10n-args='{ "count": 0 }'></span>
+                            <span id="editorCommentsSidebarCount"></span>
+                          </span>
+                          <button id="editorCommentsSidebarCloseButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-comments-sidebar-close-button">
+                            <span data-l10n-id="pdfjs-editor-comments-sidebar-close-button-label"></span>
+                          </button>
+                        </div>
+                        <div id="editorCommentsSidebarListContainer" tabindex="-1">
+                          <ul id="editorCommentsSidebarList"></ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="editorSignature" class="toolbarButtonWithContainer" hidden="true">
+                    <button
+                      id="editorSignatureButton"
+                      class="toolbarButton"
+                      type="button"
+                      tabindex="0"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="editorSignatureParamsToolbar"
+                      data-l10n-id="pdfjs-editor-signature-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-signature-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorSignatureParamsToolbar">
+                      <div id="addSignatureDoorHanger" class="menuContainer" role="region" data-l10n-id="pdfjs-editor-add-signature-container">
+                        <button
+                          id="editorSignatureAddSignature"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-editor-signature-add-signature-button"
+                        >
+                          <span data-l10n-id="pdfjs-editor-signature-add-signature-button-label" class="editorParamsLabel"></span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="editorHighlight" class="toolbarButtonWithContainer">
+                    <button
+                      id="editorHighlightButton"
+                      class="toolbarButton"
+                      type="button"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="editorHighlightParamsToolbar"
+                      tabindex="0"
+                      data-l10n-id="pdfjs-editor-highlight-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-highlight-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight" id="editorHighlightParamsToolbar">
+                      <div id="highlightParamsToolbarContainer" class="editorParamsToolbarContainer">
+                        <div id="editorHighlightColorPicker" class="colorPicker">
+                          <span id="highlightColorPickerLabel" class="editorParamsLabel" data-l10n-id="pdfjs-editor-highlight-colorpicker-label"></span>
+                        </div>
+                        <div id="editorHighlightThickness">
+                          <label
+                            for="editorFreeHighlightThickness"
+                            class="editorParamsLabel"
+                            data-l10n-id="pdfjs-editor-free-highlight-thickness-input"
+                          ></label>
+                          <div class="thicknessPicker">
+                            <input
+                              type="range"
+                              id="editorFreeHighlightThickness"
+                              class="editorParamsSlider"
+                              data-l10n-id="pdfjs-editor-free-highlight-thickness-title"
+                              value="12"
+                              min="8"
+                              max="24"
+                              step="1"
+                              tabindex="0"
+                            />
+                          </div>
+                        </div>
+                        <div id="editorHighlightVisibility">
+                          <div class="divider"></div>
+                          <div class="toggler">
+                            <label for="editorHighlightShowAll" class="editorParamsLabel" data-l10n-id="pdfjs-editor-highlight-show-all-button-label"></label>
+                            <button
+                              id="editorHighlightShowAll"
+                              class="toggle-button"
+                              type="button"
+                              data-l10n-id="pdfjs-editor-highlight-show-all-button"
+                              aria-pressed="true"
+                              tabindex="0"
+                            ></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="editorFreeText" class="toolbarButtonWithContainer">
+                    <button
+                      id="editorFreeTextButton"
+                      class="toolbarButton"
+                      type="button"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="editorFreeTextParamsToolbar"
+                      tabindex="0"
+                      data-l10n-id="pdfjs-editor-free-text-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-free-text-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight" id="editorFreeTextParamsToolbar">
+                      <div class="editorParamsToolbarContainer">
+                        <div class="editorParamsSetter">
+                          <label for="editorFreeTextColor" class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-color-input"></label>
+                          <input type="color" id="editorFreeTextColor" class="editorParamsColor" tabindex="0" />
+                        </div>
+                        <div class="editorParamsSetter">
+                          <label for="editorFreeTextFontSize" class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-size-input"></label>
+                          <input type="range" id="editorFreeTextFontSize" class="editorParamsSlider" value="10" min="5" max="100" step="1" tabindex="0" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="editorInk" class="toolbarButtonWithContainer">
+                    <button
+                      id="editorInkButton"
+                      class="toolbarButton"
+                      type="button"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="editorInkParamsToolbar"
+                      tabindex="0"
+                      data-l10n-id="pdfjs-editor-ink-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-ink-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight" id="editorInkParamsToolbar">
+                      <div class="editorParamsToolbarContainer">
+                        <div class="editorParamsSetter">
+                          <label for="editorInkColor" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-color-input"></label>
+                          <input type="color" id="editorInkColor" class="editorParamsColor" tabindex="0" />
+                        </div>
+                        <div class="editorParamsSetter">
+                          <label for="editorInkThickness" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-thickness-input"></label>
+                          <input type="range" id="editorInkThickness" class="editorParamsSlider" value="1" min="1" max="20" step="1" tabindex="0" />
+                        </div>
+                        <div class="editorParamsSetter">
+                          <label for="editorInkOpacity" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-opacity-input"></label>
+                          <input type="range" id="editorInkOpacity" class="editorParamsSlider" value="1" min="0.05" max="1" step="0.05" tabindex="0" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="editorStamp" class="toolbarButtonWithContainer">
+                    <button
+                      id="editorStampButton"
+                      class="toolbarButton"
+                      type="button"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                      aria-controls="editorStampParamsToolbar"
+                      tabindex="0"
+                      data-l10n-id="pdfjs-editor-stamp-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-stamp-button-label"></span>
+                    </button>
+                    <div class="editorParamsToolbar hidden doorHangerRight menu" id="editorStampParamsToolbar">
+                      <div class="menuContainer">
+                        <button
+                          id="editorStampAddImage"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-editor-stamp-add-image-button"
+                        >
+                          <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-stamp-add-image-button-label"></span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="editorModeSeparator" class="verticalToolbarSeparator"></div>
+
+                <div class="toolbarHorizontalGroup hiddenMediumView">
+                  <button id="printButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-print-button">
+                    <span data-l10n-id="pdfjs-print-button-label"></span>
+                  </button>
+
+                  <button id="downloadButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-save-button">
+                    <span data-l10n-id="pdfjs-save-button-label"></span>
+                  </button>
+                </div>
+
+                <div class="verticalToolbarSeparator hiddenMediumView"></div>
+
+                <div id="secondaryToolbarToggle" class="toolbarButtonWithContainer">
+                  <button
+                    id="secondaryToolbarToggleButton"
+                    class="toolbarButton"
+                    type="button"
+                    tabindex="0"
+                    data-l10n-id="pdfjs-tools-button"
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                    aria-controls="secondaryToolbar"
+                  >
+                    <span data-l10n-id="pdfjs-tools-button-label"></span>
+                  </button>
+                  <div id="secondaryToolbar" class="hidden doorHangerRight menu">
+                    <div id="secondaryToolbarButtonContainer" class="menuContainer">
+                      <button id="secondaryOpenFile" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-open-file-button">
+                        <span data-l10n-id="pdfjs-open-file-button-label"></span>
+                      </button>
+
+                      <div class="visibleMediumView">
+                                   
+
+                      </div>
+
+                      <div class="horizontalToolbarSeparator"></div>
+
+                      <button id="presentationMode" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-presentation-mode-button">
+                        <span data-l10n-id="pdfjs-presentation-mode-button-label"></span>
+                      </button>
+
+                      <a href="#" id="viewBookmark" class="toolbarButton labeled" tabindex="0" data-l10n-id="pdfjs-bookmark-button">
+                        <span data-l10n-id="pdfjs-bookmark-button-label"></span>
+                      </a>
+
+                      <div id="viewBookmarkSeparator" class="horizontalToolbarSeparator"></div>
+
+                      <button id="firstPage" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-first-page-button">
+                        <span data-l10n-id="pdfjs-first-page-button-label"></span>
+                      </button>
+                      <button id="lastPage" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-last-page-button">
+                        <span data-l10n-id="pdfjs-last-page-button-label"></span>
+                      </button>
+
+                      <div class="horizontalToolbarSeparator"></div>
+
+                      <button id="pageRotateCw" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-page-rotate-cw-button">
+                        <span data-l10n-id="pdfjs-page-rotate-cw-button-label"></span>
+                      </button>
+                      <button id="pageRotateCcw" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-page-rotate-ccw-button">
+                        <span data-l10n-id="pdfjs-page-rotate-ccw-button-label"></span>
+                      </button>
+
+                      <div class="horizontalToolbarSeparator"></div>
+
+                      <div id="cursorToolButtons" role="radiogroup">
+                        <button
+                          id="cursorSelectTool"
+                          class="toolbarButton labeled toggled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-cursor-text-select-tool-button"
+                          role="radio"
+                          aria-checked="true"
+                        >
+                          <span data-l10n-id="pdfjs-cursor-text-select-tool-button-label"></span>
+                        </button>
+                        <button
+                          id="cursorHandTool"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-cursor-hand-tool-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-cursor-hand-tool-button-label"></span>
+                        </button>
+                      </div>
+
+                      <div class="horizontalToolbarSeparator"></div>
+
+                      <div id="scrollModeButtons" role="radiogroup">
+                        <button
+                          id="scrollPage"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-scroll-page-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-scroll-page-button-label"></span>
+                        </button>
+                        <button
+                          id="scrollVertical"
+                          class="toolbarButton labeled toggled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-scroll-vertical-button"
+                          role="radio"
+                          aria-checked="true"
+                        >
+                          <span data-l10n-id="pdfjs-scroll-vertical-button-label"></span>
+                        </button>
+                        <button
+                          id="scrollHorizontal"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-scroll-horizontal-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-scroll-horizontal-button-label"></span>
+                        </button>
+                        <button
+                          id="scrollWrapped"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-scroll-wrapped-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-scroll-wrapped-button-label"></span>
+                        </button>
+                      </div>
+
+                      <div class="horizontalToolbarSeparator"></div>
+
+                      <div id="spreadModeButtons" role="radiogroup">
+                        <button
+                          id="spreadNone"
+                          class="toolbarButton labeled toggled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-spread-none-button"
+                          role="radio"
+                          aria-checked="true"
+                        >
+                          <span data-l10n-id="pdfjs-spread-none-button-label"></span>
+                        </button>
+                        <button
+                          id="spreadOdd"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-spread-odd-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-spread-odd-button-label"></span>
+                        </button>
+                        <button
+                          id="spreadEven"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-spread-even-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-spread-even-button-label"></span>
+                        </button>
+                      </div>
+
+                      <div id="imageAltTextSettingsSeparator" class="horizontalToolbarSeparator hidden"></div>
+                      <button
+                        id="imageAltTextSettings"
+                        type="button"
+                        class="toolbarButton labeled hidden"
+                        tabindex="0"
+                        data-l10n-id="pdfjs-image-alt-text-settings-button"
+                        aria-controls="altTextSettingsDialog"
+                      >
+                        <span data-l10n-id="pdfjs-image-alt-text-settings-button-label"></span>
+                      </button>
+
+                      <div class="horizontalToolbarSeparator"></div>
+
+                      <button
+                        id="documentProperties"
+                        class="toolbarButton labeled"
+                        type="button"
+                        tabindex="0"
+                        data-l10n-id="pdfjs-document-properties-button"
+                        aria-controls="documentPropertiesDialog"
+                      >
+                        <span data-l10n-id="pdfjs-document-properties-button-label"></span>
+                      </button>
+                    </div>
+                  </div>
+                  <!-- secondaryToolbar -->
+                </div>
+              </div>
+            </div>
+            <div id="loadingBar">
+              <div class="progress">
+                <div class="glimmer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="viewerContainer" tabindex="0">
+          <div id="viewer" class="pdfViewer"></div>
+        </div>
+      </div>
+      <!-- mainContainer -->
+
+      <div id="dialogContainer">
+        <dialog id="passwordDialog">
+          <div class="row">
+            <label for="password" id="passwordText" data-l10n-id="pdfjs-password-label"></label>
+          </div>
+          <div class="row">
+            <input type="password" id="password" class="toolbarField" />
+          </div>
+          <div class="buttonRow">
+            <button id="passwordCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-cancel-button"></span></button>
+            <button id="passwordSubmit" class="dialogButton" type="button"><span data-l10n-id="pdfjs-password-ok-button"></span></button>
+          </div>
+        </dialog>
+        <dialog id="documentPropertiesDialog">
+          <div class="row">
+            <span id="fileNameLabel" data-l10n-id="pdfjs-document-properties-file-name"></span>
+            <p id="fileNameField" aria-labelledby="fileNameLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="fileSizeLabel" data-l10n-id="pdfjs-document-properties-file-size"></span>
+            <p id="fileSizeField" aria-labelledby="fileSizeLabel">-</p>
+          </div>
+          <div class="separator"></div>
+          <div class="row">
+            <span id="titleLabel" data-l10n-id="pdfjs-document-properties-title"></span>
+            <p id="titleField" aria-labelledby="titleLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="authorLabel" data-l10n-id="pdfjs-document-properties-author"></span>
+            <p id="authorField" aria-labelledby="authorLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="subjectLabel" data-l10n-id="pdfjs-document-properties-subject"></span>
+            <p id="subjectField" aria-labelledby="subjectLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="keywordsLabel" data-l10n-id="pdfjs-document-properties-keywords"></span>
+            <p id="keywordsField" aria-labelledby="keywordsLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="creationDateLabel" data-l10n-id="pdfjs-document-properties-creation-date"></span>
+            <p id="creationDateField" aria-labelledby="creationDateLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="modificationDateLabel" data-l10n-id="pdfjs-document-properties-modification-date"></span>
+            <p id="modificationDateField" aria-labelledby="modificationDateLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="creatorLabel" data-l10n-id="pdfjs-document-properties-creator"></span>
+            <p id="creatorField" aria-labelledby="creatorLabel">-</p>
+          </div>
+          <div class="separator"></div>
+          <div class="row">
+            <span id="producerLabel" data-l10n-id="pdfjs-document-properties-producer"></span>
+            <p id="producerField" aria-labelledby="producerLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="versionLabel" data-l10n-id="pdfjs-document-properties-version"></span>
+            <p id="versionField" aria-labelledby="versionLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="pageCountLabel" data-l10n-id="pdfjs-document-properties-page-count"></span>
+            <p id="pageCountField" aria-labelledby="pageCountLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="pageSizeLabel" data-l10n-id="pdfjs-document-properties-page-size"></span>
+            <p id="pageSizeField" aria-labelledby="pageSizeLabel">-</p>
+          </div>
+          <div class="separator"></div>
+          <div class="row">
+            <span id="linearizedLabel" data-l10n-id="pdfjs-document-properties-linearized"></span>
+            <p id="linearizedField" aria-labelledby="linearizedLabel">-</p>
+          </div>
+          <div class="buttonRow">
+            <button id="documentPropertiesClose" class="dialogButton" type="button"><span data-l10n-id="pdfjs-document-properties-close-button"></span></button>
+          </div>
+        </dialog>
+        <dialog class="dialog altText" id="altTextDialog" aria-labelledby="dialogLabel" aria-describedby="dialogDescription">
+          <div id="altTextContainer" class="mainContainer">
+            <div id="overallDescription">
+              <span id="dialogLabel" data-l10n-id="pdfjs-editor-alt-text-dialog-label" class="title"></span>
+              <span id="dialogDescription" data-l10n-id="pdfjs-editor-alt-text-dialog-description"></span>
+            </div>
+            <div id="addDescription">
+              <div class="radio">
+                <div class="radioButton">
+                  <input type="radio" id="descriptionButton" name="altTextOption" tabindex="0" aria-describedby="descriptionAreaLabel" checked />
+                  <label for="descriptionButton" data-l10n-id="pdfjs-editor-alt-text-add-description-label"></label>
+                </div>
+                <div class="radioLabel">
+                  <span id="descriptionAreaLabel" data-l10n-id="pdfjs-editor-alt-text-add-description-description"></span>
+                </div>
+              </div>
+              <div class="descriptionArea">
+                <textarea id="descriptionTextarea" aria-labelledby="descriptionAreaLabel" data-l10n-id="pdfjs-editor-alt-text-textarea" tabindex="0"></textarea>
+              </div>
+            </div>
+            <div id="markAsDecorative">
+              <div class="radio">
+                <div class="radioButton">
+                  <input type="radio" id="decorativeButton" name="altTextOption" aria-describedby="decorativeLabel" />
+                  <label for="decorativeButton" data-l10n-id="pdfjs-editor-alt-text-mark-decorative-label"></label>
+                </div>
+                <div class="radioLabel">
+                  <span id="decorativeLabel" data-l10n-id="pdfjs-editor-alt-text-mark-decorative-description"></span>
+                </div>
+              </div>
+            </div>
+            <div id="buttons">
+              <button id="altTextCancel" class="secondaryButton" type="button" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-alt-text-cancel-button"></span>
+              </button>
+              <button id="altTextSave" class="primaryButton" type="button" tabindex="0"><span data-l10n-id="pdfjs-editor-alt-text-save-button"></span></button>
+            </div>
+          </div>
+        </dialog>
+        <dialog class="dialog newAltText" id="newAltTextDialog" aria-labelledby="newAltTextTitle" aria-describedby="newAltTextDescription" tabindex="0">
+          <div id="newAltTextContainer" class="mainContainer">
+            <div class="title">
+              <span id="newAltTextTitle" data-l10n-id="pdfjs-editor-new-alt-text-dialog-edit-label" role="sectionhead" tabindex="0"></span>
+            </div>
+            <div id="mainContent">
+              <div id="descriptionAndSettings">
+                <div id="descriptionInstruction">
+                  <div id="newAltTextDescriptionContainer">
+                    <div class="altTextSpinner" role="status" aria-live="polite"></div>
+                    <textarea
+                      id="newAltTextDescriptionTextarea"
+                      aria-labelledby="descriptionAreaLabel"
+                      data-l10n-id="pdfjs-editor-new-alt-text-textarea"
+                      tabindex="0"
+                    ></textarea>
+                  </div>
+                  <span id="newAltTextDescription" role="note" data-l10n-id="pdfjs-editor-new-alt-text-description"></span>
+                  <div id="newAltTextDisclaimer" role="note">
+                    <div>
+                      <span data-l10n-id="pdfjs-editor-new-alt-text-disclaimer1"></span>
+                      <a
+                        href="https://support.mozilla.org/en-US/kb/pdf-alt-text"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        id="newAltTextLearnMore"
+                        data-l10n-id="pdfjs-editor-new-alt-text-disclaimer-learn-more-url"
+                        tabindex="0"
+                      ></a>
+                    </div>
+                  </div>
+                </div>
+                <div id="newAltTextCreateAutomatically" class="toggler">
+                  <button id="newAltTextCreateAutomaticallyButton" class="toggle-button" type="button" aria-pressed="true" tabindex="0"></button>
+                  <label
+                    for="newAltTextCreateAutomaticallyButton"
+                    class="togglerLabel"
+                    data-l10n-id="pdfjs-editor-new-alt-text-create-automatically-button-label"
+                  ></label>
+                </div>
+                <div id="newAltTextDownloadModel" class="hidden">
+                  <span
+                    id="newAltTextDownloadModelDescription"
+                    data-l10n-id="pdfjs-editor-new-alt-text-ai-model-downloading-progress"
+                    aria-valuemin="0"
+                    data-l10n-args='{ "totalSize": 0, "downloadedSize": 0 }'
+                  ></span>
+                </div>
+              </div>
+              <div id="newAltTextImagePreview"></div>
+            </div>
+            <div id="newAltTextError" class="messageBar">
+              <div>
+                <div>
+                  <span class="title" data-l10n-id="pdfjs-editor-new-alt-text-error-title"></span>
+                  <span class="description" data-l10n-id="pdfjs-editor-new-alt-text-error-description"></span>
+                </div>
+                <button id="newAltTextCloseButton" class="closeButton" type="button" tabindex="0">
+                  <span data-l10n-id="pdfjs-editor-new-alt-text-error-close-button"></span>
+                </button>
+              </div>
+            </div>
+            <div id="newAltTextButtons" class="dialogButtonsGroup">
+              <button id="newAltTextCancel" type="button" class="secondaryButton hidden" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-alt-text-cancel-button"></span>
+              </button>
+              <button id="newAltTextNotNow" type="button" class="secondaryButton" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-new-alt-text-not-now-button"></span>
+              </button>
+              <button id="newAltTextSave" type="button" class="primaryButton" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-alt-text-save-button"></span>
+              </button>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog class="dialog" id="altTextSettingsDialog" aria-labelledby="altTextSettingsTitle">
+          <div id="altTextSettingsContainer" class="mainContainer">
+            <div class="title">
+              <span id="altTextSettingsTitle" data-l10n-id="pdfjs-editor-alt-text-settings-dialog-label" role="sectionhead" tabindex="0" class="title"></span>
+            </div>
+            <div id="automaticAltText">
+              <span data-l10n-id="pdfjs-editor-alt-text-settings-automatic-title"></span>
+              <div id="automaticSettings">
+                <div id="createModelSetting">
+                  <div class="toggler">
+                    <button id="createModelButton" type="button" class="toggle-button" aria-pressed="true" tabindex="0"></button>
+                    <label for="createModelButton" class="togglerLabel" data-l10n-id="pdfjs-editor-alt-text-settings-create-model-button-label"></label>
+                  </div>
+                  <div id="createModelDescription" class="description">
+                    <span data-l10n-id="pdfjs-editor-alt-text-settings-create-model-description"></span>
+                    <a
+                      href="https://support.mozilla.org/en-US/kb/pdf-alt-text"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      id="altTextSettingsLearnMore"
+                      data-l10n-id="pdfjs-editor-new-alt-text-disclaimer-learn-more-url"
+                      tabindex="0"
+                    ></a>
+                  </div>
+                </div>
+                <div id="aiModelSettings">
+                  <div>
+                    <span data-l10n-id="pdfjs-editor-alt-text-settings-download-model-label" data-l10n-args='{ "totalSize": 180 }'></span>
+                    <div id="aiModelDescription" class="description">
+                      <span data-l10n-id="pdfjs-editor-alt-text-settings-ai-model-description"></span>
+                    </div>
+                  </div>
+                  <button id="deleteModelButton" type="button" class="secondaryButton" tabindex="0">
+                    <span data-l10n-id="pdfjs-editor-alt-text-settings-delete-model-button"></span>
+                  </button>
+                  <button id="downloadModelButton" type="button" class="secondaryButton" tabindex="0">
+                    <span data-l10n-id="pdfjs-editor-alt-text-settings-download-model-button"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="dialogSeparator"></div>
+            <div id="altTextEditor">
+              <span data-l10n-id="pdfjs-editor-alt-text-settings-editor-title"></span>
+              <div id="showAltTextEditor">
+                <div class="toggler">
+                  <button id="showAltTextDialogButton" type="button" class="toggle-button" aria-pressed="true" tabindex="0"></button>
+                  <label for="showAltTextDialogButton" class="togglerLabel" data-l10n-id="pdfjs-editor-alt-text-settings-show-dialog-button-label"></label>
+                </div>
+                <div id="showAltTextDialogDescription" class="description">
+                  <span data-l10n-id="pdfjs-editor-alt-text-settings-show-dialog-description"></span>
+                </div>
+              </div>
+            </div>
+            <div id="buttons" class="dialogButtonsGroup">
+              <button id="altTextSettingsCloseButton" type="button" class="primaryButton" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-alt-text-settings-close-button"></span>
+              </button>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog class="dialog signatureDialog" id="addSignatureDialog" aria-labelledby="addSignatureDialogLabel">
+          <span id="addSignatureDialogLabel" data-l10n-id="pdfjs-editor-add-signature-dialog-label"></span>
+          <div id="addSignatureContainer" class="mainContainer">
+            <div class="title">
+              <span role="sectionhead" data-l10n-id="pdfjs-editor-add-signature-dialog-title" tabindex="0"></span>
+            </div>
+            <div role="tablist" id="addSignatureOptions">
+              <button
+                id="addSignatureTypeButton"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                aria-controls="addSignatureTypeContainer"
+                data-l10n-id="pdfjs-editor-add-signature-type-button"
+                tabindex="0"
+              ></button>
+              <button
+                id="addSignatureDrawButton"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="addSignatureDrawContainer"
+                data-l10n-id="pdfjs-editor-add-signature-draw-button"
+                tabindex="0"
+              ></button>
+              <button
+                id="addSignatureImageButton"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                aria-controls="addSignatureImageContainer"
+                data-l10n-id="pdfjs-editor-add-signature-image-button"
+                tabindex="-1"
+              ></button>
+            </div>
+            <div id="addSignatureActionContainer" data-selected="type">
+              <div id="addSignatureTypeContainer" role="tabpanel" aria-labelledby="addSignatureTypeContainer">
+                <input id="addSignatureTypeInput" type="text" data-l10n-id="pdfjs-editor-add-signature-type-input" tabindex="0" />
+              </div>
+              <div id="addSignatureDrawContainer" role="tabpanel" aria-labelledby="addSignatureDrawButton" tabindex="-1">
+                <svg id="addSignatureDraw" xmlns="http://www.w3.org/2000/svg" aria-labelledby="addSignatureDrawPlaceholder"></svg>
+                <span id="addSignatureDrawPlaceholder" data-l10n-id="pdfjs-editor-add-signature-draw-placeholder"></span>
+                <div id="thickness">
+                  <div>
+                    <label for="addSignatureDrawThickness" data-l10n-id="pdfjs-editor-add-signature-draw-thickness-range-label"></label>
+                    <input
+                      type="range"
+                      id="addSignatureDrawThickness"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                      data-l10n-id="pdfjs-editor-add-signature-draw-thickness-range"
+                      data-l10n-args='{ "thickness": 1 }'
+                      tabindex="0"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div id="addSignatureImageContainer" role="tabpanel" aria-labelledby="addSignatureImageButton" tabindex="-1">
+                <svg id="addSignatureImage" xmlns="http://www.w3.org/2000/svg" aria-labelledby="addSignatureImagePlaceholder"></svg>
+                <div id="addSignatureImagePlaceholder">
+                  <span data-l10n-id="pdfjs-editor-add-signature-image-placeholder"></span>
+                  <label id="addSignatureImageBrowse" for="addSignatureFilePicker" tabindex="0">
+                    <a data-l10n-id="pdfjs-editor-add-signature-image-browse-link"></a>
+                  </label>
+                  <input id="addSignatureFilePicker" type="file" />
+                </div>
+              </div>
+              <div id="addSignatureControls">
+                <div id="horizontalContainer">
+                  <div id="addSignatureDescriptionContainer">
+                    <label for="addSignatureDescInput" data-l10n-id="pdfjs-editor-add-signature-description-label"></label>
+                    <span id="addSignatureDescription" class="inputWithClearButton">
+                      <input id="addSignatureDescInput" type="text" data-l10n-id="pdfjs-editor-add-signature-description-input" tabindex="0" />
+                      <button class="clearInputButton" type="button" tabindex="0" aria-hidden="true"></button>
+                    </span>
+                  </div>
+                  <button id="clearSignatureButton" type="button" data-l10n-id="pdfjs-editor-add-signature-clear-button" tabindex="0">
+                    <span data-l10n-id="pdfjs-editor-add-signature-clear-button-label"></span>
+                  </button>
+                </div>
+                <div id="addSignatureSaveContainer">
+                  <input type="checkbox" id="addSignatureSaveCheckbox" />
+                  <label for="addSignatureSaveCheckbox" data-l10n-id="pdfjs-editor-add-signature-save-checkbox"></label>
+                  <span></span>
+                  <span id="addSignatureSaveWarning" data-l10n-id="pdfjs-editor-add-signature-save-warning-message"></span>
+                </div>
+              </div>
+              <div id="addSignatureError" hidden="true" class="messageBar">
+                <div>
+                  <div>
+                    <span id="addSignatureErrorTitle" class="title" data-l10n-id="pdfjs-editor-add-signature-image-upload-error-title"></span>
+                    <span id="addSignatureErrorDescription" class="description" data-l10n-id="pdfjs-editor-add-signature-image-upload-error-description"></span>
+                  </div>
+                  <button id="addSignatureErrorCloseButton" class="closeButton" type="button" tabindex="0">
+                    <span data-l10n-id="pdfjs-editor-add-signature-error-close-button"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="dialogButtonsGroup">
+                <button id="addSignatureCancelButton" type="button" class="secondaryButton" tabindex="0">
+                  <span data-l10n-id="pdfjs-editor-add-signature-cancel-button"></span>
+                </button>
+                <button id="addSignatureAddButton" type="button" class="primaryButton" disabled tabindex="0">
+                  <span data-l10n-id="pdfjs-editor-add-signature-add-button"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog class="dialog signatureDialog" id="editSignatureDescriptionDialog" aria-labelledby="editSignatureDescriptionTitle">
+          <div id="editSignatureDescriptionContainer" class="mainContainer">
+            <div class="title">
+              <span id="editSignatureDescriptionTitle" role="sectionhead" data-l10n-id="pdfjs-editor-edit-signature-dialog-title" tabindex="0"></span>
+            </div>
+            <div id="editSignatureDescriptionAndView">
+              <div id="editSignatureDescriptionContainer">
+                <label for="editSignatureDescInput" data-l10n-id="pdfjs-editor-add-signature-description-label"></label>
+                <span id="editSignatureDescription" class="inputWithClearButton">
+                  <input id="editSignatureDescInput" type="text" data-l10n-id="pdfjs-editor-add-signature-description-input" tabindex="0" />
+                  <button class="clearInputButton" type="button" tabindex="0" aria-hidden="true"></button>
+                </span>
+              </div>
+              <svg id="editSignatureView" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+            <div class="dialogButtonsGroup">
+              <button id="editSignatureCancelButton" type="button" class="secondaryButton" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-add-signature-cancel-button"></span>
+              </button>
+              <button id="editSignatureUpdateButton" type="button" class="primaryButton" disabled tabindex="0">
+                <span data-l10n-id="pdfjs-editor-edit-signature-update-button"></span>
+              </button>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog class="dialog commentManager" id="commentManagerDialog" aria-labelledby="commentManagerTitle">
+          <div class="mainContainer">
+            <div class="title" id="commentManagerToolbar">
+              <span id="commentManagerTitle" role="sectionhead" data-l10n-id="pdfjs-editor-edit-comment-dialog-title-when-adding"></span>
+            </div>
+            <textarea id="commentManagerTextInput" data-l10n-id="pdfjs-editor-edit-comment-dialog-text-input" tabindex="0"></textarea>
+            <div class="dialogButtonsGroup">
+              <button id="commentManagerCancelButton" type="button" class="secondaryButton" tabindex="0">
+                <span data-l10n-id="pdfjs-editor-edit-comment-dialog-cancel-button"></span>
+              </button>
+              <button id="commentManagerSaveButton" type="button" class="primaryButton" disabled tabindex="0">
+                <span data-l10n-id="pdfjs-editor-edit-comment-dialog-save-button-when-adding"></span>
+              </button>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog id="printServiceDialog" style="min-width: 200px">
+          <div class="row">
+            <span data-l10n-id="pdfjs-print-progress-message"></span>
+          </div>
+          <div class="row">
+            <progress value="0" max="100"></progress>
+            <span data-l10n-id="pdfjs-print-progress-percent" data-l10n-args='{ "progress": 0 }' class="relative-progress">0%</span>
+          </div>
+          <div class="buttonRow">
+            <button id="printCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-print-progress-close-button"></span></button>
+          </div>
+        </dialog>
+      </div>
+      <!-- dialogContainer -->
+
+      <div id="editorUndoBar" class="messageBar" role="status" aria-labelledby="editorUndoBarMessage" tabindex="-1" hidden>
+        <div>
+          <div>
+            <span id="editorUndoBarMessage" class="description"></span>
+          </div>
+          <button id="editorUndoBarUndoButton" class="undoButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-undo-button">
+            <span data-l10n-id="pdfjs-editor-undo-bar-undo-button-label"></span>
           </button>
-          <button class="control-button success" id="btnPlayPause" onclick="togglePlayPause()" title="Oynat/Durdur">
-            <span class="material-symbols-rounded" id="playPauseIcon">play_arrow</span>
-            <span class="button-text" id="playPauseText">OYUNAT</span>
-          </button>
-          <button class="control-button secondary" id="btnNext" onclick="nextSentence()" title="Sonraki cümle">
-            <span class="button-text">İLERİ</span>
-            <span class="material-symbols-rounded">skip_next</span>
-          </button>
-          <button class="control-button warning" id="btnRestart" onclick="restartReading()" title="Baştan oku">
-            <span class="material-symbols-rounded">replay</span>
-            <span class="button-text">BAŞTAN</span>
-          </button>
-          <button class="control-button" id="btnSpeed" onclick="cycleSpeed()" title="Okuma hızı">
-            <span class="material-symbols-rounded">speed</span>
-            <span class="button-text" id="speedText">1.0x</span>
-          </button>
-          <button class="control-button error" id="btnStop" onclick="stopReading()" title="Okumayı durdur">
-            <span class="material-symbols-rounded">stop</span>
-            <span class="button-text">DURDUR</span>
+          <button id="editorUndoBarCloseButton" class="closeButton" type="button" tabindex="0" data-l10n-id="pdfjs-editor-undo-bar-close-button">
+            <span data-l10n-id="pdfjs-editor-undo-bar-close-button-label"></span>
           </button>
         </div>
-        
-        <div class="speed-controls">
-          <button class="speed-button" data-speed="0.5" onclick="setSpeed(0.5)">0.5x</button>
-          <button class="speed-button" data-speed="0.75" onclick="setSpeed(0.75)">0.75x</button>
-          <button class="speed-button active" data-speed="1.0" onclick="setSpeed(1.0)">1.0x</button>
-          <button class="speed-button" data-speed="1.25" onclick="setSpeed(1.25)">1.25x</button>
-          <button class="speed-button" data-speed="1.5" onclick="setSpeed(1.5)">1.5x</button>
-          <button class="speed-button" data-speed="2.0" onclick="setSpeed(2.0)">2.0x</button>
-        </div>
       </div>
-      
-      <!-- Metin Gösterim Alanı -->
-      <div class="text-display" id="textDisplay">
-        <div class="text-display-title">Metin Önizleme</div>
-        <div class="text-content" id="textContent">
-          Metin yükleniyor...
-        </div>
-      </div>
-      
-      <!-- Durum Mesajları -->
-      <div class="status-message info" id="statusMessage">
-        <p id="statusText">PDF seçmek için yukarıdaki alana tıklayın</p>
-      </div>
-      
-      <!-- Boş Durum -->
-      <div class="empty-state visible" id="emptyState">
-        <div class="empty-icon material-symbols-rounded">volume_up</div>
-        <div class="empty-text" id="emptyStateText">Sesli okuma için bir PDF dosyası seçin</div>
-        <button class="control-button primary" onclick="selectPDFFile()">
-          <span class="material-symbols-rounded">upload_file</span>
-          PDF SEÇ
-        </button>
-      </div>
-      
+      <!-- editorUndoBar -->
     </div>
-  </main>
+    <!-- outerContainer -->
+    <div id="printContainer"></div>
+    
+    
+    <!-- EV çiye   -->
+    
+ 
+ 
 
-  <!-- Gizli File Input -->
-  <input type="file" id="fileInput" accept=".pdf" class="hidden">
+    
+    
 
-  <!-- PDF.js Kütüphaneleri -->
-  <script src="pdf.min.js"></script>
-  <script>
-    // PDF.js worker'ı tanımla
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+
+
+
+<script>
+// SIMPLE LANGUAGE DETECTOR (Local)
+window.simpleLanguageDetector = {
+    detect: function(text) {
+        if (!text || text.length < 10) return 'en';
+        
+        const sample = text.substring(0, 500).toLowerCase();
+        
+        // Türkçe karakter kontrolü
+        const turkishChars = /[çğıöşüâîû]/;
+        if (turkishChars.test(sample)) return 'tr';
+        
+        // İngilizce
+        const englishCommon = /\b(the|and|you|that|have|for|with|this|are|was)\b/i;
+        if (englishCommon.test(sample)) return 'en';
+        
+        // Almanca
+        const germanCommon = /\b(der|die|das|und|ist|nicht|mit|von|auf|für)\b/i;
+        if (germanCommon.test(sample)) return 'de';
+        
+        // Fransızca
+        const frenchCommon = /\b(le|la|les|et|est|pas|avec|pour|dans|sur)\b/i;
+        if (frenchCommon.test(sample)) return 'fr';
+        
+        // İspanyolca
+        const spanishCommon = /\b(el|la|los|las|y|es|no|con|por|para)\b/i;
+        if (spanishCommon.test(sample)) return 'es';
+        
+        // Arapça
+        const arabicChars = /[\u0600-\u06FF]/;
+        if (arabicChars.test(sample)) return 'ar';
+        
+        // Rusça
+        const russianChars = /[\u0400-\u04FF]/;
+        if (russianChars.test(sample)) return 'ru';
+        
+        // Çince/Japonca/Korece
+        const cjkChars = /[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/;
+        if (cjkChars.test(sample)) {
+            if (/[\u3040-\u309f\u30a0-\u30ff]/.test(sample)) return 'ja';
+            if (/[\uac00-\ud7af]/.test(sample)) return 'ko';
+            return 'zh';
+        }
+        
+        // İtalyanca
+        const italianCommon = /\b(il|la|lo|i|gli|le|e|è|non|con)\b/i;
+        if (italianCommon.test(sample)) return 'it';
+        
+        // Portekizce
+        const portugueseCommon = /\b(o|a|os|as|e|é|não|com|para|por)\b/i;
+        if (portugueseCommon.test(sample)) return 'pt';
+        
+        return 'en';
     }
-  </script>
-  
-  <script src="lang.js"></script>
-  
-  <script>
-    // ==================== DEĞİŞKENLER ====================
-    let speechSynthesis = window.speechSynthesis;
-    let currentPdfFile = null;
-    let pdfTextContent = "";
+};
+
+// GEREKLİ DEĞİŞKENLER
+let speechSynthesis = window.speechSynthesis;
+let isSpeaking = false;
+let isPaused = false;
+let currentSentenceIndex = 0;
+let sentencePositions = [];
+let speechRate = 1.0;
+let currentUtterance = null;
+let allText = "";
+let sentences = [];
+let pdfTextExtracted = false;
+let speechTimeout = null;
+let currentLanguage = 'tr-TR';
+let isSentenceComplete = false;
+
+// MERKEZ BUTON OLUŞTUR
+function createCenterButton() {
+    const existingBtn = document.getElementById('centerPDFButton');
+    if (existingBtn) existingBtn.remove();
+    
+    const centerButton = document.createElement('button');
+    centerButton.id = 'centerPDFButton';
+    centerButton.className = 'center-pdf-button';
+    centerButton.innerHTML = 'OKUNACAK PDF\'Yİ<br>SEÇİN';
+    
+    centerButton.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #4a6fa5, #3a5985);
+        color: white;
+        border: none;
+        padding: 25px 45px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(74, 111, 165, 0.4);
+        z-index: 1001;
+        text-align: center;
+        line-height: 1.4;
+        white-space: nowrap;
+    `;
+    
+    centerButton.onmouseenter = function() {
+        this.style.background = 'linear-gradient(135deg, #3a5985, #2a4865)';
+        this.style.transform = 'translate(-50%, -50%) scale(1.05)';
+        this.style.boxShadow = '0 12px 35px rgba(74, 111, 165, 0.6)';
+    };
+    
+    centerButton.onmouseleave = function() {
+        this.style.background = 'linear-gradient(135deg, #4a6fa5, #3a5985)';
+        this.style.transform = 'translate(-50%, -50%) scale(1)';
+        this.style.boxShadow = '0 8px 25px rgba(74, 111, 165, 0.4)';
+    };
+    
+    centerButton.onclick = function() {
+        const openBtn = document.getElementById('secondaryOpenFile');
+        if (openBtn) {
+            openBtn.click();
+        }
+    };
+    
+    document.body.appendChild(centerButton);
+}
+
+function hideCenterButton() {
+    const centerButton = document.getElementById('centerPDFButton');
+    if (centerButton) {
+        centerButton.style.display = 'none';
+    }
+}
+
+function showCenterButton() {
+    const centerButton = document.getElementById('centerPDFButton');
+    if (centerButton) {
+        centerButton.style.display = 'block';
+    }
+}
+
+// DİL ALGILAMA FONKSİYONU
+function detectLanguageFromText(text) {
+    const langCode = window.simpleLanguageDetector.detect(text);
+    
+    const langMap = {
+        'tr': 'tr-TR', 'en': 'en-US', 'de': 'de-DE', 'fr': 'fr-FR', 'es': 'es-ES',
+        'ar': 'ar-SA', 'ru': 'ru-RU', 'zh': 'zh-CN', 'ja': 'ja-JP', 'ko': 'ko-KR',
+        'it': 'it-IT', 'pt': 'pt-BR', 'hi': 'hi-IN', 'nl': 'nl-NL', 'pl': 'pl-PL',
+        'sv': 'sv-SE', 'da': 'da-DK', 'fi': 'fi-FI', 'no': 'nb-NO', 'cs': 'cs-CZ',
+        'ro': 'ro-RO', 'hu': 'hu-HU', 'el': 'el-GR', 'bg': 'bg-BG', 'hr': 'hr-HR',
+        'sk': 'sk-SK', 'sl': 'sl-SI', 'lt': 'lt-LT', 'lv': 'lv-LV', 'et': 'et-EE',
+        'mt': 'mt-MT', 'cy': 'cy-GB', 'is': 'is-IS', 'sq': 'sq-AL', 'sr': 'sr-RS',
+        'mk': 'mk-MK', 'uk': 'uk-UA', 'be': 'be-BY', 'ka': 'ka-GE', 'hy': 'hy-AM',
+        'az': 'az-AZ', 'kk': 'kk-KZ', 'uz': 'uz-UZ', 'ky': 'ky-KG', 'tk': 'tk-TM',
+        'tg': 'tg-TJ', 'fa': 'fa-IR', 'ps': 'ps-AF', 'ur': 'ur-PK', 'bn': 'bn-BD',
+        'ta': 'ta-IN', 'te': 'te-IN', 'mr': 'mr-IN', 'gu': 'gu-IN', 'kn': 'kn-IN',
+        'ml': 'ml-IN', 'or': 'or-IN', 'pa': 'pa-IN', 'sd': 'sd-PK', 'sa': 'sa-IN',
+        'ne': 'ne-NP', 'si': 'si-LK', 'dv': 'dv-MV', 'th': 'th-TH', 'lo': 'lo-LA',
+        'my': 'my-MM', 'km': 'km-KH', 'vi': 'vi-VN', 'ms': 'ms-MY', 'tl': 'tl-PH',
+        'jv': 'jv-ID', 'su': 'su-ID', 'he': 'he-IL', 'yi': 'yi-IL', 'eo': 'eo',
+        'ia': 'ia', 'io': 'io', 'vo': 'vo', 'lfn': 'lfn', 'tok': 'tok', 'tlh': 'tlh'
+    };
+    
+    return langMap[langCode] || 'en-US';
+}
+
+// DİLE GÖRE CÜMLE AYIRMA
+function extractSentencesByLanguage(text, languageCode) {
+    if (!text) return [];
+    
+    const lang = languageCode.split('-')[0];
     let sentences = [];
-    let currentSentenceIndex = 0;
-    let isSpeaking = false;
-    let isPaused = false;
-    let speechRate = 1.0;
-    let currentUtterance = null;
-    let detectedLanguage = 'en-US';
-    let pdfDocument = null;
-    let textPositions = [];
-    let currentHighlight = null;
     
-    // ==================== DİL ÇEVİRİLERİ ====================
-    const translations = {
-        "tr": {
-            "pageTitle": "Sesli Okuma",
-            "selectPdfTitle": "PDF Dosyası Seç",
-            "selectPdfSubtitle": "Sesli okuma için bir PDF dosyası seçin",
-            "androidSelectBtnText": "PDF DOSYASI SEÇ",
-            "btnPrev": "GERİ",
-            "btnPlayPause": "OYUNAT",
-            "btnNext": "İLERİ",
-            "btnRestart": "BAŞTAN",
-            "btnSpeed": "1.0x",
-            "btnStop": "DURDUR",
-            "emptyStateText": "Sesli okuma için bir PDF dosyası seçin",
-            "selectPdf": "PDF SEÇ",
-            "statusSelectPdf": "PDF seçmek için yukarıdaki alana tıklayın",
-            "statusLoading": "PDF yükleniyor...",
-            "statusExtracting": "Metin çıkarılıyor...",
-            "statusReady": "Okumaya hazır!",
-            "statusPlaying": "Okuyor...",
-            "statusPaused": "Duraklatıldı",
-            "statusCompleted": "Okuma tamamlandı",
-            "statusError": "Hata oluştu",
-            "progressExtracting": "Metin çıkarılıyor: ",
-            "progressSentence": "Cümle: ",
-            "progressComplete": "Tamamlandı",
-            "alertSelectPdf": "Lütfen önce bir PDF dosyası seçin",
-            "alertNoText": "PDF'de okunabilir metin bulunamadı",
-            "alertSpeechNotSupported": "Tarayıcınız ses sentezleme özelliğini desteklemiyor",
-            "alertAlreadySpeaking": "Zaten okuyor",
-            "alertNotSpeaking": "Okuma aktif değil",
-            "alertFirstSentence": "İlk cümledesiniz",
-            "alertLastSentence": "Son cümledesiniz",
-            "languageDetected": "Dil algılandı: "
-        },
-        "en": {
-            "pageTitle": "Text-to-Speech",
-            "selectPdfTitle": "Select PDF File",
-            "selectPdfSubtitle": "Select a PDF file for text-to-speech",
-            "androidSelectBtnText": "SELECT PDF FILE",
-            "btnPrev": "PREV",
-            "btnPlayPause": "PLAY",
-            "btnNext": "NEXT",
-            "btnRestart": "RESTART",
-            "btnSpeed": "1.0x",
-            "btnStop": "STOP",
-            "emptyStateText": "Select a PDF file for text-to-speech",
-            "selectPdf": "SELECT PDF",
-            "statusSelectPdf": "Click the area above to select a PDF",
-            "statusLoading": "Loading PDF...",
-            "statusExtracting": "Extracting text...",
-            "statusReady": "Ready to read!",
-            "statusPlaying": "Playing...",
-            "statusPaused": "Paused",
-            "statusCompleted": "Reading completed",
-            "statusError": "Error occurred",
-            "progressExtracting": "Extracting text: ",
-            "progressSentence": "Sentence: ",
-            "progressComplete": "Complete",
-            "alertSelectPdf": "Please select a PDF file first",
-            "alertNoText": "No readable text found in PDF",
-            "alertSpeechNotSupported": "Your browser doesn't support speech synthesis",
-            "alertAlreadySpeaking": "Already speaking",
-            "alertNotSpeaking": "Not currently speaking",
-            "alertFirstSentence": "You're at the first sentence",
-            "alertLastSentence": "You're at the last sentence",
-            "languageDetected": "Language detected: "
-        },
-        "ar": {
-            "pageTitle": "القراءة بصوت",
-            "selectPdfTitle": "اختر ملف PDF",
-            "selectPdfSubtitle": "اختر ملف PDF للقراءة بصوت",
-            "androidSelectBtnText": "اختر ملف PDF",
-            "btnPrev": "السابق",
-            "btnPlayPause": "تشغيل",
-            "btnNext": "التالي",
-            "btnRestart": "إعادة",
-            "btnSpeed": "1.0x",
-            "btnStop": "توقف",
-            "emptyStateText": "اختر ملف PDF للقراءة بصوت",
-            "selectPdf": "اختر PDF",
-            "statusSelectPdf": "انقر على المنطقة أعلاه لاختيار PDF",
-            "statusLoading": "جار تحميل PDF...",
-            "statusExtracting": "جار استخراج النص...",
-            "statusReady": "جاهز للقراءة!",
-            "statusPlaying": "جاري التشغيل...",
-            "statusPaused": "متوقف مؤقتاً",
-            "statusCompleted": "اكتملت القراءة",
-            "statusError": "حدث خطأ",
-            "progressExtracting": "جار استخراج النص: ",
-            "progressSentence": "جملة: ",
-            "progressComplete": "مكتمل",
-            "alertSelectPdf": "الرجاء اختيار ملف PDF أولاً",
-            "alertNoText": "لم يتم العثور على نص قابل للقراءة في PDF",
-            "alertSpeechNotSupported": "متصفحك لا يدعم توليف الكلام",
-            "alertAlreadySpeaking": "جاري التحدث بالفعل",
-            "alertNotSpeaking": "غير متحدث حالياً",
-            "alertFirstSentence": "أنت في الجملة الأولى",
-            "alertLastSentence": "أنت في الجملة الأخيرة",
-            "languageDetected": "تم اكتشاف اللغة: "
-        },
-        "de": {
-            "pageTitle": "Sprachausgabe",
-            "selectPdfTitle": "PDF-Datei auswählen",
-            "selectPdfSubtitle": "Wählen Sie eine PDF-Datei für die Sprachausgabe",
-            "androidSelectBtnText": "PDF-DATEI AUSWÄHLEN",
-            "btnPrev": "ZURÜCK",
-            "btnPlayPause": "ABSPIELEN",
-            "btnNext": "WEITER",
-            "btnRestart": "NEUSTART",
-            "btnSpeed": "1.0x",
-            "btnStop": "STOPP",
-            "emptyStateText": "Wählen Sie eine PDF-Datei für die Sprachausgabe",
-            "selectPdf": "PDF AUSWÄHLEN",
-            "statusSelectPdf": "Klicken Sie auf den Bereich oben, um eine PDF auszuwählen",
-            "statusLoading": "PDF wird geladen...",
-            "statusExtracting": "Text wird extrahiert...",
-            "statusReady": "Bereit zum Lesen!",
-            "statusPlaying": "Wird abgespielt...",
-            "statusPaused": "Pausiert",
-            "statusCompleted": "Lesen abgeschlossen",
-            "statusError": "Fehler aufgetreten",
-            "progressExtracting": "Text extrahieren: ",
-            "progressSentence": "Satz: ",
-            "progressComplete": "Vollständig",
-            "alertSelectPdf": "Bitte wählen Sie zuerst eine PDF-Datei",
-            "alertNoText": "Kein lesbarer Text in PDF gefunden",
-            "alertSpeechNotSupported": "Ihr Browser unterstützt keine Sprachsynthese",
-            "alertAlreadySpeaking": "Spricht bereits",
-            "alertNotSpeaking": "Aktuell nicht aktiv",
-            "alertFirstSentence": "Sie sind beim ersten Satz",
-            "alertLastSentence": "Sie sind beim letzten Satz",
-            "languageDetected": "Sprache erkannt: "
-        },
-        "fr": {
-            "pageTitle": "Lecture vocale",
-            "selectPdfTitle": "Sélectionner un fichier PDF",
-            "selectPdfSubtitle": "Sélectionnez un fichier PDF pour la lecture vocale",
-            "androidSelectBtnText": "SÉLECTIONNER UN FICHIER PDF",
-            "btnPrev": "PRÉCÉDENT",
-            "btnPlayPause": "LECTURE",
-            "btnNext": "SUIVANT",
-            "btnRestart": "REDÉMARRER",
-            "btnSpeed": "1.0x",
-            "btnStop": "ARRÊTER",
-            "emptyStateText": "Sélectionnez un fichier PDF pour la lecture vocale",
-            "selectPdf": "SÉLECTIONNER PDF",
-            "statusSelectPdf": "Cliquez sur la zone ci-dessus pour sélectionner un PDF",
-            "statusLoading": "Chargement du PDF...",
-            "statusExtracting": "Extraction du texte...",
-            "statusReady": "Prêt à lire !",
-            "statusPlaying": "Lecture en cours...",
-            "statusPaused": "En pause",
-            "statusCompleted": "Lecture terminée",
-            "statusError": "Une erreur est survenue",
-            "progressExtracting": "Extraction du texte : ",
-            "progressSentence": "Phrase : ",
-            "progressComplete": "Complet",
-            "alertSelectPdf": "Veuillez d'abord sélectionner un fichier PDF",
-            "alertNoText": "Aucun texte lisible trouvé dans le PDF",
-            "alertSpeechNotSupported": "Votre navigateur ne prend pas en charge la synthèse vocale",
-            "alertAlreadySpeaking": "Lecture déjà en cours",
-            "alertNotSpeaking": "Pas actuellement en lecture",
-            "alertFirstSentence": "Vous êtes à la première phrase",
-            "alertLastSentence": "Vous êtes à la dernière phrase",
-            "languageDetected": "Langue détectée : "
-        },
-        "es": {
-            "pageTitle": "Lectura en voz alta",
-            "selectPdfTitle": "Seleccionar archivo PDF",
-            "selectPdfSubtitle": "Seleccione un archivo PDF para lectura en voz alta",
-            "androidSelectBtnText": "SELECCIONAR ARCHIVO PDF",
-            "btnPrev": "ANTERIOR",
-            "btnPlayPause": "REPRODUCIR",
-            "btnNext": "SIGUIENTE",
-            "btnRestart": "REINICIAR",
-            "btnSpeed": "1.0x",
-            "btnStop": "DETENER",
-            "emptyStateText": "Seleccione un archivo PDF para lectura en voz alta",
-            "selectPdf": "SELECCIONAR PDF",
-            "statusSelectPdf": "Haga clic en el área de arriba para seleccionar un PDF",
-            "statusLoading": "Cargando PDF...",
-            "statusExtracting": "Extrayendo texto...",
-            "statusReady": "¡Listo para leer!",
-            "statusPlaying": "Reproduciendo...",
-            "statusPaused": "En pausa",
-            "statusCompleted": "Lectura completada",
-            "statusError": "Ocurrió un error",
-            "progressExtracting": "Extrayendo texto: ",
-            "progressSentence": "Oración: ",
-            "progressComplete": "Completo",
-            "alertSelectPdf": "Por favor, seleccione primero un archivo PDF",
-            "alertNoText": "No se encontró texto legible en el PDF",
-            "alertSpeechNotSupported": "Su navegador no soporta síntesis de voz",
-            "alertAlreadySpeaking": "Ya se está leyendo",
-            "alertNotSpeaking": "No se está leyendo actualmente",
-            "alertFirstSentence": "Estás en la primera oración",
-            "alertLastSentence": "Estás en la última oración",
-            "languageDetected": "Idioma detectado: "
-        },
-        "ru": {
-            "pageTitle": "Озвучка текста",
-            "selectPdfTitle": "Выбрать файл PDF",
-            "selectPdfSubtitle": "Выберите файл PDF для озвучки",
-            "androidSelectBtnText": "ВЫБРАТЬ ФАЙЛ PDF",
-            "btnPrev": "НАЗАД",
-            "btnPlayPause": "ИГРАТЬ",
-            "btnNext": "ДАЛЬШЕ",
-            "btnRestart": "ЗАНОВО",
-            "btnSpeed": "1.0x",
-            "btnStop": "СТОП",
-            "emptyStateText": "Выберите файл PDF для озвучки",
-            "selectPdf": "ВЫБРАТЬ PDF",
-            "statusSelectPdf": "Нажмите на область выше, чтобы выбрать PDF",
-            "statusLoading": "Загрузка PDF...",
-            "statusExtracting": "Извлечение текста...",
-            "statusReady": "Готово к чтению!",
-            "statusPlaying": "Играет...",
-            "statusPaused": "Приостановлено",
-            "statusCompleted": "Чтение завершено",
-            "statusError": "Произошла ошибка",
-            "progressExtracting": "Извлечение текста: ",
-            "progressSentence": "Предложение: ",
-            "progressComplete": "Завершено",
-            "alertSelectPdf": "Пожалуйста, сначала выберите файл PDF",
-            "alertNoText": "Читаемый текст в PDF не найден",
-            "alertSpeechNotSupported": "Ваш браузер не поддерживает синтез речи",
-            "alertAlreadySpeaking": "Уже читается",
-            "alertNotSpeaking": "В данный момент не читается",
-            "alertFirstSentence": "Вы на первом предложении",
-            "alertLastSentence": "Вы на последнем предложении",
-            "languageDetected": "Обнаружен язык: "
-        },
-        "zh": {
-            "pageTitle": "语音朗读",
-            "selectPdfTitle": "选择PDF文件",
-            "selectPdfSubtitle": "选择PDF文件进行语音朗读",
-            "androidSelectBtnText": "选择PDF文件",
-            "btnPrev": "上一句",
-            "btnPlayPause": "播放",
-            "btnNext": "下一句",
-            "btnRestart": "重新开始",
-            "btnSpeed": "1.0x",
-            "btnStop": "停止",
-            "emptyStateText": "选择PDF文件进行语音朗读",
-            "selectPdf": "选择PDF",
-            "statusSelectPdf": "点击上方区域选择PDF",
-            "statusLoading": "正在加载PDF...",
-            "statusExtracting": "正在提取文本...",
-            "statusReady": "准备朗读!",
-            "statusPlaying": "正在播放...",
-            "statusPaused": "已暂停",
-            "statusCompleted": "朗读完成",
-            "statusError": "发生错误",
-            "progressExtracting": "提取文本: ",
-            "progressSentence": "句子: ",
-            "progressComplete": "完成",
-            "alertSelectPdf": "请先选择PDF文件",
-            "alertNoText": "PDF中未找到可读文本",
-            "alertSpeechNotSupported": "您的浏览器不支持语音合成",
-            "alertAlreadySpeaking": "已经在朗读",
-            "alertNotSpeaking": "当前未朗读",
-            "alertFirstSentence": "您在第一句",
-            "alertLastSentence": "您在最后一句",
-            "languageDetected": "检测到语言: "
-        },
-        "ja": {
-            "pageTitle": "音声読み上げ",
-            "selectPdfTitle": "PDFファイルを選択",
-            "selectPdfSubtitle": "音声読み上げ用のPDFファイルを選択",
-            "androidSelectBtnText": "PDFファイルを選択",
-            "btnPrev": "前へ",
-            "btnPlayPause": "再生",
-            "btnNext": "次へ",
-            "btnRestart": "最初から",
-            "btnSpeed": "1.0x",
-            "btnStop": "停止",
-            "emptyStateText": "音声読み上げ用のPDFファイルを選択",
-            "selectPdf": "PDFを選択",
-            "statusSelectPdf": "上の領域をクリックしてPDFを選択",
-            "statusLoading": "PDFを読み込み中...",
-            "statusExtracting": "テキストを抽出中...",
-            "statusReady": "読み上げの準備ができました!",
-            "statusPlaying": "再生中...",
-            "statusPaused": "一時停止中",
-            "statusCompleted": "読み上げ完了",
-            "statusError": "エラーが発生しました",
-            "progressExtracting": "テキスト抽出中: ",
-            "progressSentence": "文: ",
-            "progressComplete": "完了",
-            "alertSelectPdf": "まずPDFファイルを選択してください",
-            "alertNoText": "PDFに読み取り可能なテキストが見つかりません",
-            "alertSpeechNotSupported": "お使いのブラウザは音声合成をサポートしていません",
-            "alertAlreadySpeaking": "すでに読み上げ中です",
-            "alertNotSpeaking": "現在読み上げていません",
-            "alertFirstSentence": "最初の文です",
-            "alertLastSentence": "最後の文です",
-            "languageDetected": "検出された言語: "
-        },
-        "ko": {
-            "pageTitle": "텍스트 음성 변환",
-            "selectPdfTitle": "PDF 파일 선택",
-            "selectPdfSubtitle": "텍스트 음성 변환을 위한 PDF 파일 선택",
-            "androidSelectBtnText": "PDF 파일 선택",
-            "btnPrev": "이전",
-            "btnPlayPause": "재생",
-            "btnNext": "다음",
-            "btnRestart": "다시 시작",
-            "btnSpeed": "1.0x",
-            "btnStop": "중지",
-            "emptyStateText": "텍스트 음성 변환을 위한 PDF 파일 선택",
-            "selectPdf": "PDF 선택",
-            "statusSelectPdf": "위 영역을 클릭하여 PDF 선택",
-            "statusLoading": "PDF 로드 중...",
-            "statusExtracting": "텍스트 추출 중...",
-            "statusReady": "읽기 준비 완료!",
-            "statusPlaying": "재생 중...",
-            "statusPaused": "일시정지됨",
-            "statusCompleted": "읽기 완료",
-            "statusError": "오류 발생",
-            "progressExtracting": "텍스트 추출 중: ",
-            "progressSentence": "문장: ",
-            "progressComplete": "완료",
-            "alertSelectPdf": "먼저 PDF 파일을 선택하세요",
-            "alertNoText": "PDF에서 읽을 수 있는 텍스트를 찾을 수 없음",
-            "alertSpeechNotSupported": "브라우저가 음성 합성을 지원하지 않습니다",
-            "alertAlreadySpeaking": "이미 읽는 중입니다",
-            "alertNotSpeaking": "현재 읽지 않음",
-            "alertFirstSentence": "첫 번째 문장입니다",
-            "alertLastSentence": "마지막 문장입니다",
-            "languageDetected": "감지된 언어: "
-        },
-        "pt": {
-            "pageTitle": "Leitura em voz alta",
-            "selectPdfTitle": "Selecionar arquivo PDF",
-            "selectPdfSubtitle": "Selecione um arquivo PDF para leitura em voz alta",
-            "androidSelectBtnText": "SELECIONAR ARQUIVO PDF",
-            "btnPrev": "ANTERIOR",
-            "btnPlayPause": "REPRODUZIR",
-            "btnNext": "PRÓXIMO",
-            "btnRestart": "REINICIAR",
-            "btnSpeed": "1.0x",
-            "btnStop": "PARAR",
-            "emptyStateText": "Selecione um arquivo PDF para leitura em voz alta",
-            "selectPdf": "SELECIONAR PDF",
-            "statusSelectPdf": "Clique na área acima para selecionar um PDF",
-            "statusLoading": "Carregando PDF...",
-            "statusExtracting": "Extraindo texto...",
-            "statusReady": "Pronto para ler!",
-            "statusPlaying": "Reproduzindo...",
-            "statusPaused": "Pausado",
-            "statusCompleted": "Leitura concluída",
-            "statusError": "Ocorreu um erro",
-            "progressExtracting": "Extraindo texto: ",
-            "progressSentence": "Sentença: ",
-            "progressComplete": "Completo",
-            "alertSelectPdf": "Por favor, selecione um arquivo PDF primeiro",
-            "alertNoText": "Nenhum texto legível encontrado no PDF",
-            "alertSpeechNotSupported": "Seu navegador não suporta síntese de voz",
-            "alertAlreadySpeaking": "Já está falando",
-            "alertNotSpeaking": "Não está falando atualmente",
-            "alertFirstSentence": "Você está na primeira sentença",
-            "alertLastSentence": "Você está na última sentença",
-            "languageDetected": "Idioma detectado: "
-        },
-        "it": {
-            "pageTitle": "Lettura vocale",
-            "selectPdfTitle": "Seleziona file PDF",
-            "selectPdfSubtitle": "Seleziona un file PDF per la lettura vocale",
-            "androidSelectBtnText": "SELEZIONA FILE PDF",
-            "btnPrev": "PRECEDENTE",
-            "btnPlayPause": "RIPRODUCI",
-            "btnNext": "SUCCESSIVO",
-            "btnRestart": "RIAVVIA",
-            "btnSpeed": "1.0x",
-            "btnStop": "FERMA",
-            "emptyStateText": "Seleziona un file PDF per la lettura vocale",
-            "selectPdf": "SELEZIONA PDF",
-            "statusSelectPdf": "Clicca sull'area sopra per selezionare un PDF",
-            "statusLoading": "Caricamento PDF...",
-            "statusExtracting": "Estrazione testo...",
-            "statusReady": "Pronto per leggere!",
-            "statusPlaying": "Riproducendo...",
-            "statusPaused": "In pausa",
-            "statusCompleted": "Lettura completata",
-            "statusError": "Si è verificato un errore",
-            "progressExtracting": "Estrazione testo: ",
-            "progressSentence": "Frase: ",
-            "progressComplete": "Completo",
-            "alertSelectPdf": "Si prega di selezionare prima un file PDF",
-            "alertNoText": "Nessun testo leggibile trovato nel PDF",
-            "alertSpeechNotSupported": "Il tuo browser non supporta la sintesi vocale",
-            "alertAlreadySpeaking": "Già in lettura",
-            "alertNotSpeaking": "Attualmente non in lettura",
-            "alertFirstSentence": "Sei alla prima frase",
-            "alertLastSentence": "Sei all'ultima frase",
-            "languageDetected": "Lingua rilevata: "
-        },
-        "nl": {
-            "pageTitle": "Spraakherkenning",
-            "selectPdfTitle": "Selecteer PDF-bestand",
-            "selectPdfSubtitle": "Selecteer een PDF-bestand voor spraakherkenning",
-            "androidSelectBtnText": "SELECTEER PDF-BESTAND",
-            "btnPrev": "VORIGE",
-            "btnPlayPause": "AFSPELEN",
-            "btnNext": "VOLGENDE",
-            "btnRestart": "OPNIEUW",
-            "btnSpeed": "1.0x",
-            "btnStop": "STOP",
-            "emptyStateText": "Selecteer een PDF-bestand voor spraakherkenning",
-            "selectPdf": "SELECTEER PDF",
-            "statusSelectPdf": "Klik op het gebied hierboven om een PDF te selecteren",
-            "statusLoading": "PDF laden...",
-            "statusExtracting": "Tekst extraheren...",
-            "statusReady": "Klaar om te lezen!",
-            "statusPlaying": "Wordt afgespeeld...",
-            "statusPaused": "Gepauzeerd",
-            "statusCompleted": "Lezen voltooid",
-            "statusError": "Er is een fout opgetreden",
-            "progressExtracting": "Tekst extraheren: ",
-            "progressSentence": "Zin: ",
-            "progressComplete": "Voltooid",
-            "alertSelectPdf": "Selecteer eerst een PDF-bestand",
-            "alertNoText": "Geen leesbare tekst gevonden in PDF",
-            "alertSpeechNotSupported": "Uw browser ondersteunt geen spraaksynthese",
-            "alertAlreadySpeaking": "Leest al",
-            "alertNotSpeaking": "Momenteel niet aan het lezen",
-            "alertFirstSentence": "U bent bij de eerste zin",
-            "alertLastSentence": "U bent bij de laatste zin",
-            "languageDetected": "Taal gedetecteerd: "
-        },
-        "pl": {
-            "pageTitle": "Czytanie na głos",
-            "selectPdfTitle": "Wybierz plik PDF",
-            "selectPdfSubtitle": "Wybierz plik PDF do czytania na głos",
-            "androidSelectBtnText": "WYBIERZ PLIK PDF",
-            "btnPrev": "POPRZEDNI",
-            "btnPlayPause": "ODTWÓRZ",
-            "btnNext": "NASTĘPNY",
-            "btnRestart": "PONÓW",
-            "btnSpeed": "1.0x",
-            "btnStop": "STOP",
-            "emptyStateText": "Wybierz plik PDF do czytania na głos",
-            "selectPdf": "WYBIERZ PDF",
-            "statusSelectPdf": "Kliknij obszar powyżej, aby wybrać PDF",
-            "statusLoading": "Ładowanie PDF...",
-            "statusExtracting": "Ekstrakcja tekstu...",
-            "statusReady": "Gotowy do czytania!",
-            "statusPlaying": "Odtwarzanie...",
-            "statusPaused": "Wstrzymano",
-            "statusCompleted": "Czytanie zakończone",
-            "statusError": "Wystąpił błąd",
-            "progressExtracting": "Ekstrakcja tekstu: ",
-            "progressSentence": "Zdanie: ",
-            "progressComplete": "Zakończono",
-            "alertSelectPdf": "Najpierw wybierz plik PDF",
-            "alertNoText": "Nie znaleziono czytelnego tekstu w PDF",
-            "alertSpeechNotSupported": "Twoja przeglądarka nie obsługuje syntezy mowy",
-            "alertAlreadySpeaking": "Już czyta",
-            "alertNotSpeaking": "Obecnie nie czyta",
-            "alertFirstSentence": "Jesteś przy pierwszym zdaniu",
-            "alertLastSentence": "Jesteś przy ostatnim zdaniu",
-            "languageDetected": "Wykryty język: "
-        },
-        "sw": {
-            "pageTitle": "Kusoma kwa sauti",
-            "selectPdfTitle": "Chagua faili ya PDF",
-            "selectPdfSubtitle": "Chagua faili ya PDF kwa kusoma kwa sauti",
-            "androidSelectBtnText": "CHAGUA FAILI YA PDF",
-            "btnPrev": "NYUMA",
-            "btnPlayPause": "CHEZA",
-            "btnNext": "INAYOFUATA",
-            "btnRestart": "ANZA UPYA",
-            "btnSpeed": "1.0x",
-            "btnStop": "SIMAMISHA",
-            "emptyStateText": "Chagua faili ya PDF kwa kusoma kwa sauti",
-            "selectPdf": "CHAGUA PDF",
-            "statusSelectPdf": "Bonyeza eneo hapo juu kuchagua PDF",
-            "statusLoading": "Inapakia PDF...",
-            "statusExtracting": "Inatoa maandishi...",
-            "statusReady": "Tayari kusoma!",
-            "statusPlaying": "Inacheza...",
-            "statusPaused": "Imezimwa",
-            "statusCompleted": "Kusoma kumekamilika",
-            "statusError": "Hitilafu imetokea",
-            "progressExtracting": "Inatoa maandishi: ",
-            "progressSentence": "Sentensi: ",
-            "progressComplete": "Kamili",
-            "alertSelectPdf": "Tafadhali chagua faili ya PDF kwanza",
-            "alertNoText": "Hakuna maandishi yanayoweza kusomwa yaliyopatikana kwenye PDF",
-            "alertSpeechNotSupported": "Kivinjari chako hakiungii mkono usanisi wa sauti",
-            "alertAlreadySpeaking": "Tayari inasoma",
-            "alertNotSpeaking": "Haikusomi kwa sasa",
-            "alertFirstSentence": "Uko kwenye sentensi ya kwanza",
-            "alertLastSentence": "Uko kwenye sentensi ya mwisho",
-            "languageDetected": "Lugha imegunduliwa: "
-        },
-        "hi": {
-            "pageTitle": "टेक्स्ट-टू-स्पीच",
-            "selectPdfTitle": "PDF फ़ाइल चुनें",
-            "selectPdfSubtitle": "टेक्स्ट-टू-स्पीच के लिए एक PDF फ़ाइल चुनें",
-            "androidSelectBtnText": "PDF फ़ाइल चुनें",
-            "btnPrev": "पिछला",
-            "btnPlayPause": "चलाएँ",
-            "btnNext": "अगला",
-            "btnRestart": "पुनः आरंभ",
-            "btnSpeed": "1.0x",
-            "btnStop": "रोकें",
-            "emptyStateText": "टेक्स्ट-टू-स्पीच के लिए एक PDF फ़ाइल चुनें",
-            "selectPdf": "PDF चुनें",
-            "statusSelectPdf": "PDF चुनने के लिए ऊपर के क्षेत्र पर क्लिक करें",
-            "statusLoading": "PDF लोड हो रहा है...",
-            "statusExtracting": "टेक्स्ट निकाला जा रहा है...",
-            "statusReady": "पढ़ने के लिए तैयार!",
-            "statusPlaying": "चल रहा है...",
-            "statusPaused": "रुका हुआ",
-            "statusCompleted": "पढ़ना पूरा हुआ",
-            "statusError": "एक त्रुटि हुई",
-            "progressExtracting": "टेक्स्ट निकाल रहा है: ",
-            "progressSentence": "वाक्य: ",
-            "progressComplete": "पूर्ण",
-            "alertSelectPdf": "कृपया पहले एक PDF फ़ाइल चुनें",
-            "alertNoText": "PDF में कोई पठनीय टेक्स्ट नहीं मिला",
-            "alertSpeechNotSupported": "आपका ब्राउज़र स्पीच सिंथेसिस का समर्थन नहीं करता",
-            "alertAlreadySpeaking": "पहले से ही पढ़ रहा है",
-            "alertNotSpeaking": "वर्तमान में नहीं पढ़ रहा",
-            "alertFirstSentence": "आप पहले वाक्य पर हैं",
-            "alertLastSentence": "आप अंतिम वाक्य पर हैं",
-            "languageDetected": "भाषा पाई गई: "
-        }
-    };
+    const sentenceRegex = getSentenceRegexForLanguage(lang);
+    const matches = text.match(sentenceRegex);
     
-    // ==================== DİL ALGILAMA ====================
-    const languageDetection = {
-        detect: function(text) {
-            if (!text || text.length < 10) return 'en';
-            
-            const sample = text.substring(0, 500).toLowerCase();
-            
-            // Türkçe
-            const turkishChars = /[çğıöşüâîû]/;
-            if (turkishChars.test(sample)) return 'tr';
-            
-            // İngilizce
-            const englishCommon = /\b(the|and|you|that|have|for|with|this|are|was)\b/i;
-            if (englishCommon.test(sample)) return 'en';
-            
-            // Almanca
-            const germanCommon = /\b(der|die|das|und|ist|nicht|mit|von|auf|für)\b/i;
-            if (germanCommon.test(sample)) return 'de';
-            
-            // Fransızca
-            const frenchCommon = /\b(le|la|les|et|est|pas|avec|pour|dans|sur)\b/i;
-            if (frenchCommon.test(sample)) return 'fr';
-            
-            // İspanyolca
-            const spanishCommon = /\b(el|la|los|las|y|es|no|con|por|para)\b/i;
-            if (spanishCommon.test(sample)) return 'es';
-            
-            // Arapça
-            const arabicChars = /[\u0600-\u06FF]/;
-            if (arabicChars.test(sample)) return 'ar';
-            
-            // Rusça
-            const russianChars = /[\u0400-\u04FF]/;
-            if (russianChars.test(sample)) return 'ru';
-            
-            // Çince
-            const chineseChars = /[\u4e00-\u9fff]/;
-            if (chineseChars.test(sample)) return 'zh';
-            
-            // Japonca
-            const japaneseChars = /[\u3040-\u309f\u30a0-\u30ff]/;
-            if (japaneseChars.test(sample)) return 'ja';
-            
-            // Korece
-            const koreanChars = /[\uac00-\ud7af]/;
-            if (koreanChars.test(sample)) return 'ko';
-            
-            // Portekizce
-            const portugueseCommon = /\b(o|a|os|as|e|é|não|com|para|por)\b/i;
-            if (portugueseCommon.test(sample)) return 'pt';
-            
-            // İtalyanca
-            const italianCommon = /\b(il|la|lo|i|gli|le|e|è|non|con)\b/i;
-            if (italianCommon.test(sample)) return 'it';
-            
-            // Hollandaca
-            const dutchCommon = /\b(de|het|een|en|is|niet|met|van|op|voor)\b/i;
-            if (dutchCommon.test(sample)) return 'nl';
-            
-            // Lehçe
-            const polishCommon = /\b(i|w|na|z|do|się|że|o|nie|jest)\b/i;
-            if (polishCommon.test(sample)) return 'pl';
-            
-            // Hintçe
-            const hindiCommon = /[\u0900-\u097F]/;
-            if (hindiCommon.test(sample)) return 'hi';
-            
-            return 'en';
-        },
-        
-        getSpeechLangCode: function(langCode) {
-            const langMap = {
-                'tr': 'tr-TR', 'en': 'en-US', 'de': 'de-DE', 'fr': 'fr-FR', 
-                'es': 'es-ES', 'ar': 'ar-SA', 'ru': 'ru-RU', 'zh': 'zh-CN',
-                'ja': 'ja-JP', 'ko': 'ko-KR', 'pt': 'pt-BR', 'it': 'it-IT',
-                'nl': 'nl-NL', 'pl': 'pl-PL', 'hi': 'hi-IN', 'sw': 'sw-KE'
-            };
-            return langMap[langCode] || 'en-US';
-        },
-        
-        getLanguageName: function(langCode) {
-            const names = {
-                'tr': 'Türkçe', 'en': 'İngilizce', 'de': 'Almanca', 'fr': 'Fransızca',
-                'es': 'İspanyolca', 'ar': 'Arapça', 'ru': 'Rusça', 'zh': 'Çince',
-                'ja': 'Japonca', 'ko': 'Korece', 'pt': 'Portekizce', 'it': 'İtalyanca',
-                'nl': 'Flemenkçe', 'pl': 'Lehçe', 'hi': 'Hintçe', 'sw': 'Svahili'
-            };
-            return names[langCode] || langCode;
-        },
-        
-        getFlag: function(langCode) {
-            const flags = {
-                'tr': '🇹🇷', 'en': '🇺🇸', 'de': '🇩🇪', 'fr': '🇫🇷',
-                'es': '🇪🇸', 'ar': '🇸🇦', 'ru': '🇷🇺', 'zh': '🇨🇳',
-                'ja': '🇯🇵', 'ko': '🇰🇷', 'pt': '🇵🇹', 'it': '🇮🇹',
-                'nl': '🇳🇱', 'pl': '🇵🇱', 'hi': '🇮🇳', 'sw': '🇹🇿'
-            };
-            return flags[langCode] || '🌐';
-        }
-    };
-    
-    // ==================== TEMEL FONKSİYONLAR ====================
-    function getTranslation(key) {
-        try {
-            const currentLang = languageConfig ? languageConfig.getCurrent() : 'tr';
-            const t = translations[currentLang] || translations['tr'];
-            return t[key] || key;
-        } catch (e) {
-            return key;
-        }
+    if (matches) {
+        sentences = matches
+            .map(s => s.trim())
+            .filter(s => s.length > 0 && s.length > 2);
     }
     
-    function updateUIText() {
-        try {
-            // Başlık ve metinler
-            document.getElementById('pageTitle').textContent = getTranslation('pageTitle');
-            document.getElementById('selectPdfTitle').textContent = getTranslation('selectPdfTitle');
-            document.getElementById('selectPdfSubtitle').textContent = getTranslation('selectPdfSubtitle');
-            document.getElementById('androidSelectBtnText').textContent = getTranslation('androidSelectBtnText');
-            document.getElementById('emptyStateText').textContent = getTranslation('emptyStateText');
-            document.getElementById('statusText').textContent = getTranslation('statusSelectPdf');
-            
-            // Buton metinleri
-            document.getElementById('btnPrev').querySelector('.button-text').textContent = getTranslation('btnPrev');
-            document.getElementById('btnPlayPause').querySelector('.button-text').textContent = getTranslation('btnPlayPause');
-            document.getElementById('btnNext').querySelector('.button-text').textContent = getTranslation('btnNext');
-            document.getElementById('btnRestart').querySelector('.button-text').textContent = getTranslation('btnRestart');
-            document.getElementById('btnStop').querySelector('.button-text').textContent = getTranslation('btnStop');
-            
-            // Boş durum butonu
-            const emptyBtn = document.querySelector('.empty-state .control-button');
-            if (emptyBtn) {
-                emptyBtn.querySelector('span:last-child').textContent = getTranslation('selectPdf');
+    return sentences;
+}
+
+function getSentenceRegexForLanguage(lang) {
+    switch(lang) {
+        case 'zh': case 'ja': case 'ko':
+            return /[^！？。!?…]+[！？。!?…]/g;
+        case 'hi': case 'bn': case 'ta': case 'te': case 'mr': case 'gu': 
+        case 'kn': case 'ml': case 'or': case 'pa': case 'sd': case 'sa': 
+        case 'ne': case 'si': case 'dv':
+            return /[^।!?…]+[।!?…]/g;
+        case 'ar':
+            return /[^۔!?…]+[۔!?…]/g;
+        default:
+            return /[^.!?…]+[.!?…]/g;
+    }
+}
+
+// YENİ: TEXTLAYER'DAN DOĞRUDAN CÜMLE VE POZİSYON ÇIKAR
+function extractFromTextLayer() {
+    console.log("TextLayer'dan cümleler çıkarılıyor...");
+    
+    sentences = [];
+    sentencePositions = [];
+    allText = "";
+    
+    // Tüm textLayer'ları bul
+    const textLayers = document.querySelectorAll('.textLayer');
+    
+    if (textLayers.length === 0) {
+        console.warn("TextLayer bulunamadı!");
+        return;
+    }
+    
+    let pageSentences = [];
+    
+    // Her sayfayı işle
+    textLayers.forEach((textLayer, pageIndex) => {
+        const spans = textLayer.querySelectorAll('span');
+        let pageText = "";
+        let currentSentence = "";
+        let currentElements = [];
+        
+        spans.forEach(span => {
+            const spanText = span.textContent || "";
+            if (spanText.trim().length > 0) {
+                pageText += spanText + " ";
+                
+                // Cümle sonu kontrolü
+                const hasSentenceEnd = /[.!?。！؟।…]$/.test(spanText);
+                
+                if (hasSentenceEnd || spanText.includes('. ') || spanText.includes('? ') || spanText.includes('! ')) {
+                    // Cümle sonu bulundu
+                    if (currentSentence.trim().length > 0) {
+                        // Mevcut cümleyi kaydet
+                        const sentenceText = (currentSentence + " " + spanText).trim();
+                        const sentenceElements = [...currentElements, span];
+                        
+                        if (sentenceText.length > 2) {
+                            sentences.push(sentenceText);
+                            sentencePositions.push({
+                                elements: sentenceElements,
+                                rect: sentenceElements[0].getBoundingClientRect(),
+                                text: sentenceText,
+                                page: pageIndex
+                            });
+                        }
+                        
+                        // Sıfırla
+                        currentSentence = "";
+                        currentElements = [];
+                    } else {
+                        // Bu span tek başına bir cümle
+                        if (spanText.trim().length > 2) {
+                            sentences.push(spanText.trim());
+                            sentencePositions.push({
+                                elements: [span],
+                                rect: span.getBoundingClientRect(),
+                                text: spanText.trim(),
+                                page: pageIndex
+                            });
+                        }
+                    }
+                } else {
+                    // Cümle devam ediyor
+                    currentSentence += (currentSentence ? " " : "") + spanText;
+                    currentElements.push(span);
+                }
             }
-            
-        } catch (e) {
-            console.error('UI metinleri güncellenemedi:', e);
-        }
-    }
-    
-    function goBack() {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.location.href = 'index.html';
-        }
-    }
-    
-    function refreshPDFList() {
-        // Sayfayı yenile
-        window.location.reload();
-    }
-    
-    // ==================== PDF SEÇİMİ ====================
-    function selectPDFFile() {
-        const fileInput = document.getElementById('fileInput');
-        fileInput.click();
-    }
-    
-    document.getElementById('fileInput').addEventListener('change', async function(e) {
-        if (e.target.files.length === 0) return;
+        });
         
-        const file = e.target.files[0];
-        if (!file.type.includes('pdf')) {
-            showStatus(getTranslation('alertSelectPdf'), 'error');
-            return;
+        // Sayfa sonunda kalan cümleyi ekle
+        if (currentSentence.trim().length > 0) {
+            sentences.push(currentSentence.trim());
+            sentencePositions.push({
+                elements: currentElements,
+                rect: currentElements[0].getBoundingClientRect(),
+                text: currentSentence.trim(),
+                page: pageIndex
+            });
         }
         
-        await loadPDFFile(file);
-        this.value = '';
+        allText += pageText + " ";
     });
     
-    async function loadPDFFile(file) {
-        try {
-            showStatus(getTranslation('statusLoading'), 'info');
-            
-            currentPdfFile = file;
-            
-            // PDF bilgilerini göster
-            document.getElementById('currentPdfName').textContent = file.name;
-            document.getElementById('currentPdfSize').textContent = formatBytes(file.size);
-            document.getElementById('currentPdfDate').textContent = new Date(file.lastModified).toLocaleDateString();
-            
-            // UI güncelle
-            document.getElementById('pdfSelectSection').style.display = 'none';
-            document.getElementById('pdfInfoCard').classList.add('visible');
-            document.getElementById('emptyState').classList.remove('visible');
-            document.getElementById('statusMessage').classList.remove('visible');
-            
-            // PDF yükle
-            const arrayBuffer = await file.arrayBuffer();
-            
-            // PDF.js kütüphanesini kontrol et
-            if (typeof pdfjsLib === 'undefined') {
-                throw new Error('PDF.js kütüphanesi yüklenemedi');
-            }
-            
-            pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            
-            // Metni çıkar
-            await extractTextFromPDF();
-            
-        } catch (error) {
-            console.error('PDF yükleme hatası:', error);
-            showStatus(getTranslation('statusError') + ': ' + error.message, 'error');
-            clearSelection();
-        }
+    console.log("TextLayer'dan çıkarılan cümle sayısı:", sentences.length);
+    console.log("Toplam metin uzunluğu:", allText.length);
+    
+    if (sentences.length > 0) {
+        console.log("İlk 3 cümle:", sentences.slice(0, 3));
+        console.log("İlk cümle pozisyonları:", sentencePositions[0]?.elements?.length || 0, "element");
     }
     
-    // ==================== METİN ÇIKARMA ====================
-    async function extractTextFromPDF() {
-        try {
-            showStatus(getTranslation('statusExtracting'), 'info');
-            document.getElementById('progressText').textContent = getTranslation('progressExtracting') + '0%';
+    pdfTextExtracted = true;
+}
+
+// ALGILANAN DİLİ GÖSTER
+function showDetectedLanguage(languageCode) {
+    const langNames = {
+        'tr-TR': '🇹🇷 Türkçe',
+        'en-US': '🇺🇸 İngilizce', 
+        'de-DE': '🇩🇪 Almanca',
+        'fr-FR': '🇫🇷 Fransızca',
+        'es-ES': '🇪🇸 İspanyolca',
+        'ar-SA': '🇸🇦 Arapça',
+        'ru-RU': '🇷🇺 Rusça',
+        'zh-CN': '🇨🇳 Çince',
+        'ja-JP': '🇯🇵 Japonca',
+        'ko-KR': '🇰🇷 Korece',
+        'it-IT': '🇮🇹 İtalyanca',
+        'pt-BR': '🇧🇷 Portekizce',
+        'hi-IN': '🇮🇳 Hintçe',
+        'nl-NL': '🇳🇱 Flemenkçe',
+        'pl-PL': '🇵🇱 Lehçe',
+        'sv-SE': '🇸🇪 İsveççe'
+    };
+    
+    const langName = langNames[languageCode] || languageCode;
+    
+    const pdfSelectBtn = document.getElementById('secondaryOpenFile');
+    if (pdfSelectBtn) {
+        pdfSelectBtn.innerHTML = `🌍 ${langName}`;
+        pdfSelectBtn.title = `Algılanan Dil: ${langName}`;
+        pdfSelectBtn.style.background = 'linear-gradient(135deg, #9b59b6, #8e44ad)';
+        pdfSelectBtn.style.fontSize = '11px';
+        pdfSelectBtn.style.padding = '8px 10px';
+        
+        pdfSelectBtn.onmouseenter = function() {
+            this.style.background = 'linear-gradient(135deg, #8e44ad, #7d3c98)';
+        };
+        
+        pdfSelectBtn.onmouseleave = function() {
+            this.style.background = 'linear-gradient(135deg, #9b59b6, #8e44ad)';
+        };
+    }
+}
+
+// PDF YÜKLENDİĞİNDE - YENİ YAKLAŞIM
+function setupPDFTextExtraction() {
+    if (typeof PDFViewerApplication !== 'undefined') {
+        PDFViewerApplication.eventBus.on('documentloaded', async function() {
+            console.log("PDF yüklendi, metin ve dil algılanıyor...");
             
-            let fullText = '';
+            hideCenterButton();
+            
+            const toolbar = document.getElementById('customToolbar');
+            if (toolbar) {
+                toolbar.classList.add('visible');
+            }
+            
+            // TextLayer'ın yüklenmesini bekle
+            setTimeout(() => {
+                // TextLayer'dan doğrudan metni ve pozisyonları al
+                extractFromTextLayer();
+                
+                if (allText && allText.length > 0) {
+                    // Dili algıla
+                    currentLanguage = detectLanguageFromText(allText);
+                    console.log("Algılanan dil:", currentLanguage);
+                    
+                    // Dil bilgisini göster
+                    showDetectedLanguage(currentLanguage);
+                    
+                    console.log("Hazır! Cümle sayısı:", sentences.length);
+                    console.log("Pozisyon sayısı:", sentencePositions.length);
+                    
+                    // Eşleşmeyi kontrol et
+                    if (sentences.length !== sentencePositions.length) {
+                        console.warn("Cümle ve pozisyon sayıları eşleşmiyor!");
+                        console.log("Cümleler:", sentences.length, "Pozisyonlar:", sentencePositions.length);
+                        
+                        // Pozisyonları cümlelere göre ayarla
+                        if (sentencePositions.length > sentences.length) {
+                            sentencePositions = sentencePositions.slice(0, sentences.length);
+                        }
+                    }
+                } else {
+                    console.error("TextLayer'dan metin çıkarılamadı!");
+                }
+            }, 1000); // TextLayer'ın oluşması için bekle
+        });
+        
+        PDFViewerApplication.eventBus.on('documentunloaded', function() {
+            showCenterButton();
+            
+            const toolbar = document.getElementById('customToolbar');
+            if (toolbar) {
+                toolbar.classList.remove('visible');
+            }
+            
+            const pdfSelectBtn = document.getElementById('secondaryOpenFile');
+            if (pdfSelectBtn) {
+                pdfSelectBtn.innerHTML = '📄 PDF SEÇ';
+                pdfSelectBtn.title = 'PDF Seç';
+                pdfSelectBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+                pdfSelectBtn.style.fontSize = '11px';
+                pdfSelectBtn.style.padding = '8px 12px';
+            }
+            
+            pdfTextExtracted = false;
             sentences = [];
-            textPositions = [];
-            
-            // PDF'teki tüm sayfaları işle
-            for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-                const page = await pdfDocument.getPage(pageNum);
-                const textContent = await page.getTextContent();
-                
-                // Sayfa metnini birleştir
-                let pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + '\n\n';
-                
-                // İlerleme güncelle
-                const progress = Math.round((pageNum / pdfDocument.numPages) * 100);
-                document.getElementById('progressText').textContent = getTranslation('progressExtracting') + progress + '%';
-                document.getElementById('progressFill').style.width = progress + '%';
-                
-                // Küçük bir gecikme (UI güncellemesi için)
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-            
-            if (!fullText.trim()) {
-                throw new Error(getTranslation('alertNoText'));
-            }
-            
-            // Dili algıla
-            const detectedLang = languageDetection.detect(fullText);
-            detectedLanguage = languageDetection.getSpeechLangCode(detectedLang);
-            
-            // Dil bilgisini göster
-            const languageName = languageDetection.getLanguageName(detectedLang);
-            const languageFlag = languageDetection.getFlag(detectedLang);
-            
-            document.getElementById('languageFlag').textContent = languageFlag;
-            document.getElementById('languageText').textContent = getTranslation('languageDetected') + languageName;
-            
-            // Cümlelere ayır
-            sentences = splitIntoSentences(fullText);
-            
-            // Metni göster
-            document.getElementById('textContent').innerHTML = highlightCurrentSentence();
-            document.getElementById('textDisplay').classList.add('visible');
-            
-            // Kontrolleri göster
-            document.getElementById('speechControls').classList.add('visible');
-            
-            // İlerlemeyi sıfırla
+            sentencePositions = [];
+            allText = "";
             currentSentenceIndex = 0;
-            updateProgress();
-            showStatus(getTranslation('statusReady'), 'success');
+            stopReading();
+        });
+    }
+}
+
+// SESLİ OKUMA KONTROLLERİ
+function initSpeechControls() {
+    const speechBtn = document.getElementById('customSpeech');
+    const prevBtn = document.getElementById('customPrev');
+    const playPauseBtn = document.getElementById('customPlayPause');
+    const nextBtn = document.getElementById('customNext');
+    const speedBtn = document.getElementById('customSpeed');
+    
+    speechBtn.onclick = function() {
+        extractAllTextAndSpeak();
+    };
+    
+    prevBtn.onclick = function() {
+        goToPreviousSentence();
+    };
+    
+    playPauseBtn.onclick = function() {
+        togglePlayPause();
+    };
+    
+    nextBtn.onclick = function() {
+        goToNextSentence();
+    };
+    
+    speedBtn.onclick = function() {
+        changeSpeechSpeed();
+    };
+    
+    updateButtonStates();
+}
+
+function updateButtonStates() {
+    const playPauseBtn = document.getElementById('customPlayPause');
+    if (!playPauseBtn) return;
+    
+    if (isPaused) {
+        playPauseBtn.textContent = "▶ DEVAM";
+        playPauseBtn.style.background = 'linear-gradient(135deg, #27ae60, #219a52)';
+    } else if (isSpeaking) {
+        playPauseBtn.textContent = "⏸ DURDUR";
+        playPauseBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+    } else {
+        playPauseBtn.textContent = "▶ OYNAT";
+        playPauseBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
+    }
+}
+
+function extractAllTextAndSpeak() {
+    if (!pdfTextExtracted || sentences.length === 0) {
+        alert("PDF yüklenmedi veya metin bulunamadı!");
+        return;
+    }
+    
+    console.log("Sesli okuma başlatılıyor...");
+    console.log("Dil:", currentLanguage);
+    console.log("Cümle sayısı:", sentences.length);
+    console.log("Pozisyon eşleşmesi:", sentences.length === sentencePositions.length ? "✓ Tam" : "✗ Hatalı");
+    
+    currentSentenceIndex = 0;
+    startReading();
+}
+
+function startReading() {
+    if (sentences.length === 0) return;
+    
+    isSpeaking = true;
+    isPaused = false;
+    isSentenceComplete = false;
+    updateButtonStates();
+    speakCurrentSentence();
+}
+
+function speakCurrentSentence() {
+    if (speechTimeout) {
+        clearTimeout(speechTimeout);
+        speechTimeout = null;
+    }
+    
+    if (currentSentenceIndex >= sentences.length) {
+        stopReading();
+        console.log("Okuma tamamlandı!");
+        return;
+    }
+    
+    const currentSentence = sentences[currentSentenceIndex];
+    console.log(`Cümle ${currentSentenceIndex + 1}/${sentences.length}: "${currentSentence.substring(0, 100)}..."`);
+    
+    // VURGULAMA - TEXTLAYER'E DOĞRUDAN UYGULA
+    document.querySelectorAll('.speech-highlight').forEach(el => {
+        el.classList.remove('speech-highlight');
+    });
+    
+    // Pozisyon kontrolü - KESİNLİKLE AYNI CÜMLE
+    if (sentencePositions.length > currentSentenceIndex) {
+        const position = sentencePositions[currentSentenceIndex];
+        if (position && position.elements && position.elements.length > 0) {
+            console.log(`Vurgulama: ${position.elements.length} element`);
             
-        } catch (error) {
-            console.error('Metin çıkarma hatası:', error);
-            showStatus(error.message || getTranslation('alertNoText'), 'error');
-        }
-    }
-    
-    function splitIntoSentences(text) {
-        // Basit cümle bölme algoritması
-        const sentenceRegex = /[^.!?…]+[.!?…]+/g;
-        const matches = text.match(sentenceRegex) || [];
-        
-        return matches
-            .map(s => s.trim())
-            .filter(s => s.length > 5) // Çok kısa cümleleri filtrele
-            .filter(s => !s.match(/^\d+$/)) // Sadece sayıları filtrele
-            .slice(0, 500); // Maksimum 500 cümle
-    }
-    
-    function highlightCurrentSentence() {
-        if (sentences.length === 0) return getTranslation('alertNoText');
-        
-        let html = '';
-        for (let i = 0; i < sentences.length; i++) {
-            const sentence = sentences[i];
-            if (i === currentSentenceIndex) {
-                html += `<span class="text-highlight current-sentence">${sentence}</span> `;
-            } else {
-                html += `<span>${sentence}</span> `;
-            }
-        }
-        return html;
-    }
-    
-    // ==================== SESLİ OKUMA KONTROLLERİ ====================
-    function togglePlayPause() {
-        if (!speechSynthesis) {
-            showStatus(getTranslation('alertSpeechNotSupported'), 'error');
-            return;
-        }
-        
-        if (!sentences.length) {
-            showStatus(getTranslation('alertSelectPdf'), 'error');
-            return;
-        }
-        
-        if (isSpeaking) {
-            if (isPaused) {
-                resumeReading();
-            } else {
-                pauseReading();
+            // Tüm cümle elementlerini vurgula
+            position.elements.forEach(element => {
+                if (element && element.classList) {
+                    element.classList.add('speech-highlight');
+                }
+            });
+            
+            // Sayfayı kaydır
+            if (position.rect) {
+                const viewer = document.getElementById('viewerContainer');
+                if (viewer) {
+                    viewer.scrollTop = position.rect.top - 100;
+                }
             }
         } else {
-            startReading();
+            console.warn(`Cümle ${currentSentenceIndex} için pozisyon bulunamadı`);
         }
+    } else {
+        console.warn(`Cümle indeksi (${currentSentenceIndex}) pozisyon sayısından (${sentencePositions.length}) büyük`);
     }
     
-    function startReading() {
-        if (isSpeaking) {
-            showStatus(getTranslation('alertAlreadySpeaking'), 'warning');
-            return;
+    // SESLENDİRME
+    if (currentUtterance) {
+        speechSynthesis.cancel();
+        currentUtterance = null;
+    }
+    
+    currentUtterance = new SpeechSynthesisUtterance(currentSentence);
+    currentUtterance.rate = speechRate;
+    currentUtterance.lang = currentLanguage;
+    
+    currentUtterance.onstart = function() {
+        isSentenceComplete = false;
+        console.log(`Cümle ${currentSentenceIndex + 1} okunmaya başladı`);
+    };
+    
+    currentUtterance.onend = function() {
+        isSentenceComplete = true;
+        console.log(`Cümle ${currentSentenceIndex + 1} tamamlandı`);
+        
+        if (isSpeaking && !isPaused) {
+            currentSentenceIndex++;
+            speechTimeout = setTimeout(speakCurrentSentence, 500);
+        }
+    };
+    
+    currentUtterance.onerror = function(event) {
+        console.error("Okuma hatası:", event);
+        isSentenceComplete = true;
+        
+        if (isSpeaking && !isPaused) {
+            currentSentenceIndex++;
+            speechTimeout = setTimeout(speakCurrentSentence, 500);
+        }
+    };
+    
+    speechSynthesis.speak(currentUtterance);
+}
+
+function togglePlayPause() {
+    if (!isSpeaking) {
+        extractAllTextAndSpeak();
+    } else if (isPaused) {
+        resumeReading();
+    } else {
+        pauseReading();
+    }
+}
+
+function pauseReading() {
+    if (isSpeaking && !isPaused) {
+        isPaused = true;
+        speechSynthesis.cancel();
+        
+        if (speechTimeout) {
+            clearTimeout(speechTimeout);
+            speechTimeout = null;
         }
         
-        if (currentSentenceIndex >= sentences.length) {
-            currentSentenceIndex = 0;
-        }
-        
-        isSpeaking = true;
+        updateButtonStates();
+        console.log("Okuma durduruldu, cümle:", currentSentenceIndex);
+    }
+}
+
+function resumeReading() {
+    if (isSpeaking && isPaused) {
         isPaused = false;
         updateButtonStates();
-        showStatus(getTranslation('statusPlaying'), 'info');
+        console.log("Okuma devam ediyor, cümle:", currentSentenceIndex);
         speakCurrentSentence();
     }
+}
+
+function stopReading() {
+    isSpeaking = false;
+    isPaused = false;
+    isSentenceComplete = false;
+    speechSynthesis.cancel();
     
-    function pauseReading() {
-        if (!isSpeaking || isPaused) return;
-        
-        speechSynthesis.pause();
-        isPaused = true;
-        updateButtonStates();
-        showStatus(getTranslation('statusPaused'), 'warning');
+    if (speechTimeout) {
+        clearTimeout(speechTimeout);
+        speechTimeout = null;
     }
     
-    function resumeReading() {
-        if (!isSpeaking || !isPaused) return;
-        
-        speechSynthesis.resume();
-        isPaused = false;
-        updateButtonStates();
-        showStatus(getTranslation('statusPlaying'), 'info');
+    if (currentUtterance) {
+        currentUtterance = null;
     }
     
-    function stopReading() {
-        if (!isSpeaking) {
-            showStatus(getTranslation('alertNotSpeaking'), 'warning');
-            return;
-        }
-        
+    updateButtonStates();
+    
+    document.querySelectorAll('.speech-highlight').forEach(el => {
+        el.classList.remove('speech-highlight');
+    });
+    
+    console.log("Okuma tamamen durduruldu");
+}
+
+function goToPreviousSentence() {
+    if (!isSpeaking) {
+        alert("Okuma aktif değil!");
+        return;
+    }
+    
+    if (isPaused || isSentenceComplete) {
         speechSynthesis.cancel();
-        isSpeaking = false;
-        isPaused = false;
-        updateButtonStates();
-        showStatus(getTranslation('statusCompleted'), 'success');
-    }
-    
-    function restartReading() {
-        stopReading();
-        currentSentenceIndex = 0;
-        updateProgress();
-        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
-        showStatus(getTranslation('statusReady'), 'success');
-    }
-    
-    function prevSentence() {
-        if (currentSentenceIndex <= 0) {
-            showStatus(getTranslation('alertFirstSentence'), 'warning');
-            return;
+        if (speechTimeout) {
+            clearTimeout(speechTimeout);
+            speechTimeout = null;
         }
         
-        stopReading();
-        currentSentenceIndex--;
-        updateProgress();
-        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
-        showStatus(getTranslation('progressSentence') + (currentSentenceIndex + 1), 'info');
+        if (currentSentenceIndex > 0) {
+            currentSentenceIndex--;
+            isSpeaking = true;
+            isPaused = false;
+            isSentenceComplete = false;
+            speakCurrentSentence();
+            updateButtonStates();
+        }
+    } else {
+        alert("Cümle henüz tamamlanmadı! Lütfen cümlenin bitmesini bekleyin veya duraklatın.");
+    }
+}
+
+function goToNextSentence() {
+    if (!isSpeaking) {
+        alert("Okuma aktif değil!");
+        return;
     }
     
-    function nextSentence() {
-        if (currentSentenceIndex >= sentences.length - 1) {
-            showStatus(getTranslation('alertLastSentence'), 'warning');
-            return;
+    if (isPaused || isSentenceComplete) {
+        speechSynthesis.cancel();
+        if (speechTimeout) {
+            clearTimeout(speechTimeout);
+            speechTimeout = null;
         }
         
-        stopReading();
-        currentSentenceIndex++;
-        updateProgress();
-        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
-        showStatus(getTranslation('progressSentence') + (currentSentenceIndex + 1), 'info');
-    }
-    
-    function speakCurrentSentence() {
-        if (currentSentenceIndex >= sentences.length) {
-            stopReading();
-            showStatus(getTranslation('statusCompleted'), 'success');
-            return;
-        }
-        
-        const sentence = sentences[currentSentenceIndex];
-        
-        // Metni güncelle
-        document.getElementById('textContent').innerHTML = highlightCurrentSentence();
-        updateProgress();
-        
-        // Konuşma oluştur
-        if (currentUtterance) {
-            speechSynthesis.cancel();
-        }
-        
-        currentUtterance = new SpeechSynthesisUtterance(sentence);
-        currentUtterance.lang = detectedLanguage;
-        currentUtterance.rate = speechRate;
-        currentUtterance.volume = 1.0;
-        currentUtterance.pitch = 1.0;
-        
-        currentUtterance.onstart = function() {
-            console.log('Cümle başladı:', currentSentenceIndex + 1);
-        };
-        
-        currentUtterance.onend = function() {
-            console.log('Cümle bitti:', currentSentenceIndex + 1);
-            
-            if (isSpeaking && !isPaused) {
-                currentSentenceIndex++;
-                
-                if (currentSentenceIndex < sentences.length) {
-                    setTimeout(speakCurrentSentence, 300);
-                } else {
-                    stopReading();
-                    showStatus(getTranslation('statusCompleted'), 'success');
-                }
-            }
-        };
-        
-        currentUtterance.onerror = function(event) {
-            console.error('Okuma hatası:', event);
-            showStatus(getTranslation('statusError'), 'error');
-            
-            if (isSpeaking && !isPaused) {
-                currentSentenceIndex++;
-                if (currentSentenceIndex < sentences.length) {
-                    setTimeout(speakCurrentSentence, 300);
-                }
-            }
-        };
-        
-        speechSynthesis.speak(currentUtterance);
-    }
-    
-    // ==================== HIZ KONTROLLERİ ====================
-    function cycleSpeed() {
-        const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-        const currentIndex = speeds.indexOf(speechRate);
-        const nextIndex = (currentIndex + 1) % speeds.length;
-        setSpeed(speeds[nextIndex]);
-    }
-    
-    function setSpeed(speed) {
-        speechRate = speed;
-        
-        // Aktif butonu güncelle
-        document.querySelectorAll('.speed-button').forEach(btn => {
-            btn.classList.remove('active');
-            if (parseFloat(btn.dataset.speed) === speed) {
-                btn.classList.add('active');
-            }
-        });
-        
-        // Hız metnini güncelle
-        document.getElementById('speedText').textContent = speed.toFixed(1) + 'x';
-        
-        // Mevcut konuşmayı güncelle
-        if (currentUtterance) {
-            currentUtterance.rate = speed;
-        }
-    }
-    
-    // ==================== UI GÜNCELLEMELERİ ====================
-    function updateProgress() {
-        if (sentences.length === 0) return;
-        
-        const progress = Math.round(((currentSentenceIndex + 1) / sentences.length) * 100);
-        document.getElementById('progressText').textContent = 
-            getTranslation('progressSentence') + (currentSentenceIndex + 1) + '/' + sentences.length + 
-            ' (' + progress + '%)';
-        document.getElementById('progressFill').style.width = progress + '%';
-    }
-    
-    function updateButtonStates() {
-        const playPauseBtn = document.getElementById('btnPlayPause');
-        const playPauseIcon = document.getElementById('playPauseIcon');
-        const playPauseText = document.getElementById('playPauseText');
-        
-        if (isSpeaking) {
-            if (isPaused) {
-                playPauseIcon.textContent = 'play_arrow';
-                playPauseText.textContent = getTranslation('btnPlayPause');
-                playPauseBtn.classList.remove('success');
-                playPauseBtn.classList.add('warning');
-            } else {
-                playPauseIcon.textContent = 'pause';
-                playPauseText.textContent = 'DURDUR';
-                playPauseBtn.classList.remove('warning');
-                playPauseBtn.classList.add('success');
-            }
+        if (currentSentenceIndex < sentences.length - 1) {
+            currentSentenceIndex++;
+            isSpeaking = true;
+            isPaused = false;
+            isSentenceComplete = false;
+            speakCurrentSentence();
+            updateButtonStates();
         } else {
-            playPauseIcon.textContent = 'play_arrow';
-            playPauseText.textContent = getTranslation('btnPlayPause');
-            playPauseBtn.classList.remove('warning');
-            playPauseBtn.classList.add('success');
+            alert("Son cümledesiniz!");
+        }
+    } else {
+        alert("Cümle henüz tamamlanmadı! Lütfen cümlenin bitmesini bekleyin veya duraklatın.");
+    }
+}
+
+function changeSpeechSpeed() {
+    speechRate += 0.25;
+    if (speechRate > 2.0) speechRate = 0.5;
+    
+    const speedBtn = document.getElementById('customSpeed');
+    if (speedBtn) {
+        speedBtn.textContent = 'HIZ: ' + speechRate.toFixed(1) + 'x';
+    }
+    
+    if (currentUtterance) {
+        currentUtterance.rate = speechRate;
+    }
+}
+
+// SAYFA YÜKLENDİĞİNDE
+document.addEventListener('DOMContentLoaded', function() {
+    if (!('speechSynthesis' in window)) {
+        console.error("Tarayıcı ses sentezleme özelliğini desteklemiyor!");
+        return;
+    }
+    
+    createCenterButton();
+    initSpeechControls();
+    setupPDFTextExtraction();
+    
+    if (typeof PDFViewerApplication !== 'undefined' && PDFViewerApplication.pdfDocument) {
+        hideCenterButton();
+        const toolbar = document.getElementById('customToolbar');
+        if (toolbar) {
+            toolbar.classList.add('visible');
         }
     }
+});
+
+// SAYFA KAPATILIRKEN
+window.addEventListener('beforeunload', function() {
+    stopReading();
+});
+
+  <!-- lang.js   -->
+
+
+
+
+
+
+
+// ==============================
+// LANG.JS DİL ENTEGRASYONU
+// ==============================
+
+// Dil çevirileri
+const customToolbarTranslations = {
+    'ar': {
+        prev: "السابق",
+        playPause: "تشغيل/إيقاف",
+        next: "التالي",
+        speed: "السرعة:",
+        speech: "قراءة من البداية",
+        openFile: "اختيار PDF",
+        titlePrev: "الكلمة السابقة",
+        titlePlayPause: "تشغيل/إيقاف مؤقت",
+        titleNext: "الكلمة التالية",
+        titleSpeed: "سرعة القراءة",
+        titleSpeech: "قراءة من البداية",
+        titleOpen: "اختيار ملف PDF",
+        centerButton: "اختر ملف PDF للقراءة",
+        alertNoPdf: "لم يتم تحميل ملف PDF أو لم يتم العثور على النص!",
+        alertNotActive: "القراءة غير نشطة!",
+        alertSentenceNotComplete: "الجملة لم تكتمل بعد! يرجى الانتظار حتى تكتمل الجملة أو الإيقاف المؤقت.",
+        alertLastSentence: "أنت في الجملة الأخيرة!",
+        playing: "تشغيل",
+        pausing: "إيقاف مؤقت",
+        resuming: "استئناف"
+    },
+    'bn': {
+        prev: "পূর্ববর্তী",
+        playPause: "প্লে/পজ",
+        next: "পরবর্তী",
+        speed: "গতি:",
+        speech: "শুরু থেকে পড়ুন",
+        openFile: "PDF নির্বাচন করুন",
+        titlePrev: "পূর্ববর্তী শব্দ",
+        titlePlayPause: "প্লে/পজ",
+        titleNext: "পরবর্তী শব্দ",
+        titleSpeed: "পঠন গতি",
+        titleSpeech: "শুরু থেকে পড়ুন",
+        titleOpen: "PDF ফাইল নির্বাচন করুন",
+        centerButton: "পঠনের জন্য PDF ফাইল নির্বাচন করুন",
+        alertNoPdf: "PDF লোড হয়নি বা পাঠ্য পাওয়া যায়নি!",
+        alertNotActive: "পঠন সক্রিয় নয়!",
+        alertSentenceNotComplete: "বাক্যটি এখনও সম্পূর্ণ হয়নি! অনুগ্রহ করে বাক্যটি সম্পূর্ণ হতে অপেক্ষা করুন বা বিরতি দিন।",
+        alertLastSentence: "আপনি শেষ বাক্যে আছেন!",
+        playing: "খেলছে",
+        pausing: "বিরতিহীন",
+        resuming: "পুনরায় শুরু করা হচ্ছে"
+    },
+    'de': {
+        prev: "ZURÜCK",
+        playPause: "▶ PAUSE",
+        next: "WEITER ▶",
+        speed: "TEMPO:",
+        speech: "🔊 NEU VORLESEN",
+        openFile: "📄 PDF WÄHLEN",
+        titlePrev: "Vorheriges Wort",
+        titlePlayPause: "Abspielen/Pausieren",
+        titleNext: "Nächstes Wort",
+        titleSpeed: "Lesegeschwindigkeit",
+        titleSpeech: "Von Anfang vorlesen",
+        titleOpen: "PDF-Datei auswählen",
+        centerButton: "PDF ZUM VORLESEN<br>AUSWÄHLEN",
+        alertNoPdf: "PDF nicht geladen oder Text nicht gefunden!",
+        alertNotActive: "Vorlesen nicht aktiv!",
+        alertSentenceNotComplete: "Satz noch nicht fertig! Bitte warten Sie, bis der Satz beendet ist, oder pausieren Sie.",
+        alertLastSentence: "Sie sind beim letzten Satz!",
+        playing: "Wiedergabe",
+        pausing: "Pausiert",
+        resuming: "Fortsetzen"
+    },
+    'en': {
+        prev: "◀ BACK",
+        playPause: "⏸ PAUSE",
+        next: "NEXT ▶",
+        speed: "SPEED:",
+        speech: "🔊 READ FROM START",
+        openFile: "📄 SELECT PDF",
+        titlePrev: "Previous Word",
+        titlePlayPause: "Play/Pause",
+        titleNext: "Next Word",
+        titleSpeed: "Reading Speed",
+        titleSpeech: "Read from beginning",
+        titleOpen: "Select PDF file",
+        centerButton: "SELECT PDF<br>TO READ",
+        alertNoPdf: "PDF not loaded or text not found!",
+        alertNotActive: "Reading not active!",
+        alertSentenceNotComplete: "Sentence not yet complete! Please wait for the sentence to finish or pause.",
+        alertLastSentence: "You're at the last sentence!",
+        playing: "Playing",
+        pausing: "Paused",
+        resuming: "Resume"
+    },
+    'es': {
+        prev: "◀ ATRÁS",
+        playPause: "⏸ PAUSA",
+        next: "SIGUIENTE ▶",
+        speed: "VELOCIDAD:",
+        speech: "🔊 LEER DESDE INICIO",
+        openFile: "📄 SELECCIONAR PDF",
+        titlePrev: "Palabra anterior",
+        titlePlayPause: "Reproducir/Pausar",
+        titleNext: "Palabra siguiente",
+        titleSpeed: "Velocidad de lectura",
+        titleSpeech: "Leer desde el principio",
+        titleOpen: "Seleccionar archivo PDF",
+        centerButton: "SELECCIONAR PDF<br>PARA LEER",
+        alertNoPdf: "¡PDF no cargado o texto no encontrado!",
+        alertNotActive: "¡Lectura no activa!",
+        alertSentenceNotComplete: "¡Frase aún no completada! Por favor, espere a que termine la frase o pause.",
+        alertLastSentence: "¡Estás en la última frase!",
+        playing: "Reproduciendo",
+        pausing: "Pausado",
+        resuming: "Reanudar"
+    },
+    'fr': {
+        prev: "◀ RETOUR",
+        playPause: "⏸ PAUSE",
+        next: "SUIVANT ▶",
+        speed: "VITESSE:",
+        speech: "🔊 LIRE DEPUIS LE DÉBUT",
+        openFile: "📄 SÉLECTIONNER PDF",
+        titlePrev: "Mot précédent",
+        titlePlayPause: "Lecture/Pause",
+        titleNext: "Mot suivant",
+        titleSpeed: "Vitesse de lecture",
+        titleSpeech: "Lire depuis le début",
+        titleOpen: "Sélectionner un fichier PDF",
+        centerButton: "SÉLECTIONNER PDF<br>À LIRE",
+        alertNoPdf: "PDF non chargé ou texte introuvable!",
+        alertNotActive: "Lecture non active!",
+        alertSentenceNotComplete: "Phrase pas encore terminée! Veuillez attendre la fin de la phrase ou mettre en pause.",
+        alertLastSentence: "Vous êtes à la dernière phrase!",
+        playing: "Lecture",
+        pausing: "En pause",
+        resuming: "Reprendre"
+    },
+    'hi': {
+        prev: "◀ पिछला",
+        playPause: "⏸ रोकें",
+        next: "अगला ▶",
+        speed: "गति:",
+        speech: "🔊 प्रारंभ से पढ़ें",
+        openFile: "📄 PDF चुनें",
+        titlePrev: "पिछला शब्द",
+        titlePlayPause: "चलाएँ/रोकें",
+        titleNext: "अगला शब्द",
+        titleSpeed: "पढ़ने की गति",
+        titleSpeech: "शुरुआत से पढ़ें",
+        titleOpen: "PDF फ़ाइल चुनें",
+        centerButton: "पढ़ने के लिए PDF<br>चुनें",
+        alertNoPdf: "PDF लोड नहीं हुआ या पाठ नहीं मिला!",
+        alertNotActive: "पढ़ना सक्रिय नहीं है!",
+        alertSentenceNotComplete: "वाक्य अभी तक पूरा नहीं हुआ! कृपया वाक्य पूरा होने तक प्रतीक्षा करें या रोकें।",
+        alertLastSentence: "आप अंतिम वाक्य पर हैं!",
+        playing: "चल रहा है",
+        pausing: "रुका हुआ",
+        resuming: "जारी रखें"
+    },
+    'id': {
+        prev: "◀ KEMBALI",
+        playPause: "⏸ JEDA",
+        next: "LANJUT ▶",
+        speed: "KECEPATAN:",
+        speech: "🔊 BACA DARI AWAL",
+        openFile: "📄 PILIH PDF",
+        titlePrev: "Kata Sebelumnya",
+        titlePlayPause: "Putar/Jeda",
+        titleNext: "Kata Berikutnya",
+        titleSpeed: "Kecepatan Membaca",
+        titleSpeech: "Baca dari awal",
+        titleOpen: "Pilih file PDF",
+        centerButton: "PILIH PDF<br>UNTUK DIBACA",
+        alertNoPdf: "PDF tidak dimuat atau teks tidak ditemukan!",
+        alertNotActive: "Pembacaan tidak aktif!",
+        alertSentenceNotComplete: "Kalimat belum selesai! Harap tunggu kalimat selesai atau jeda.",
+        alertLastSentence: "Anda berada di kalimat terakhir!",
+        playing: "Memutar",
+        pausing: "Dijeda",
+        resuming: "Lanjutkan"
+    },
+    'ja': {
+        prev: "◀ 戻る",
+        playPause: "⏸ 一時停止",
+        next: "次へ ▶",
+        speed: "速度:",
+        speech: "🔊 最初から読む",
+        openFile: "📄 PDFを選択",
+        titlePrev: "前の単語",
+        titlePlayPause: "再生/一時停止",
+        titleNext: "次の単語",
+        titleSpeed: "読み上げ速度",
+        titleSpeech: "最初から読む",
+        titleOpen: "PDFファイルを選択",
+        centerButton: "読むPDFを<br>選択してください",
+        alertNoPdf: "PDFが読み込まれていないか、テキストが見つかりません！",
+        alertNotActive: "読み上げがアクティブではありません！",
+        alertSentenceNotComplete: "文がまだ完了していません！文が終わるのを待つか、一時停止してください。",
+        alertLastSentence: "最後の文です！",
+        playing: "再生中",
+        pausing: "一時停止",
+        resuming: "再開"
+    },
+    'ku': {
+        prev: "◀ BERÎ",
+        playPause: "⏸ RAWESTE",
+        next: "PAŞ ▶",
+        speed: "LEZÎ:",
+        speech: "🔊 JI SERÊ BIXWÎNE",
+        openFile: "📄 PDF BİJÊRE",
+        titlePrev: "Peyva Berî",
+        titlePlayPause: "Lêxe/Berdev",
+        titleNext: "Peyva Paş",
+        titleSpeed: "Leza Xwendinê",
+        titleSpeech: "Ji serê bixwîne",
+        titleOpen: "Dosyeya PDF bijêre",
+        centerButton: "PDF'A BİXWÎNÊ<br>BIJÊRE",
+        alertNoPdf: "PDF barkirin nebû an jî nivîs nehat dîtin!",
+        alertNotActive: "Xwendin çalak nîn e!",
+        alertSentenceNotComplete: "Hevoka hê neqediya! Ji kerema xwe bisekinare hevoka biqede an raweste.",
+        alertLastSentence: "Tu li hevoka dawî yî!",
+        playing: "Tê lêxistin",
+        pausing: "Ravestî",
+        resuming: "Bidomîne"
+    },
+    'pt': {
+        prev: "◀ VOLTAR",
+        playPause: "⏸ PAUSAR",
+        next: "PRÓXIMO ▶",
+        speed: "VELOCIDADE:",
+        speech: "🔊 LER DO INÍCIO",
+        openFile: "📄 SELECIONAR PDF",
+        titlePrev: "Palavra Anterior",
+        titlePlayPause: "Reproduzir/Pausar",
+        titleNext: "Próxima Palavra",
+        titleSpeed: "Velocidade de Leitura",
+        titleSpeech: "Ler do início",
+        titleOpen: "Selecionar arquivo PDF",
+        centerButton: "SELECIONAR PDF<br>PARA LER",
+        alertNoPdf: "PDF não carregado ou texto não encontrado!",
+        alertNotActive: "Leitura não ativa!",
+        alertSentenceNotComplete: "Frase ainda não concluída! Por favor, aguarde a frase terminar ou pause.",
+        alertLastSentence: "Você está na última frase!",
+        playing: "Reproduzindo",
+        pausing: "Pausado",
+        resuming: "Retomar"
+    },
+    'ru': {
+        prev: "◀ НАЗАД",
+        playPause: "⏸ ПАУЗА",
+        next: "ДАЛЬШЕ ▶",
+        speed: "СКОРОСТЬ:",
+        speech: "🔊 ЧИТАТЬ С НАЧАЛА",
+        openFile: "📄 ВЫБРАТЬ PDF",
+        titlePrev: "Предыдущее слово",
+        titlePlayPause: "Воспроизвести/Пауза",
+        titleNext: "Следующее слово",
+        titleSpeed: "Скорость чтения",
+        titleSpeech: "Читать с начала",
+        titleOpen: "Выбрать PDF файл",
+        centerButton: "ВЫБРАТЬ PDF<br>ДЛЯ ЧТЕНИЯ",
+        alertNoPdf: "PDF не загружен или текст не найден!",
+        alertNotActive: "Чтение не активно!",
+        alertSentenceNotComplete: "Предложение еще не завершено! Пожалуйста, дождитесь завершения предложения или поставьте на паузу.",
+        alertLastSentence: "Вы на последнем предложении!",
+        playing: "Воспроизведение",
+        pausing: "На паузе",
+        resuming: "Продолжить"
+    },
+    'sw': {
+        prev: "◀ NYUMA",
+        playPause: "⏸ SIMAMISHA",
+        next: "INAYOFUATA ▶",
+        speed: "MWENDO:",
+        speech: "🔊 SOMA KUTOKA MWANZO",
+        openFile: "📄 CHAGUA PDF",
+        titlePrev: "Neno Lililotangulia",
+        titlePlayPause: "Cheza/Simamisha",
+        titleNext: "Neno Linalofuata",
+        titleSpeed: "Kasi ya Kusoma",
+        titleSpeech: "Soma kutoka mwanzo",
+        titleOpen: "Chagua faili ya PDF",
+        centerButton: "CHAGUA PDF<br>KUSOMA",
+        alertNoPdf: "PDF haijapakiwa au maandishi hayajapatikana!",
+        alertNotActive: "Kusoma sio kazi!",
+        alertSentenceNotComplete: "Sentensi bado haijakamilika! Tafadhali subiri sentensi ikamilike au simamisha.",
+        alertLastSentence: "Uko kwenye sentensi ya mwisho!",
+        playing: "Inacheza",
+        pausing: "Imezimwa",
+        resuming: "Endelea"
+    },
+    'tr': {
+        prev: "◀ GERİ",
+        playPause: "⏸ DURDUR",
+        next: "İLERİ ▶",
+        speed: "HIZ:",
+        speech: "🔊 BAŞTAN OKU",
+        openFile: "📄 PDF SEÇ",
+        titlePrev: "Önceki Kelime",
+        titlePlayPause: "Oynat/Durdur",
+        titleNext: "Sonraki Kelime",
+        titleSpeed: "Okuma Hızı",
+        titleSpeech: "Baştan Oku",
+        titleOpen: "PDF Dosyası Seç",
+        centerButton: "OKUNACAK PDF'Yİ<br>SEÇİN",
+        alertNoPdf: "PDF yüklenmedi veya metin bulunamadı!",
+        alertNotActive: "Okuma aktif değil!",
+        alertSentenceNotComplete: "Cümle henüz tamamlanmadı! Lütfen cümlenin bitmesini bekleyin veya duraklatın.",
+        alertLastSentence: "Son cümledesiniz!",
+        playing: "Oynat",
+        pausing: "Durdur",
+        resuming: "Devam"
+    },
+    'ur': {
+        prev: "◀ پیچھے",
+        playPause: "⏸ روکیں",
+        next: "آگے ▶",
+        speed: "رفتار:",
+        speech: "🔊 شروع سے پڑھیں",
+        openFile: "📄 PDF منتخب کریں",
+        titlePrev: "پچھلا لفظ",
+        titlePlayPause: "چلائیں/روکیں",
+        titleNext: "اگلا لفظ",
+        titleSpeed: "پڑھنے کی رفتار",
+        titleSpeech: "شروع سے پڑھیں",
+        titleOpen: "PDF فائل منتخب کریں",
+        centerButton: "پڑھنے کے لیے PDF<br>منتخب کریں",
+        alertNoPdf: "PDF لوڈ نہیں ہوئی یا متن نہیں ملا!",
+        alertNotActive: "پڑھنا فعال نہیں ہے!",
+        alertSentenceNotComplete: "جملہ ابھی تک مکمل نہیں ہوا! براہ کرم جملہ مکمل ہونے تک انتظار کریں یا روکیں۔",
+        alertLastSentence: "آپ آخری جملے پر ہیں!",
+        playing: "چل رہا ہے",
+        pausing: "روکا ہوا",
+        resuming: "جاری رکھیں"
+    },
+    'za': {
+        prev: "◀ PAŞ",
+        playPause: "⏸ RAWASTE",
+        next: "PÊŞ ▶",
+        speed: "LEZ:",
+        speech: "🔊 JI SERÎ BİXWÎNE",
+        openFile: "📄 PDF BİJÊRE",
+        titlePrev: "Peyva Berî",
+        titlePlayPause: "Lîstin/Rawastin",
+        titleNext: "Peyva Pêş",
+        titleSpeed: "Leza Xwendinê",
+        titleSpeech: "Ji serî bixwîne",
+        titleOpen: "Dosyeya PDF bijêre",
+        centerButton: "PDF'A BİXWÎNÊ<br>BIJÊRE",
+        alertNoPdf: "PDF barkirin nebû an jî nivîs nehat dîtin!",
+        alertNotActive: "Xwendin çalak nîne!",
+        alertSentenceNotComplete: "Hevoka hê neqediya! Ji kerema xwe sekinîne hevoka biqede an raweste.",
+        alertLastSentence: "Tu li hevoka dawî yî!",
+        playing: "Tê lîstin",
+        pausing: "Rawestî",
+        resuming: "Bidomîne"
+    },
+    'zh': {
+        prev: "◀ 上一句",
+        playPause: "⏸ 暂停",
+        next: "下一句 ▶",
+        speed: "速度:",
+        speech: "🔊 从头开始读",
+        openFile: "📄 选择PDF",
+        titlePrev: "上一个词",
+        titlePlayPause: "播放/暂停",
+        titleNext: "下一个词",
+        titleSpeed: "阅读速度",
+        titleSpeech: "从头开始读",
+        titleOpen: "选择PDF文件",
+        centerButton: "选择要阅读的<br>PDF文件",
+        alertNoPdf: "PDF未加载或找不到文本！",
+        alertNotActive: "阅读未激活！",
+        alertSentenceNotComplete: "句子尚未完成！请等待句子完成或暂停。",
+        alertLastSentence: "您在最后一个句子！",
+        playing: "播放",
+        pausing: "暂停",
+        resuming: "继续"
+    }
+};
+
+// Mevcut dili al
+function getCurrentLanguage() {
+    // Lang.js'den dili al
+    if (typeof languageConfig !== 'undefined') {
+        return languageConfig.getCurrent();
+    }
+    // Fallback: Tarayıcı dili veya varsayılan
+    const browserLang = navigator.language.split('-')[0];
+    return Object.keys(customToolbarTranslations).includes(browserLang) ? browserLang : 'en';
+}
+
+// Toolbar'ı güncelle
+function updateCustomToolbarLanguage() {
+    const lang = getCurrentLanguage();
+    const translations = customToolbarTranslations[lang] || customToolbarTranslations['en'];
     
-    function showStatus(message, type = 'info') {
-        const statusElement = document.getElementById('statusMessage');
-        const statusText = document.getElementById('statusText');
-        
-        statusText.textContent = message;
-        statusElement.className = 'status-message visible ' + type;
-        
-        // 3 saniye sonra gizle
-        setTimeout(() => {
-            statusElement.classList.remove('visible');
-        }, 3000);
+    // Butonları güncelle
+    const prevBtn = document.getElementById('customPrev');
+    const playPauseBtn = document.getElementById('customPlayPause');
+    const nextBtn = document.getElementById('customNext');
+    const speedBtn = document.getElementById('customSpeed');
+    const speechBtn = document.getElementById('customSpeech');
+    const openBtn = document.getElementById('secondaryOpenFile');
+    const centerBtn = document.getElementById('centerPDFButton');
+    
+    if (prevBtn) {
+        prevBtn.textContent = `◀ ${translations.prev}`;
+        prevBtn.title = translations.titlePrev;
     }
     
-    function clearSelection() {
-        // Okumayı durdur
-        stopReading();
-        
-        // Değişkenleri sıfırla
-        currentPdfFile = null;
-        pdfTextContent = "";
-        sentences = [];
-        currentSentenceIndex = 0;
-        pdfDocument = null;
-        textPositions = [];
-        
-        // UI'ı sıfırla
-        document.getElementById('pdfSelectSection').style.display = 'block';
-        document.getElementById('pdfInfoCard').classList.remove('visible');
-        document.getElementById('speechControls').classList.remove('visible');
-        document.getElementById('textDisplay').classList.remove('visible');
-        document.getElementById('emptyState').classList.add('visible');
-        document.getElementById('statusMessage').classList.remove('visible');
-        
-        // File input'u temizle
-        document.getElementById('fileInput').value = '';
+    if (playPauseBtn) {
+        // Duruma göre metni güncelle
+        if (isPaused) {
+            playPauseBtn.textContent = `▶ ${translations.resuming}`;
+        } else if (isSpeaking) {
+            playPauseBtn.textContent = `⏸ ${translations.pausing}`;
+        } else {
+            playPauseBtn.textContent = `▶ ${translations.playing}`;
+        }
+        playPauseBtn.title = translations.titlePlayPause;
     }
     
-    // ==================== YARDIMCI FONKSİYONLAR ====================
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    if (nextBtn) {
+        nextBtn.textContent = `${translations.next} ▶`;
+        nextBtn.title = translations.titleNext;
     }
     
-    // ==================== ANDROID BRIDGE FONKSİYONLARI ====================
-    function openFilePicker() {
-        selectPDFFile();
+    if (speedBtn) {
+        speedBtn.textContent = `${translations.speed} ${speechRate.toFixed(1)}x`;
+        speedBtn.title = translations.titleSpeed;
     }
     
-    function onFileSelected(fileData, fileName) {
-        // Android'den gelen dosyayı işle
-        const blob = new Blob([fileData], { type: 'application/pdf' });
-        const file = new File([blob], fileName, { type: 'application/pdf' });
-        
-        loadPDFFile(file);
+    if (speechBtn) {
+        speechBtn.textContent = `🔊 ${translations.speech}`;
+        speechBtn.title = translations.titleSpeech;
     }
     
-    // ==================== SAYFA YÜKLENDİĞİNDE ====================
-    document.addEventListener('DOMContentLoaded', function() {
-        // UI metinlerini güncelle
-        updateUIText();
-        
-        // Tema ayarı
-        const savedTheme = localStorage.getItem('pdfTheme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        
-        // Dil değişikliklerini dinle
-        if (languageConfig && languageConfig.onLanguageChange) {
-            languageConfig.onLanguageChange(updateUIText);
+    if (openBtn) {
+        openBtn.textContent = `📄 ${translations.openFile}`;
+        openBtn.title = translations.titleOpen;
+    }
+    
+    if (centerBtn) {
+        centerBtn.innerHTML = translations.centerButton.replace('<br>', '<br>');
+    }
+}
+
+// Alert mesajlarını diline çevir
+function getTranslatedAlert(type) {
+    const lang = getCurrentLanguage();
+    const translations = customToolbarTranslations[lang] || customToolbarTranslations['en'];
+    
+    switch(type) {
+        case 'noPdf': return translations.alertNoPdf;
+        case 'notActive': return translations.alertNotActive;
+        case 'sentenceNotComplete': return translations.alertSentenceNotComplete;
+        case 'lastSentence': return translations.alertLastSentence;
+        default: return '';
+    }
+}
+
+// Mevcut fonksiyonları override et (alert mesajlarını çevir)
+const originalExtractAllTextAndSpeak = extractAllTextAndSpeak;
+extractAllTextAndSpeak = function() {
+    if (!pdfTextExtracted || sentences.length === 0) {
+        alert(getTranslatedAlert('noPdf'));
+        return;
+    }
+    
+    console.log("Sesli okuma başlatılıyor...");
+    console.log("Dil:", currentLanguage);
+    console.log("Cümle sayısı:", sentences.length);
+    
+    currentSentenceIndex = 0;
+    startReading();
+};
+
+const originalGoToPreviousSentence = goToPreviousSentence;
+goToPreviousSentence = function() {
+    if (!isSpeaking) {
+        alert(getTranslatedAlert('notActive'));
+        return;
+    }
+    
+    if (isPaused || isSentenceComplete) {
+        speechSynthesis.cancel();
+        if (speechTimeout) {
+            clearTimeout(speechTimeout);
+            speechTimeout = null;
         }
         
-        // Speech synthesis kontrolü
-        if (!('speechSynthesis' in window)) {
-            showStatus(getTranslation('alertSpeechNotSupported'), 'error');
-            document.getElementById('speechControls').style.display = 'none';
+        if (currentSentenceIndex > 0) {
+            currentSentenceIndex--;
+            isSpeaking = true;
+            isPaused = false;
+            isSentenceComplete = false;
+            speakCurrentSentence();
+            updateButtonStates();
+        }
+    } else {
+        alert(getTranslatedAlert('sentenceNotComplete'));
+    }
+};
+
+const originalGoToNextSentence = goToNextSentence;
+goToNextSentence = function() {
+    if (!isSpeaking) {
+        alert(getTranslatedAlert('notActive'));
+        return;
+    }
+    
+    if (isPaused || isSentenceComplete) {
+        speechSynthesis.cancel();
+        if (speechTimeout) {
+            clearTimeout(speechTimeout);
+            speechTimeout = null;
         }
         
-        // Hız butonlarını aktif et
-        document.querySelectorAll('.speed-button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const speed = parseFloat(this.dataset.speed);
-                setSpeed(speed);
-            });
-        });
-        
-        // Varsayılan hız
-        setSpeed(1.0);
-        
-        // Android bridge'i hazırla
-        if (typeof Android !== 'undefined') {
-            window.selectPDFFile = function() {
-                Android.openFilePicker();
+        if (currentSentenceIndex < sentences.length - 1) {
+            currentSentenceIndex++;
+            isSpeaking = true;
+            isPaused = false;
+            isSentenceComplete = false;
+            speakCurrentSentence();
+            updateButtonStates();
+        } else {
+            alert(getTranslatedAlert('lastSentence'));
+        }
+    } else {
+        alert(getTranslatedAlert('sentenceNotComplete'));
+    }
+};
+
+// Button durumlarını güncellerken dili de güncelle
+const originalUpdateButtonStates = updateButtonStates;
+updateButtonStates = function() {
+    originalUpdateButtonStates();
+    updateCustomToolbarLanguage();
+};
+
+// Hız butonunu güncelle
+const originalChangeSpeechSpeed = changeSpeechSpeed;
+changeSpeechSpeed = function() {
+    originalChangeSpeechSpeed();
+    updateCustomToolbarLanguage();
+};
+
+// Dil değişikliklerini dinle
+function setupLanguageListener() {
+    // Lang.js'deki dil değişimini dinle (eğer mümkünse)
+    if (typeof languageConfig !== 'undefined') {
+        // Özgün setLanguage fonksiyonunu override et
+        const originalSetLanguage = languageConfig.setLanguage;
+        if (originalSetLanguage) {
+            languageConfig.setLanguage = function(langCode) {
+                const result = originalSetLanguage.call(this, langCode);
+                if (result) {
+                    // UI güncelle
+                    updateCustomToolbarLanguage();
+                }
+                return result;
             };
         }
+    }
+    
+    // Sayfa yüklendiğinde toolbar'ı güncelle
+    updateCustomToolbarLanguage();
+    
+    // Her 5 saniyede bir kontrol et (güvenlik için)
+    setInterval(updateCustomToolbarLanguage, 5000);
+}
+
+// DOM yüklendiğinde dili ayarla
+document.addEventListener('DOMContentLoaded', function() {
+    // Mevcut initSpeechControls fonksiyonundan sonra çalıştır
+    setTimeout(() => {
+        setupLanguageListener();
+    }, 1000);
+});
+
+// PDF yüklendiğinde dili güncelle
+if (typeof PDFViewerApplication !== 'undefined') {
+    PDFViewerApplication.eventBus.on('documentloaded', function() {
+        setTimeout(updateCustomToolbarLanguage, 500);
     });
     
-    // ==================== SAYFA KAPATILIRKEN ====================
-    window.addEventListener('beforeunload', function() {
-        stopReading();
+    PDFViewerApplication.eventBus.on('documentunloaded', function() {
+        setTimeout(updateCustomToolbarLanguage, 500);
     });
+}
+
+
+
+
+
+
+</script>
     
-    // ==================== GLOBAL FONKSİYONLAR ====================
-    window.goBack = goBack;
-    window.refreshPDFList = refreshPDFList;
-    window.selectPDFFile = selectPDFFile;
-    window.clearSelection = clearSelection;
-    window.togglePlayPause = togglePlayPause;
-    window.prevSentence = prevSentence;
-    window.nextSentence = nextSentence;
-    window.restartReading = restartReading;
-    window.stopReading = stopReading;
-    window.cycleSpeed = cycleSpeed;
-    window.setSpeed = setSpeed;
-    window.openFilePicker = openFilePicker;
-    window.onFileSelected = onFileSelected;
+        <!-- EV çiye   -->
+        
+        
+        
+        
     
-    // Android'den dosya seçildiğinde çağrılır
-    window.onAndroidFileSelected = function(base64Data, fileName) {
-        try {
-            // Base64'i decode et
-            const binaryString = atob(base64Data);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            
-            const blob = new Blob([bytes], { type: 'application/pdf' });
-            const file = new File([blob], fileName, { type: 'application/pdf' });
-            
-            loadPDFFile(file);
-        } catch (error) {
-            console.error('Android dosya yükleme hatası:', error);
-            showStatus('Dosya yüklenemedi: ' + error.message, 'error');
-        }
-    };
-    
-  </script>
-</body>
+  </body>
 </html>

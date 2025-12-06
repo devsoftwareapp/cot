@@ -6,7 +6,7 @@
   <title>Sesli Okuma | PDF Reader</title>
   
   <style>
-    /* Material Symbols Rounded - Local WebView Font */
+    /* Material Symbols Rounded */
     @font-face {
         font-family: 'Material Symbols Rounded';
         src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
@@ -34,7 +34,7 @@
             'opsz' 48;
     }
     
-    /* --- 1. DEĞİŞKENLER --- */
+    /* --- DEĞİŞKENLER --- */
     :root {
       --background: #e8e8e8;
       --surface: #ffffff;
@@ -69,7 +69,7 @@
       --secondary: #3a5985;
     }
 
-    /* --- 2. TEMEL AYARLAR --- */
+    /* --- TEMEL AYARLAR --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
       height: 100%; 
@@ -112,7 +112,7 @@
     .fixed { position: fixed; }
     .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
 
-    /* --- 3. ÜST BAR (HEADER) --- */
+    /* --- ÜST BAR (HEADER) --- */
     .top-bar-container {
         position: fixed;
         top: 0;
@@ -181,7 +181,7 @@
       color: white; 
     }
 
-    /* --- 4. ANA İÇERİK ALANI --- */
+    /* --- ANA İÇERİK ALANI --- */
     .main-content {
         padding-top: var(--header-height);
         padding-bottom: 20px;
@@ -199,7 +199,7 @@
         padding: 20px;
     }
 
-    /* --- 5. PDF SEÇİM ALANI --- */
+    /* --- PDF SEÇİM ALANI --- */
     .pdf-select-section {
         margin-bottom: 24px;
         padding: var(--spacing-lg);
@@ -235,7 +235,7 @@
         color: var(--text-secondary);
     }
 
-    /* --- 6. PDF BİLGİ GÖSTERİMİ --- */
+    /* --- PDF BİLGİ GÖSTERİMİ --- */
     .pdf-info-card {
         background: var(--surface);
         border-radius: var(--radius-lg);
@@ -287,7 +287,7 @@
         font-size: 20px;
     }
 
-    /* --- 7. SESLİ OKUMA KONTROLLERİ --- */
+    /* --- SESLİ OKUMA KONTROLLERİ --- */
     .speech-controls {
         background: var(--surface);
         border-radius: var(--radius-lg);
@@ -404,7 +404,7 @@
         border-color: var(--primary);
     }
 
-    /* --- 8. TEXT GÖSTERİM ALANI --- */
+    /* --- TEXT GÖSTERİM ALANI --- */
     .text-display {
         background: var(--surface);
         border-radius: var(--radius-lg);
@@ -445,7 +445,7 @@
         color: var(--primary);
     }
 
-    /* --- 9. DURUM MESAJLARI --- */
+    /* --- DURUM MESAJLARI --- */
     .status-message {
         padding: 16px;
         border-radius: var(--radius-md);
@@ -483,7 +483,7 @@
         border: 1px solid rgba(231, 76, 60, 0.3);
     }
 
-    /* --- 10. BOŞ DURUM MESAJI --- */
+    /* --- BOŞ DURUM MESAJI --- */
     .empty-state {
         text-align: center;
         padding: 40px 20px;
@@ -506,7 +506,36 @@
         margin-bottom: 24px;
     }
 
-    /* --- 11. ANİMASYONLAR --- */
+    /* --- ANDROID PDF SELECT BUTTON STYLE --- */
+    .android-file-button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 16px 24px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all var(--transition-fast);
+        text-align: center;
+        width: 100%;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .android-file-button:hover {
+        background: var(--secondary);
+        transform: translateY(-2px);
+    }
+    
+    .android-file-button:active {
+        transform: translateY(0);
+    }
+
+    /* --- ANİMASYONLAR --- */
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -532,7 +561,7 @@
         animation: pulse 1.5s infinite;
     }
 
-    /* --- 12. DARK MODE DÜZENLEMELERİ --- */
+    /* --- DARK MODE DÜZENLEMELERİ --- */
     [data-theme="dark"] .pdf-select-section:hover {
         background: rgba(74, 111, 165, 0.2);
     }
@@ -549,7 +578,7 @@
         background: rgba(255, 235, 59, 0.3);
     }
 
-    /* --- 13. RESPONSIVE TASARIM --- */
+    /* --- RESPONSIVE TASARIM --- */
     @media (min-width: 768px) {
         .container {
             max-width: 600px;
@@ -609,6 +638,12 @@
         <h2 class="select-pdf-title" id="selectPdfTitle">PDF Dosyası Seç</h2>
         <p class="select-pdf-subtitle" id="selectPdfSubtitle">Sesli okuma için bir PDF dosyası seçin</p>
       </div>
+      
+      <!-- Android PDF Seç Butonu -->
+      <button class="android-file-button" onclick="selectPDFFile()">
+        <span class="material-symbols-rounded">upload_file</span>
+        <span id="androidSelectBtnText">PDF DOSYASI SEÇ</span>
+      </button>
       
       <!-- PDF Bilgi Kartı -->
       <div class="pdf-info-card" id="pdfInfoCard">
@@ -706,8 +741,15 @@
   <!-- Gizli File Input -->
   <input type="file" id="fileInput" accept=".pdf" class="hidden">
 
+  <!-- PDF.js Kütüphaneleri -->
   <script src="pdf.min.js"></script>
-  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";</script>
+  <script>
+    // PDF.js worker'ı tanımla
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+    }
+  </script>
+  
   <script src="lang.js"></script>
   
   <script>
@@ -725,7 +767,6 @@
     let pdfDocument = null;
     let textPositions = [];
     let currentHighlight = null;
-    let extractionInProgress = false;
     
     // ==================== DİL ÇEVİRİLERİ ====================
     const translations = {
@@ -733,6 +774,7 @@
             "pageTitle": "Sesli Okuma",
             "selectPdfTitle": "PDF Dosyası Seç",
             "selectPdfSubtitle": "Sesli okuma için bir PDF dosyası seçin",
+            "androidSelectBtnText": "PDF DOSYASI SEÇ",
             "btnPrev": "GERİ",
             "btnPlayPause": "OYUNAT",
             "btnNext": "İLERİ",
@@ -765,6 +807,7 @@
             "pageTitle": "Text-to-Speech",
             "selectPdfTitle": "Select PDF File",
             "selectPdfSubtitle": "Select a PDF file for text-to-speech",
+            "androidSelectBtnText": "SELECT PDF FILE",
             "btnPrev": "PREV",
             "btnPlayPause": "PLAY",
             "btnNext": "NEXT",
@@ -797,6 +840,7 @@
             "pageTitle": "القراءة بصوت",
             "selectPdfTitle": "اختر ملف PDF",
             "selectPdfSubtitle": "اختر ملف PDF للقراءة بصوت",
+            "androidSelectBtnText": "اختر ملف PDF",
             "btnPrev": "السابق",
             "btnPlayPause": "تشغيل",
             "btnNext": "التالي",
@@ -829,6 +873,7 @@
             "pageTitle": "Sprachausgabe",
             "selectPdfTitle": "PDF-Datei auswählen",
             "selectPdfSubtitle": "Wählen Sie eine PDF-Datei für die Sprachausgabe",
+            "androidSelectBtnText": "PDF-DATEI AUSWÄHLEN",
             "btnPrev": "ZURÜCK",
             "btnPlayPause": "ABSPIELEN",
             "btnNext": "WEITER",
@@ -861,6 +906,7 @@
             "pageTitle": "Lecture vocale",
             "selectPdfTitle": "Sélectionner un fichier PDF",
             "selectPdfSubtitle": "Sélectionnez un fichier PDF pour la lecture vocale",
+            "androidSelectBtnText": "SÉLECTIONNER UN FICHIER PDF",
             "btnPrev": "PRÉCÉDENT",
             "btnPlayPause": "LECTURE",
             "btnNext": "SUIVANT",
@@ -893,6 +939,7 @@
             "pageTitle": "Lectura en voz alta",
             "selectPdfTitle": "Seleccionar archivo PDF",
             "selectPdfSubtitle": "Seleccione un archivo PDF para lectura en voz alta",
+            "androidSelectBtnText": "SELECCIONAR ARCHIVO PDF",
             "btnPrev": "ANTERIOR",
             "btnPlayPause": "REPRODUCIR",
             "btnNext": "SIGUIENTE",
@@ -925,6 +972,7 @@
             "pageTitle": "Озвучка текста",
             "selectPdfTitle": "Выбрать файл PDF",
             "selectPdfSubtitle": "Выберите файл PDF для озвучки",
+            "androidSelectBtnText": "ВЫБРАТЬ ФАЙЛ PDF",
             "btnPrev": "НАЗАД",
             "btnPlayPause": "ИГРАТЬ",
             "btnNext": "ДАЛЬШЕ",
@@ -957,6 +1005,7 @@
             "pageTitle": "语音朗读",
             "selectPdfTitle": "选择PDF文件",
             "selectPdfSubtitle": "选择PDF文件进行语音朗读",
+            "androidSelectBtnText": "选择PDF文件",
             "btnPrev": "上一句",
             "btnPlayPause": "播放",
             "btnNext": "下一句",
@@ -989,6 +1038,7 @@
             "pageTitle": "音声読み上げ",
             "selectPdfTitle": "PDFファイルを選択",
             "selectPdfSubtitle": "音声読み上げ用のPDFファイルを選択",
+            "androidSelectBtnText": "PDFファイルを選択",
             "btnPrev": "前へ",
             "btnPlayPause": "再生",
             "btnNext": "次へ",
@@ -1021,6 +1071,7 @@
             "pageTitle": "텍스트 음성 변환",
             "selectPdfTitle": "PDF 파일 선택",
             "selectPdfSubtitle": "텍스트 음성 변환을 위한 PDF 파일 선택",
+            "androidSelectBtnText": "PDF 파일 선택",
             "btnPrev": "이전",
             "btnPlayPause": "재생",
             "btnNext": "다음",
@@ -1053,6 +1104,7 @@
             "pageTitle": "Leitura em voz alta",
             "selectPdfTitle": "Selecionar arquivo PDF",
             "selectPdfSubtitle": "Selecione um arquivo PDF para leitura em voz alta",
+            "androidSelectBtnText": "SELECIONAR ARQUIVO PDF",
             "btnPrev": "ANTERIOR",
             "btnPlayPause": "REPRODUZIR",
             "btnNext": "PRÓXIMO",
@@ -1085,6 +1137,7 @@
             "pageTitle": "Lettura vocale",
             "selectPdfTitle": "Seleziona file PDF",
             "selectPdfSubtitle": "Seleziona un file PDF per la lettura vocale",
+            "androidSelectBtnText": "SELEZIONA FILE PDF",
             "btnPrev": "PRECEDENTE",
             "btnPlayPause": "RIPRODUCI",
             "btnNext": "SUCCESSIVO",
@@ -1117,6 +1170,7 @@
             "pageTitle": "Spraakherkenning",
             "selectPdfTitle": "Selecteer PDF-bestand",
             "selectPdfSubtitle": "Selecteer een PDF-bestand voor spraakherkenning",
+            "androidSelectBtnText": "SELECTEER PDF-BESTAND",
             "btnPrev": "VORIGE",
             "btnPlayPause": "AFSPELEN",
             "btnNext": "VOLGENDE",
@@ -1149,6 +1203,7 @@
             "pageTitle": "Czytanie na głos",
             "selectPdfTitle": "Wybierz plik PDF",
             "selectPdfSubtitle": "Wybierz plik PDF do czytania na głos",
+            "androidSelectBtnText": "WYBIERZ PLIK PDF",
             "btnPrev": "POPRZEDNI",
             "btnPlayPause": "ODTWÓRZ",
             "btnNext": "NASTĘPNY",
@@ -1181,6 +1236,7 @@
             "pageTitle": "Kusoma kwa sauti",
             "selectPdfTitle": "Chagua faili ya PDF",
             "selectPdfSubtitle": "Chagua faili ya PDF kwa kusoma kwa sauti",
+            "androidSelectBtnText": "CHAGUA FAILI YA PDF",
             "btnPrev": "NYUMA",
             "btnPlayPause": "CHEZA",
             "btnNext": "INAYOFUATA",
@@ -1213,6 +1269,7 @@
             "pageTitle": "टेक्स्ट-टू-स्पीच",
             "selectPdfTitle": "PDF फ़ाइल चुनें",
             "selectPdfSubtitle": "टेक्स्ट-टू-स्पीच के लिए एक PDF फ़ाइल चुनें",
+            "androidSelectBtnText": "PDF फ़ाइल चुनें",
             "btnPrev": "पिछला",
             "btnPlayPause": "चलाएँ",
             "btnNext": "अगला",
@@ -1361,7 +1418,9 @@
             document.getElementById('pageTitle').textContent = getTranslation('pageTitle');
             document.getElementById('selectPdfTitle').textContent = getTranslation('selectPdfTitle');
             document.getElementById('selectPdfSubtitle').textContent = getTranslation('selectPdfSubtitle');
+            document.getElementById('androidSelectBtnText').textContent = getTranslation('androidSelectBtnText');
             document.getElementById('emptyStateText').textContent = getTranslation('emptyStateText');
+            document.getElementById('statusText').textContent = getTranslation('statusSelectPdf');
             
             // Buton metinleri
             document.getElementById('btnPrev').querySelector('.button-text').textContent = getTranslation('btnPrev');
@@ -1428,9 +1487,16 @@
             document.getElementById('pdfSelectSection').style.display = 'none';
             document.getElementById('pdfInfoCard').classList.add('visible');
             document.getElementById('emptyState').classList.remove('visible');
+            document.getElementById('statusMessage').classList.remove('visible');
             
             // PDF yükle
             const arrayBuffer = await file.arrayBuffer();
+            
+            // PDF.js kütüphanesini kontrol et
+            if (typeof pdfjsLib === 'undefined') {
+                throw new Error('PDF.js kütüphanesi yüklenemedi');
+            }
+            
             pdfDocument = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             
             // Metni çıkar
@@ -1438,7 +1504,7 @@
             
         } catch (error) {
             console.error('PDF yükleme hatası:', error);
-            showStatus(getTranslation('statusError'), 'error');
+            showStatus(getTranslation('statusError') + ': ' + error.message, 'error');
             clearSelection();
         }
     }
@@ -1472,7 +1538,7 @@
             }
             
             if (!fullText.trim()) {
-                throw new Error('No text found');
+                throw new Error(getTranslation('alertNoText'));
             }
             
             // Dili algıla
@@ -1503,7 +1569,7 @@
             
         } catch (error) {
             console.error('Metin çıkarma hatası:', error);
-            showStatus(getTranslation('alertNoText'), 'error');
+            showStatus(error.message || getTranslation('alertNoText'), 'error');
         }
     }
     
@@ -1807,6 +1873,19 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
     
+    // ==================== ANDROID BRIDGE FONKSİYONLARI ====================
+    function openFilePicker() {
+        selectPDFFile();
+    }
+    
+    function onFileSelected(fileData, fileName) {
+        // Android'den gelen dosyayı işle
+        const blob = new Blob([fileData], { type: 'application/pdf' });
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        
+        loadPDFFile(file);
+    }
+    
     // ==================== SAYFA YÜKLENDİĞİNDE ====================
     document.addEventListener('DOMContentLoaded', function() {
         // UI metinlerini güncelle
@@ -1837,6 +1916,13 @@
         
         // Varsayılan hız
         setSpeed(1.0);
+        
+        // Android bridge'i hazırla
+        if (typeof Android !== 'undefined') {
+            window.selectPDFFile = function() {
+                Android.openFilePicker();
+            };
+        }
     });
     
     // ==================== SAYFA KAPATILIRKEN ====================
@@ -1844,7 +1930,7 @@
         stopReading();
     });
     
-    // ==================== ANDROID BRIDGE FONKSİYONLARI ====================
+    // ==================== GLOBAL FONKSİYONLAR ====================
     window.goBack = goBack;
     window.refreshPDFList = refreshPDFList;
     window.selectPDFFile = selectPDFFile;
@@ -1856,6 +1942,28 @@
     window.stopReading = stopReading;
     window.cycleSpeed = cycleSpeed;
     window.setSpeed = setSpeed;
+    window.openFilePicker = openFilePicker;
+    window.onFileSelected = onFileSelected;
+    
+    // Android'den dosya seçildiğinde çağrılır
+    window.onAndroidFileSelected = function(base64Data, fileName) {
+        try {
+            // Base64'i decode et
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            
+            loadPDFFile(file);
+        } catch (error) {
+            console.error('Android dosya yükleme hatası:', error);
+            showStatus('Dosya yüklenemedi: ' + error.message, 'error');
+        }
+    };
     
   </script>
 </body>

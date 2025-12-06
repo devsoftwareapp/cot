@@ -20,7 +20,8 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import android.util.Base64
-import android.webkit.WebSettings // Eklendi: Ayarlar için gerekli
+import android.webkit.MimeTypeMap
+import android.webkit.WebSettings
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
-        // WebView Ayarları
+        // WebView Ayarları - SESLİ OKUMA İÇİN GÜNCELLENDİ
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -53,22 +54,27 @@ class MainActivity : AppCompatActivity() {
             builtInZoomControls = true
             displayZoomControls = false
             
-            // --- GÜNCELLEME BURADA (TTS DÜZELTMESİ) ---
-            databaseEnabled = true // TTS motorunun veritabanı erişimi için
+            // Sesli okuma için önemli ayarlar
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                allowUniversalAccessFromFileURLs = true
+                allowFileAccessFromFileURLs = true
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                mediaPlaybackRequiresUserGesture = false
+            }
             
-            // PDF.js ve TTS'in çalışması için karışık içerik modunu açıyoruz
+            // Android WebView için özel ayarlar
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
-            // ------------------------------------------
-
-            // Ek ayarlar
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                allowUniversalAccessFromFileURLs = true
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                mediaPlaybackRequiresUserGesture = false // Otomatik okuma için kritik
-            }
+            
+            cacheMode = WebSettings.LOAD_DEFAULT
+            setGeolocationEnabled(true)
+            
+            // PDF.js için önemli
+            loadsImagesAutomatically = true
+            blockNetworkImage = false
+            blockNetworkLoads = false
         }
 
         // Android Bridge
@@ -78,13 +84,13 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
                 println("URL yükleme: $url")
-                 
+                
                 // Settings linki
                 if (url == "settings://all_files") {
                     openAllFilesPermission()
                     return true
                 }
-                 
+                
                 // Viewer.html kontrolü
                 if (url.contains("viewer.html")) {
                     isInViewer = true
@@ -105,7 +111,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 println("Sayfa yüklendi: $url")
-                 
+                
                 // Viewer'dan döndüğümüzde
                 if (url.contains("index.html") && isInViewer) {
                     isInViewer = false
@@ -120,6 +126,11 @@ class MainActivity : AppCompatActivity() {
                             }
                         """.trimIndent(), null)
                     }, 300)
+                }
+                
+                // Sesli okuma sayfası için özel JavaScript enjeksiyonu
+                if (url.contains("sesli_okuma.html")) {
+                    injectSpeechSynthesisFix()
                 }
             }
         }
@@ -157,12 +168,123 @@ class MainActivity : AppCompatActivity() {
                 
                 return true
             }
+            
+            // WebView için JavaScript console.log desteği
+            override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage): Boolean {
+                println("WebView Console (${consoleMessage.messageLevel()}): ${consoleMessage.message()}")
+                return true
+            }
         }
 
         webView.loadUrl("file:///android_asset/web/index.html")
         
         // Uygulama açıldığında PDF Reader klasörünü oluştur
         createAppFolder()
+    }
+    
+    // SESLİ OKUMA DÜZELTMESİ: WebView'e JavaScript enjeksiyonu
+    private fun injectSpeechSynthesisFix() {
+        webView.postDelayed({
+            webView.evaluateJavascript("""
+                // Android WebView için SpeechSynthesis düzeltmesi
+                if (!window.speechSynthesis) {
+                    console.warn('SpeechSynthesis API desteklenmiyor, polyfill yükleniyor...');
+                    
+                    // Basit bir polyfill (gerçek ses sentezleme için Android TTS kullanılmalı)
+                    window.SpeechSynthesisUtterance = function(text) {
+                        this.text = text;
+                        this.lang = 'tr-TR';
+                        this.rate = 1.0;
+                        this.pitch = 1.0;
+                        this.volume = 1.0;
+                        
+                        this.onstart = null;
+                        this.onend = null;
+                        this.onerror = null;
+                    };
+                    
+                    window.speechSynthesis = {
+                        speaking: false,
+                        paused: false,
+                        
+                        speak: function(utterance) {
+                            console.log('AndroidBridge.speak çağrılıyor: ' + utterance.text);
+                            
+                            // Android TTS'ye gönder
+                            if (window.Android && Android.speakText) {
+                                Android.speakText(utterance.text, utterance.lang, utterance.rate);
+                                
+                                if (utterance.onstart) {
+                                    setTimeout(utterance.onstart, 100);
+                                }
+                                
+                                if (utterance.onend) {
+                                    setTimeout(utterance.onend, 1000);
+                                }
+                            } else {
+                                console.error('Android.speakText fonksiyonu bulunamadı!');
+                                if (utterance.onerror) {
+                                    utterance.onerror({ error: 'TTS not available' });
+                                }
+                            }
+                        },
+                        
+                        cancel: function() {
+                            console.log('AndroidBridge.cancel çağrılıyor');
+                            if (window.Android && Android.stopSpeaking) {
+                                Android.stopSpeaking();
+                            }
+                            this.speaking = false;
+                            this.paused = false;
+                        },
+                        
+                        pause: function() {
+                            console.log('AndroidBridge.pause çağrılıyor');
+                            if (window.Android && Android.pauseSpeaking) {
+                                Android.pauseSpeaking();
+                            }
+                            this.paused = true;
+                        },
+                        
+                        resume: function() {
+                            console.log('AndroidBridge.resume çağrılıyor');
+                            if (window.Android && Android.resumeSpeaking) {
+                                Android.resumeSpeaking();
+                            }
+                            this.paused = false;
+                        },
+                        
+                        getVoices: function() {
+                            return [{ name: 'Android TTS', lang: 'tr-TR' }];
+                        }
+                    };
+                    
+                    console.log('SpeechSynthesis polyfill yüklendi');
+                } else {
+                    console.log('SpeechSynthesis API zaten mevcut');
+                }
+                
+                // Cordova.js yerine Android Bridge
+                window.cordova = {
+                    file: {
+                        externalRootDirectory: 'file:///storage/emulated/0/'
+                    }
+                };
+                
+                // Alert fonksiyonunu Android'e bağla
+                const originalAlert = window.alert;
+                window.alert = function(message) {
+                    if (window.Android && Android.showToast) {
+                        Android.showToast(message);
+                    } else {
+                        originalAlert(message);
+                    }
+                };
+                
+                console.log('Android WebView fix yüklendi');
+                
+            """.trimIndent(), null)
+        }, 1000)
     }
     
     // Activity result - File chooser sonucu
@@ -410,7 +532,7 @@ class MainActivity : AppCompatActivity() {
             return try {
                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 val appFolder = File(downloadsDir, appFolderName)
-                 
+                
                 // Klasör yoksa oluştur
                 if (!appFolder.exists()) {
                     appFolder.mkdirs()
@@ -710,6 +832,97 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun selectSpeechPDF() {
             selectPDFForSpeech()
+        }
+        
+        // ===== SESLİ OKUMA FONKSİYONLARI =====
+        
+        /** WebView'den gelen metni seslendir */
+        @JavascriptInterface
+        fun speakText(text: String, lang: String, rate: Float) {
+            runOnUiThread {
+                // Android TextToSpeech (TTS) kullanılmalı
+                // Bu örnek için Toast gösteriyoruz, gerçek TTS için implementasyon gerekli
+                Toast.makeText(this@MainActivity, 
+                    "Seslendiriliyor: ${text.take(50)}...", 
+                    Toast.LENGTH_SHORT).show()
+                
+                println("Android TTS: $text (lang: $lang, rate: $rate)")
+            }
+        }
+        
+        /** Seslendirmeyi durdur */
+        @JavascriptInterface
+        fun stopSpeaking() {
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, 
+                    "Seslendirme durduruldu", 
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        /** Seslendirmeyi duraklat */
+        @JavascriptInterface
+        fun pauseSpeaking() {
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, 
+                    "Seslendirme duraklatıldı", 
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        /** Seslendirmeyi devam ettir */
+        @JavascriptInterface
+        fun resumeSpeaking() {
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, 
+                    "Seslendirme devam ediyor", 
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        /** Toast mesajı göster */
+        @JavascriptInterface
+        fun showToast(message: String) {
+            runOnUiThread {
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        /** Base64 PDF'yi aç */
+        @JavascriptInterface
+        fun openBase64PDF(base64Data: String) {
+            try {
+                // Base64 verisini decode et
+                val pdfBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                
+                // Geçici dosya oluştur
+                val tempFile = File(cacheDir, "temp_${System.currentTimeMillis()}.pdf")
+                FileOutputStream(tempFile).use { fos ->
+                    fos.write(pdfBytes)
+                }
+                
+                // Dosyayı aç
+                val uri = FileProvider.getUriForFile(
+                    this@MainActivity,
+                    "${this@MainActivity.packageName}.provider",
+                    tempFile
+                )
+                
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/pdf")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                
+                startActivity(intent)
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF açılamadı: ${e.message}", 
+                        Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

@@ -173,6 +173,7 @@
     .selection-actions {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
     }
     
     .selection-action-btn {
@@ -185,6 +186,7 @@
         font-size: 12px;
         font-weight: 500;
         transition: all var(--transition-fast);
+        white-space: nowrap;
     }
     
     .selection-action-btn:hover {
@@ -487,6 +489,7 @@
         <div class="selection-actions">
           <button class="selection-action-btn" onclick="selectAllPDFs()" id="selectAllBtn">Tümünü Seç</button>
           <button class="selection-action-btn" onclick="deselectAllPDFs()" id="deselectAllBtn">Seçimi Temizle</button>
+          <button class="selection-action-btn primary" onclick="selectFilesFromWebView()" id="selectFilesBtn">Dosya Seç</button>
         </div>
       </div>
 
@@ -525,12 +528,15 @@
     </div>
   </main>
 
+  <!-- Gizli File Input -->
+  <input type="file" id="webviewFileInput" multiple accept=".pdf" class="hidden">
+
   <script src="pdf-lib.min.js"></script>
   <script src="lang.js"></script>
   <script>
     // --- DEĞİŞKENLER ---
     let devicePDFs = []; // Cihazdaki PDF'ler
-    let selectedPDFs = []; // Seçilen PDF'ler
+    let selectedPDFs = []; // Seçilen PDF'ler (fileObject içerir)
     let mergedPdfBlob = null;
 
     // --- TÜM DİL ÇEVİRİLERİ ---
@@ -555,7 +561,8 @@
             "loadingPDFs": "جاري تحميل ملفات PDF...",
             "errorLoading": "خطأ في تحميل ملفات PDF",
             "permissionRequired": "يتطلب الوصول إلى ملفات PDF إذنًا",
-            "grantPermission": "منح الإذن"
+            "grantPermission": "منح الإذن",
+            "selectFiles": "اختر الملفات"
         },
         "bn": {
             "pageTitle": "PDF মার্জ",
@@ -577,7 +584,8 @@
             "loadingPDFs": "PDF লোড হচ্ছে...",
             "errorLoading": "PDF লোড করতে ত্রুটি",
             "permissionRequired": "PDF ফাইল অ্যাক্সেসের জন্য অনুমতি প্রয়োজন",
-            "grantPermission": "অনুমতি দিন"
+            "grantPermission": "অনুমতি দিন",
+            "selectFiles": "ফাইল নির্বাচন করুন"
         },
         "de": {
             "pageTitle": "PDF Zusammenführen",
@@ -599,7 +607,8 @@
             "loadingPDFs": "PDFs werden geladen...",
             "errorLoading": "Fehler beim Laden der PDFs",
             "permissionRequired": "Zugriff auf PDF-Dateien erfordert Berechtigung",
-            "grantPermission": "Berechtigung erteilen"
+            "grantPermission": "Berechtigung erteilen",
+            "selectFiles": "Dateien auswählen"
         },
         "en": {
             "pageTitle": "PDF Merge",
@@ -621,7 +630,8 @@
             "loadingPDFs": "Loading PDFs...",
             "errorLoading": "Error loading PDFs",
             "permissionRequired": "PDF file access requires permission",
-            "grantPermission": "Grant Permission"
+            "grantPermission": "Grant Permission",
+            "selectFiles": "Select Files"
         },
         "es": {
             "pageTitle": "Combinar PDF",
@@ -643,7 +653,8 @@
             "loadingPDFs": "Cargando PDFs...",
             "errorLoading": "Error al cargar PDFs",
             "permissionRequired": "El acceso a archivos PDF requiere permiso",
-            "grantPermission": "Conceder permiso"
+            "grantPermission": "Conceder permiso",
+            "selectFiles": "Seleccionar archivos"
         },
         "fr": {
             "pageTitle": "Fusionner PDF",
@@ -665,7 +676,8 @@
             "loadingPDFs": "Chargement des PDF...",
             "errorLoading": "Erreur de chargement des PDF",
             "permissionRequired": "L'accès aux fichiers PDF nécessite une autorisation",
-            "grantPermission": "Accorder l'autorisation"
+            "grantPermission": "Accorder l'autorisation",
+            "selectFiles": "Sélectionner des fichiers"
         },
         "hi": {
             "pageTitle": "PDF मर्ज",
@@ -687,7 +699,8 @@
             "loadingPDFs": "PDF लोड हो रहे हैं...",
             "errorLoading": "PDF लोड करने में त्रुटि",
             "permissionRequired": "PDF फ़ाइल पहुंच के लिए अनुमति आवश्यक है",
-            "grantPermission": "अनुमति दें"
+            "grantPermission": "अनुमति दें",
+            "selectFiles": "फ़ाइलें चुनें"
         },
         "id": {
             "pageTitle": "Gabungkan PDF",
@@ -709,7 +722,8 @@
             "loadingPDFs": "Memuat PDF...",
             "errorLoading": "Kesalahan memuat PDF",
             "permissionRequired": "Akses file PDF memerlukan izin",
-            "grantPermission": "Berikan Izin"
+            "grantPermission": "Berikan Izin",
+            "selectFiles": "Pilih File"
         },
         "ja": {
             "pageTitle": "PDF結合",
@@ -731,7 +745,8 @@
             "loadingPDFs": "PDFを読み込み中...",
             "errorLoading": "PDFの読み込みエラー",
             "permissionRequired": "PDFファイルへのアクセスには許可が必要です",
-            "grantPermission": "許可を与える"
+            "grantPermission": "許可を与える",
+            "selectFiles": "ファイルを選択"
         },
         "ku": {
             "pageTitle": "PDF-ê Pêşkêş bike",
@@ -752,8 +767,9 @@
             "refresh": "Nû bike",
             "loadingPDFs": "PDF-ê têne barkirin...",
             "errorLoading": "Çewtiya barkirina PDF-ê",
-            "permissionRequired": "Gihiştina pelê PDF-ê destûrê dixwaze",
-            "grantPermission": "Destûrê bide"
+            "permissionRequired": "Gihiştina pelê PDF-ê destûré wazeno",
+            "grantPermission": "Destûrê bide",
+            "selectFiles": "Pelê hilbijêrin"
         },
         "pt": {
             "pageTitle": "Mesclar PDF",
@@ -775,7 +791,8 @@
             "loadingPDFs": "Carregando PDFs...",
             "errorLoading": "Erro ao carregar PDFs",
             "permissionRequired": "Acesso a arquivos PDF requer permissão",
-            "grantPermission": "Conceder Permissão"
+            "grantPermission": "Conceder Permissão",
+            "selectFiles": "Selecionar Arquivos"
         },
         "ru": {
             "pageTitle": "Объединение PDF",
@@ -797,7 +814,8 @@
             "loadingPDFs": "Загрузка PDF...",
             "errorLoading": "Ошибка загрузки PDF",
             "permissionRequired": "Доступ к файлам PDF требует разрешения",
-            "grantPermission": "Предоставить разрешение"
+            "grantPermission": "Предоставить разрешение",
+            "selectFiles": "Выбрать файлы"
         },
         "sw": {
             "pageTitle": "Unganisha PDF",
@@ -819,7 +837,8 @@
             "loadingPDFs": "Inapakia PDF...",
             "errorLoading": "Hitilafu katika kupakia PDF",
             "permissionRequired": "Ufikiaji wa faili za PDF unahitaji idhini",
-            "grantPermission": "Toa Idhini"
+            "grantPermission": "Toa Idhini",
+            "selectFiles": "Chagua Faili"
         },
         "tr": {
             "pageTitle": "PDF Birleştirme",
@@ -841,7 +860,8 @@
             "loadingPDFs": "PDF'ler yükleniyor...",
             "errorLoading": "PDF'ler yüklenirken hata oluştu",
             "permissionRequired": "PDF dosyalarına erişim için izin gerekli",
-            "grantPermission": "İzin Ver"
+            "grantPermission": "İzin Ver",
+            "selectFiles": "Dosya Seç"
         },
         "ur": {
             "pageTitle": "PDF ملا دیں",
@@ -863,7 +883,8 @@
             "loadingPDFs": "PDF لوڈ ہو رہے ہیں...",
             "errorLoading": "PDF لوڈ کرنے میں خرابی",
             "permissionRequired": "PDF فائل تک رسائی کے لیے اجازت درکار ہے",
-            "grantPermission": "اجازت دیں"
+            "grantPermission": "اجازت دیں",
+            "selectFiles": "فائلیں منتخب کریں"
         },
         "za": {
             "pageTitle": "PDFyan Pêro Pê kerdış",
@@ -885,7 +906,8 @@
             "loadingPDFs": "PDFyan têne barkirin...",
             "errorLoading": "Xetaya barkirina PDFyan",
             "permissionRequired": "Gihîştina dosyayé PDFyan destûré wazeno",
-            "grantPermission": "Destûr bide"
+            "grantPermission": "Destûr bide",
+            "selectFiles": "Dosyayan weçiné"
         },
         "zh": {
             "pageTitle": "PDF合并",
@@ -907,7 +929,8 @@
             "loadingPDFs": "正在加载PDF...",
             "errorLoading": "加载PDF时出错",
             "permissionRequired": "访问PDF文件需要权限",
-            "grantPermission": "授予权限"
+            "grantPermission": "授予权限",
+            "selectFiles": "选择文件"
         }
     };
 
@@ -928,6 +951,7 @@
             document.getElementById('selectionInfo').textContent = getTranslation('selectInfo');
             document.getElementById('selectAllBtn').textContent = getTranslation('selectAll');
             document.getElementById('deselectAllBtn').textContent = getTranslation('deselectAll');
+            document.getElementById('selectFilesBtn').textContent = getTranslation('selectFiles');
             document.getElementById('selectedHeader').innerHTML = `${getTranslation('selectedPDFs')} <span id="selectedCount">0</span>`;
             document.getElementById('mergingPdfText').innerHTML = `${getTranslation('mergingPdf')} <span id="progressText">0%</span>`;
             document.getElementById('savedToText').textContent = getTranslation('savedTo');
@@ -996,7 +1020,8 @@
                     size: size,
                     date: date,
                     path: path,
-                    isSelected: false
+                    isSelected: false,
+                    fileObject: null // Android'den gelenlerde fileObject yok
                 });
             });
 
@@ -1066,7 +1091,9 @@
 
         let html = '';
         devicePDFs.forEach(pdf => {
-            const isSelected = selectedPDFs.some(selected => selected.path === pdf.path);
+            const isSelected = selectedPDFs.some(selected => 
+                selected.path === pdf.path || selected.name === pdf.name
+            );
             const selectedClass = isSelected ? 'selected' : '';
             
             html += `
@@ -1080,6 +1107,7 @@
                             <span>${pdf.size}</span>
                             <span>•</span>
                             <span>${pdf.date}</span>
+                            ${pdf.fileObject ? '<span style="color: var(--success);">(WebView)</span>' : ''}
                         </div>
                     </div>
                 </div>`;
@@ -1120,7 +1148,9 @@
         const pdf = devicePDFs.find(p => p.id === id);
         if (!pdf) return;
 
-        const index = selectedPDFs.findIndex(selected => selected.path === pdf.path);
+        const index = selectedPDFs.findIndex(selected => 
+            selected.path === pdf.path || selected.name === pdf.name
+        );
         
         if (index === -1) {
             // Seç
@@ -1161,7 +1191,9 @@
         selectedPDFs.splice(index, 1);
         
         // Device PDF listesinde de güncelle
-        const devicePDF = devicePDFs.find(p => p.path === removedPDF.path);
+        const devicePDF = devicePDFs.find(p => 
+            p.path === removedPDF.path || p.name === removedPDF.name
+        );
         if (devicePDF) {
             devicePDF.isSelected = false;
         }
@@ -1190,6 +1222,54 @@
         mergedPdfBlob = null;
     }
 
+    // --- WEBVIEW DOSYA SEÇME ---
+    function selectFilesFromWebView() {
+        document.getElementById('webviewFileInput').click();
+    }
+
+    // File input event listener
+    document.getElementById('webviewFileInput').addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        files.forEach((file, index) => {
+            if (file.type === 'application/pdf') {
+                // Dosya zaten listede var mı kontrol et
+                const existingIndex = devicePDFs.findIndex(pdf => pdf.name === file.name);
+                
+                if (existingIndex === -1) {
+                    // Yeni PDF ekle
+                    const pdfData = {
+                        id: devicePDFs.length + index + 1000, // Yüksek ID
+                        name: file.name,
+                        size: formatBytes(file.size),
+                        date: getCurrentDate(),
+                        path: file.name, // Tam yol yok, sadece isim
+                        isSelected: true,
+                        fileObject: file // File objesini sakla
+                    };
+                    
+                    // Listelere ekle
+                    devicePDFs.push(pdfData);
+                    selectedPDFs.push(pdfData);
+                } else {
+                    // Zaten varsa sadece seç
+                    devicePDFs[existingIndex].isSelected = true;
+                    if (!selectedPDFs.some(pdf => pdf.name === file.name)) {
+                        selectedPDFs.push(devicePDFs[existingIndex]);
+                    }
+                }
+            }
+        });
+        
+        // Listeleri güncelle
+        renderPDFList();
+        renderSelectedList();
+        updateButtons();
+        
+        // Input'u temizle
+        this.value = '';
+    });
+
     // --- PDF BİRLEŞTİRME ---
     async function mergePDFs() {
         if (selectedPDFs.length < 2) {
@@ -1213,18 +1293,34 @@
                 const pdf = selectedPDFs[i];
                 
                 try {
-                    // Android'den dosya verisini al
+                    // Öncelik sırası:
+                    // 1. WebView fileObject (en güvenilir)
+                    // 2. Android.getPDFData()
+                    // 3. fetch()
+                    
                     let pdfData;
-                    if (typeof Android !== 'undefined' && Android.getFileData) {
+                    
+                    if (pdf.fileObject) {
+                        // WebView içinden seçilen dosya
+                        const arrayBuffer = await pdf.fileObject.arrayBuffer();
+                        pdfData = arrayBuffer;
+                        console.log(`WebView dosyası yüklendi: ${pdf.name}`);
+                    } else if (typeof Android !== 'undefined' && Android.getPDFData && pdf.path && !pdf.path.startsWith('http')) {
+                        // Android'den al
                         pdfData = await getFileDataFromAndroid(pdf.path);
+                        console.log(`Android'den yüklendi: ${pdf.name}`);
                     } else {
+                        // Son çare fetch
                         pdfData = await fetchPDFData(pdf.path);
+                        console.log(`Fetch ile yüklendi: ${pdf.name}`);
                     }
                     
                     if (!pdfData) {
-                        throw new Error(`PDF yüklenemedi: ${pdf.name}`);
+                        console.warn(`PDF verisi alınamadı: ${pdf.name}`);
+                        continue;
                     }
                     
+                    // PDF'i yükle ve birleştir
                     const pdfDoc = await PDFDocument.load(pdfData);
                     const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
                     pages.forEach(page => mergedPdf.addPage(page));
@@ -1234,15 +1330,19 @@
                     continue;
                 }
                 
+                // İlerleme güncelle
                 const progressPercent = Math.round(((i + 1) / selectedPDFs.length) * 100);
                 progressText.textContent = `${progressPercent}%`;
                 
-                await new Promise(resolve => setTimeout(resolve, 10));
+                // Küçük bir bekleme (UI güncellemesi için)
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
 
+            // Birleştirilmiş PDF'i kaydet
             const mergedPdfBytes = await mergedPdf.save();
             mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
             
+            // Başarı mesajını göster
             progress.style.display = 'none';
             document.getElementById('successMessage').textContent = getTranslation('mergeSuccess');
             document.getElementById('success').style.display = 'block';
@@ -1263,6 +1363,7 @@
                 if (typeof Android !== 'undefined' && Android.getPDFData) {
                     const base64Data = Android.getPDFData(filePath);
                     if (base64Data && base64Data.trim().length > 0) {
+                        // Base64'i ArrayBuffer'a çevir
                         const binaryString = atob(base64Data);
                         const bytes = new Uint8Array(binaryString.length);
                         for (let i = 0; i < binaryString.length; i++) {
@@ -1303,18 +1404,19 @@
         const reader = new FileReader();
         reader.onload = function() {
             const base64data = reader.result.split(',')[1];
+            const fileName = `merged_${Date.now()}.pdf`;
             
             if (typeof Android !== 'undefined' && Android.saveMergedPDF) {
-                const fileName = `merged_${Date.now()}.pdf`;
                 Android.saveMergedPDF(base64data, fileName);
                 
                 document.getElementById('successMessage').textContent = getTranslation('saveSuccess');
                 document.getElementById('saveBtn').style.display = 'none';
             } else {
+                // Web tarayıcısı için
                 const url = URL.createObjectURL(mergedPdfBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'merged.pdf';
+                a.download = fileName;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1378,6 +1480,7 @@
     window.mergePDFs = mergePDFs;
     window.saveMergedPDF = saveMergedPDF;
     window.requestPermission = requestPermission;
+    window.selectFilesFromWebView = selectFilesFromWebView;
     window.onAndroidResume = onAndroidResume;
   </script>
 </body>

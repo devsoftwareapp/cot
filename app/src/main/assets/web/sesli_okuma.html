@@ -3,125 +3,6 @@
 <html dir="ltr" mozdisallowselectionprint>
   <head>
 
-    
-<script>
-// ANDROID PDF SEÇME ENTEGRASYONU - DÜZELTİLMİŞ
-document.addEventListener('DOMContentLoaded', function() {
-    // 1. URL'den PDF parametresini kontrol et
-    const urlParams = new URLSearchParams(window.location.search);
-    const pdfFile = urlParams.get('file');
-    
-    if (pdfFile) {
-        console.log("Android'den PDF yükleniyor:", pdfFile);
-        
-        // PDF.js viewer'ın tamamen yüklenmesini bekle
-        const waitForPDFViewer = setInterval(() => {
-            if (typeof PDFViewerApplication !== 'undefined') {
-                clearInterval(waitForPDFViewer);
-                
-                console.log("PDF.js viewer hazır, PDF açılıyor...");
-                
-                // PDF'yi aç
-                try {
-                    PDFViewerApplication.open(pdfFile);
-                    hideCenterButton();
-                    
-                    const toolbar = document.getElementById('customToolbar');
-                    if (toolbar) {
-                        toolbar.classList.add('visible');
-                    }
-                    
-                    console.log("PDF başarıyla yüklendi");
-                } catch (error) {
-                    console.error("PDF yükleme hatası:", error);
-                    alert("PDF yüklenirken hata oluştu: " + error.message);
-                }
-            }
-        }, 100);
-        
-        // 10 saniye sonra timeout
-        setTimeout(() => {
-            clearInterval(waitForPDFViewer);
-            if (typeof PDFViewerApplication === 'undefined') {
-                console.error("PDF.js viewer yüklenemedi!");
-                alert("PDF görüntüleyici yüklenemedi. Lütfen sayfayı yenileyin.");
-            }
-        }, 10000);
-    }
-    
-    // 2. Center butonunu Android'e bağla
-    const centerButton = document.getElementById('centerPDFButton');
-    if (centerButton) {
-        centerButton.onclick = function() {
-            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
-                Android.selectSpeechPDF();
-            } else {
-                alert("Lütfen Android uygulamasından PDF seçin");
-            }
-        };
-    }
-    
-    // 3. Secondary Open butonunu Android'e bağla
-    const secondaryOpenBtn = document.getElementById('secondaryOpenFile');
-    if (secondaryOpenBtn) {
-        secondaryOpenBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
-                Android.selectSpeechPDF();
-            }
-            return false;
-        };
-    }
-    
-    // 4. Android'den dönen PDF'i işlemek için global fonksiyon
-    window.onPDFSelectedForSpeech = function(filePath) {
-        console.log("Android'den PDF alındı:", filePath);
-        
-        // URL parametresi ekleyerek sayfayı yeniden yükle
-        const newUrl = window.location.pathname + '?file=' + encodeURIComponent(filePath);
-        window.location.href = newUrl;
-    };
-});
-
-// Alternatif: PDF yükleme fonksiyonu (event listener ile)
-function loadPDFWhenReady(pdfPath) {
-    if (typeof PDFViewerApplication !== 'undefined' && PDFViewerApplication.open) {
-        console.log("PDFViewerApplication hazır, açılıyor...");
-        PDFViewerApplication.open(pdfPath);
-        hideCenterButton();
-        
-        const toolbar = document.getElementById('customToolbar');
-        if (toolbar) {
-            toolbar.classList.add('visible');
-        }
-        return true;
-    }
-    return false;
-}
-
-// Event listener ekle - PDF.js hazır olduğunda otomatik yükle
-if (typeof PDFViewerApplication !== 'undefined') {
-    PDFViewerApplication.eventBus.on('loaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const pdfFile = urlParams.get('file');
-        
-        if (pdfFile) {
-            console.log("PDF.js yüklendi, otomatik açılıyor:", pdfFile);
-            setTimeout(() => {
-                PDFViewerApplication.open(pdfFile);
-                hideCenterButton();
-                
-                const toolbar = document.getElementById('customToolbar');
-                if (toolbar) {
-                    toolbar.classList.add('visible');
-                }
-            }, 500);
-        }
-    });
-}
-</script>
           
 <style>
 /* SESLİ OKUMA ÖZELLİKLERİ */
@@ -2744,7 +2625,146 @@ if (typeof PDFViewerApplication !== 'undefined') {
 }
 
 
+// =============================================
+// ANDROID ENTEGRASYONU - PDF SEÇME VE YÜKLEME
+// =============================================
 
+// URL'den PDF parametresini kontrol et ve yükle
+function checkAndLoadPDFFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pdfFile = urlParams.get('file');
+    
+    if (pdfFile) {
+        console.log("📱 Android'den PDF alındı:", pdfFile);
+        
+        // PDF.js viewer hazır mı kontrol et
+        if (typeof PDFViewerApplication !== 'undefined' && PDFViewerApplication.open) {
+            // Hemen yükle
+            console.log("✅ PDF.js hazır, PDF açılıyor...");
+            PDFViewerApplication.open(pdfFile);
+            hideCenterButton();
+            
+            const toolbar = document.getElementById('customToolbar');
+            if (toolbar) {
+                toolbar.classList.add('visible');
+            }
+        } else {
+            // Değilse, event listener ekle
+            console.log("⏳ PDF.js henüz hazır değil, bekleniyor...");
+            if (typeof PDFViewerApplication !== 'undefined') {
+                PDFViewerApplication.eventBus.on('loaded', function() {
+                    console.log("✅ PDF.js yüklendi, şimdi PDF açılıyor...");
+                    setTimeout(() => {
+                        PDFViewerApplication.open(pdfFile);
+                        hideCenterButton();
+                        
+                        const toolbar = document.getElementById('customToolbar');
+                        if (toolbar) {
+                            toolbar.classList.add('visible');
+                        }
+                    }, 500);
+                });
+            }
+        }
+    }
+}
+
+// Butonları Android'e bağla
+function setupAndroidButtons() {
+    // Center butonunu Android'e bağla
+    const centerButton = document.getElementById('centerPDFButton');
+    if (centerButton) {
+        const originalOnClick = centerButton.onclick;
+        centerButton.onclick = function() {
+            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
+                Android.selectSpeechPDF();
+            } else if (originalOnClick) {
+                originalOnClick.call(this);
+            } else {
+                console.warn("Android bridge bulunamadı!");
+            }
+        };
+    }
+    
+    // Secondary Open butonunu Android'e bağla
+    const secondaryOpenBtn = document.getElementById('secondaryOpenFile');
+    if (secondaryOpenBtn) {
+        const originalOnClick = secondaryOpenBtn.onclick;
+        secondaryOpenBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
+                Android.selectSpeechPDF();
+            } else if (originalOnClick) {
+                originalOnClick.call(this, e);
+            }
+            return false;
+        };
+    }
+}
+
+// Android'den PDF seçildiğinde çağrılacak global fonksiyon
+window.onPDFSelectedForSpeech = function(filePath) {
+    console.log("📱 Android'den PDF seçildi:", filePath);
+    
+    // URL parametresi ekleyerek sayfayı yeniden yükle
+    const newUrl = window.location.pathname + '?file=' + encodeURIComponent(filePath);
+    window.location.href = newUrl;
+};
+
+// Mevcut initSpeechControls fonksiyonunu güncelle (Android butonlarını bağlamak için)
+const originalInitSpeechControls = initSpeechControls;
+initSpeechControls = function() {
+    // Önce orijinal fonksiyonu çalıştır
+    if (originalInitSpeechControls) {
+        originalInitSpeechControls();
+    }
+    
+    // Sonra Android butonlarını bağla
+    setupAndroidButtons();
+};
+
+// Mevcut setupPDFTextExtraction fonksiyonunu güncelle (PDF yükleme için)
+const originalSetupPDFTextExtraction = setupPDFTextExtraction;
+setupPDFTextExtraction = function() {
+    // Önce orijinal fonksiyonu çalıştır
+    if (originalSetupPDFTextExtraction) {
+        originalSetupPDFTextExtraction();
+    }
+    
+    // Sonra URL'den PDF kontrolü yap
+    if (typeof PDFViewerApplication !== 'undefined') {
+        PDFViewerApplication.eventBus.on('loaded', function() {
+            console.log("📄 PDF.js viewer tamamen yüklendi");
+            // Tekrar PDF kontrolü yap
+            setTimeout(() => {
+                checkAndLoadPDFFromURL();
+            }, 300);
+        });
+    }
+};
+
+// Sayfa yüklendiğinde Android entegrasyonunu başlat
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🚀 sesli_okuma.html yüklendi, Android entegrasyonu başlatılıyor...");
+    
+    // URL'den PDF'i kontrol et ve yükle
+    setTimeout(() => {
+        checkAndLoadPDFFromURL();
+    }, 1000); // 1 saniye bekle, her şeyin yüklenmesi için
+});
+
+// PDF yüklendiğinde dili güncelle (MEVCUT KOD - DEĞİŞMEDİ)
+if (typeof PDFViewerApplication !== 'undefined') {
+    PDFViewerApplication.eventBus.on('documentloaded', function() {
+        setTimeout(updateCustomToolbarLanguage, 500);
+    });
+    
+    PDFViewerApplication.eventBus.on('documentunloaded', function() {
+        setTimeout(updateCustomToolbarLanguage, 500);
+    });
+}
 
 
 

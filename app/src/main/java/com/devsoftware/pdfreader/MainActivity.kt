@@ -8,6 +8,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.webkit.JavascriptInterface
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -18,6 +20,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import android.util.Base64
+import android.webkit.MimeTypeMap
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,6 +28,11 @@ class MainActivity : AppCompatActivity() {
     private var backPressedTime: Long = 0
     private val appFolderName = "PDF Reader"
     private var isInViewer = false
+    
+    // File chooser için değişkenler
+    private var mUploadMessage: ValueCallback<Array<Uri>>? = null
+    private val REQUEST_SELECT_FILE = 100
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,14 +48,24 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = true
             allowContentAccess = true
             allowUniversalAccessFromFileURLs = true
+            allowFileAccessFromFileURLs = true
             setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
+            
+            // Ek ayarlar
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                allowUniversalAccessFromFileURLs = true
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                mediaPlaybackRequiresUserGesture = false
+            }
         }
 
         // Android Bridge
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
+        // WebViewClient
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
                 println("URL yükleme: $url")
@@ -96,11 +114,72 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        
+        // WebChromeClient - FILE CHOOSER İÇİN ÇOK ÖNEMLİ!
+        webView.webChromeClient = object : WebChromeClient() {
+            // For Android 5.0+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                this@MainActivity.filePathCallback?.onReceiveValue(null)
+                this@MainActivity.filePathCallback = filePathCallback
+                
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                intent.type = "*/*"  // Tüm dosya türleri
+                
+                // PDF filtreleme
+                if (fileChooserParams?.acceptTypes != null && fileChooserParams.acceptTypes.isNotEmpty()) {
+                    val acceptTypes = fileChooserParams.acceptTypes.joinToString(",")
+                    if (acceptTypes.contains("pdf") || acceptTypes.contains("application/pdf")) {
+                        intent.type = "application/pdf"
+                    }
+                }
+                
+                try {
+                    startActivityForResult(Intent.createChooser(intent, "Dosya Seç"), REQUEST_SELECT_FILE)
+                } catch (e: Exception) {
+                    filePathCallback?.onReceiveValue(null)
+                    this@MainActivity.filePathCallback = null
+                    return false
+                }
+                
+                return true
+            }
+        }
 
         webView.loadUrl("file:///android_asset/web/index.html")
         
         // Uygulama açıldığında PDF Reader klasörünü oluştur
         createAppFolder()
+    }
+    
+    // Activity result - File chooser sonucu
+    @SuppressLint("NewApi")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        when (requestCode) {
+            REQUEST_SELECT_FILE -> {
+                if (filePathCallback == null) return
+                
+                var results: Array<Uri>? = null
+                
+                if (resultCode == RESULT_OK) {
+                    if (data != null) {
+                        val dataString = data.dataString
+                        if (dataString != null) {
+                            results = arrayOf(Uri.parse(dataString))
+                        }
+                    }
+                }
+                
+                filePathCallback?.onReceiveValue(results)
+                filePathCallback = null
+            }
+        }
     }
 
     /** Tüm Dosya İzni Ekranı */
@@ -141,6 +220,44 @@ class MainActivity : AppCompatActivity() {
 
     /** Android → HTML Bridge */
     inner class AndroidBridge {
+        
+        /** HTML'den dosya seçme için çağrılır */
+        @JavascriptInterface
+        fun openFilePicker() {
+            runOnUiThread {
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.type = "application/pdf"
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                
+                try {
+                    startActivityForResult(
+                        Intent.createChooser(intent, "PDF Dosyası Seç"),
+                        REQUEST_SELECT_FILE
+                    )
+                } catch (ex: Exception) {
+                    Toast.makeText(this@MainActivity, "Dosya seçici açılamadı", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        
+        /** Sesli okuma için dosya seç */
+        @JavascriptInterface
+        fun selectPDFForSpeech() {
+            runOnUiThread {
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.type = "application/pdf"
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                
+                try {
+                    startActivityForResult(
+                        Intent.createChooser(intent, "Sesli Okuma için PDF Seç"),
+                        REQUEST_SELECT_FILE
+                    )
+                } catch (ex: Exception) {
+                    Toast.makeText(this@MainActivity, "Dosya seçici açılamadı", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         /** İzin kontrolü */
         @JavascriptInterface
@@ -578,6 +695,12 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+        
+        /** Sesli okuma için Android'den dosya seç */
+        @JavascriptInterface
+        fun selectSpeechPDF() {
+            selectPDFForSpeech()
         }
     }
 

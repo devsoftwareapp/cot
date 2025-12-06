@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PDF Birleştirme | PDF Reader</title>
+  
+  <style>
+    /* Material Symbols Rounded - Local WebView Font */
+    @font-face {
+        font-family: 'Material Symbols Rounded';
+        src: url('fonts/MaterialSymbolsRounded.woff2') format('woff2');
+        font-weight: 100 700;
+        font-style: normal;
+    }
+
+    .material-symbols-rounded {
+        font-family: 'Material Symbols Rounded';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 24px;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 48;
+    }
+    
+    /* --- 1. DEĞİŞKENLER --- */
+    :root {
+      --background: #e8e8e8;
+      --surface: #e8e8e8;
+      --primary: #E53935;
+      --secondary: #B71C1C;
+      --success: #4cc9f0;
+      --error: #f94144;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --border: #d4d4d4; 
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      
+      --header-height: 64px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+
+    [data-theme="dark"] {
+      --background: #0f172a;
+      --surface: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --border: #334155;
+    }
+
+    /* --- 2. TEMEL AYARLAR --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; font-family: 'Roboto', sans-serif; background-color: var(--background); color: var(--text-primary); overflow: hidden; }
+    body { display: flex; flex-direction: column; }
+    .material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; user-select: none; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-sm { gap: var(--spacing-sm); }
+    .font-semibold { font-weight: 600; }
+    .text-secondary { color: var(--text-secondary); }
+    .text-sm { font-size: 14px; }
+    .justify-between { justify-content: space-between; }
+    .flex-col { flex-direction: column; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mb-2 { margin-bottom: 8px; }
+    .text-center { text-align: center; }
+    .hidden { display: none !important; }
+
+    /* --- 3. ÜST BAR (HEADER) --- */
+    .top-bar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: var(--header-height);
+        z-index: 100;
+        background: var(--surface);
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        box-shadow: var(--shadow-md);
+    }
+    .app-header { 
+        height: var(--header-height); 
+        padding: 0 var(--spacing-lg); 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        border-bottom: 1px solid var(--border);
+        position: relative; 
+    }
+
+    .logo { 
+        width: 36px; 
+        height: 36px; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden; 
+        flex-shrink: 0;
+    } 
+    .logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .app-title { 
+      font-size: 20px; 
+      font-weight: 700; 
+      background: linear-gradient(to right, #B71C1C, #FF6961); 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+      background-clip: text; 
+    }
+    .icon-button { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); }
+    .icon-button:hover { background: rgba(0, 0, 0, 0.05); color: var(--text-primary); }
+    .icon-button.primary { background: var(--primary); color: white; }
+
+    /* --- 4. ANA İÇERİK ALANI --- */
+    .main-content {
+        padding-top: var(--header-height);
+        padding-bottom: 20px;
+        height: 100vh;
+        width: 100%;
+        overflow-y: auto; 
+        position: relative;
+        z-index: 1;
+        transition: padding 0.3s ease;
+    }
+    
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* --- 5. YÜKLEME ALANI --- */
+    .upload-area {
+        border: 2px dashed var(--primary);
+        border-radius: var(--radius-lg);
+        padding: 40px 20px;
+        text-align: center;
+        margin: 20px 0;
+        background: var(--surface);
+        cursor: pointer;
+        transition: all var(--transition-normal);
+    }
+    .upload-area:active {
+        background: rgba(229, 57, 53, 0.05);
+        transform: scale(0.98);
+    }
+    .upload-area h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    .upload-area p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+    }
+
+    /* --- 6. DOSYA LİSTESİ --- */
+    .file-list {
+        margin: 20px 0;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        margin: 8px 0;
+        background: var(--surface);
+        transition: all var(--transition-fast);
+    }
+    .file-name {
+        flex-grow: 1;
+        font-size: 14px;
+        word-break: break-all;
+        color: var(--text-primary);
+    }
+    .remove-btn {
+        background: var(--error);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 10px;
+        font-weight: 500;
+    }
+    .remove-btn:active {
+        opacity: 0.8;
+    }
+
+    /* --- 7. BUTONLAR --- */
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    .btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 16px 20px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all var(--transition-fast);
+        text-align: center;
+        width: 100%;
+    }
+    .btn:disabled {
+        background: var(--text-secondary);
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    .btn:active:not(:disabled) {
+        transform: scale(0.98);
+        background: var(--secondary);
+    }
+    .btn-secondary {
+        background: var(--text-secondary);
+    }
+    .btn-success {
+        background: var(--success);
+    }
+
+    /* --- 8. İLERLEME VE BAŞARI MESAJLARI --- */
+    .progress {
+        margin: 20px 0;
+        text-align: center;
+        padding: 20px;
+        background: rgba(229, 57, 53, 0.1);
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+    }
+    .success {
+        margin: 20px 0;
+        text-align: center;
+        padding: 20px;
+        background: rgba(76, 201, 240, 0.1);
+        border-radius: var(--radius-md);
+        color: var(--success);
+        border: 1px solid var(--success);
+    }
+    .success h3 {
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+    .success p {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    /* --- 9. DARK MOD ADJUSTMENTS --- */
+    [data-theme="dark"] .upload-area {
+        border-color: #FF6961;
+        background: rgba(255, 105, 97, 0.05);
+    }
+    [data-theme="dark"] .btn {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="dark"] .progress {
+        background: rgba(255, 105, 97, 0.1);
+    }
+    [data-theme="dark"] .success {
+        background: rgba(76, 201, 240, 0.15);
+    }
+
+    @media (min-width: 768px) {
+        .container {
+            max-width: 500px;
+        }
+        .button-group {
+            flex-direction: row;
+        }
+        .btn {
+            width: auto;
+            flex: 1;
+        }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar-container" id="topBar">
+    <header class="app-header">
+      <div class="flex items-center gap-sm">
+        <div class="logo">
+            <img src="logo/logo.png" alt="PDF Reader Logo">
+        </div>
+        <h1 class="app-title" id="pageTitle">PDF Birleştirme</h1>
+      </div>
+      <div class="flex items-center gap-sm">
+        <button class="icon-button" onclick="goBack()">
+          <span class="material-symbols-rounded">arrow_back</span>
+        </button>
+      </div>
+    </header>
+  </div>
+
+  <main class="main-content" id="mainContent">
+    <div class="container">
+      <!-- Dosya Seçme Alanı -->
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <h3 id="selectPdfFilesText">PDF Dosyalarını Seçin</h3>
+        <p id="clickToSelectText">Tıklayarak PDF dosyalarını seçin</p>
+        <p><small id="multiplePdfText">Birden fazla PDF seçebilirsiniz</small></p>
+        <input type="file" id="fileInput" multiple accept=".pdf" class="hidden">
+      </div>
+
+      <!-- Seçilen Dosya Listesi -->
+      <div class="file-list" id="fileList"></div>
+
+      <!-- İlerleme Durumu -->
+      <div class="progress" id="progress" style="display: none;">
+        <p id="mergingPdfText">PDF'ler birleştiriliyor... <span id="progressText">0%</span></p>
+      </div>
+
+      <!-- Başarılı Mesajı -->
+      <div class="success" id="success" style="display: none;">
+        <h3 id="successMessage">PDF başarıyla birleştirildi!</h3>
+        <p id="savedToText">Download/PDF Reader klasörüne kaydedildi</p>
+      </div>
+
+      <!-- Butonlar -->
+      <div class="button-group">
+        <button class="btn" id="mergeBtn" disabled onclick="mergePDFs()">PDF BİRLEŞTİR</button>
+        <button class="btn btn-secondary" id="clearBtn" disabled onclick="clearList()">LİSTEYİ TEMİZLE</button>
+        <button class="btn btn-success" id="saveBtn" style="display: none;" onclick="saveMergedPDF()">KAYDET</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="pdf-lib.min.js"></script>
+  <script src="lang.js"></script>
+  <script>
+    // --- DEĞİŞKENLER ---
+    let selectedFiles = [];
+    let mergedPdfBlob = null;
+
+    // --- TÜM DİL ÇEVİRİLERİ ---
+    const translations = {
+        "ar": { "selectPdfFiles": "اختر ملفات PDF", "clickToSelect": "انقر لاختيار ملفات PDF", "multiplePdf": "يمكنك اختيار عدة ملفات PDF", "mergePdf": "دمج PDF", "clearList": "مسح القائمة", "save": "حفظ", "mergingPdf": "جاري دمج ملفات PDF...", "mergeSuccess": "تم دمج PDF بنجاح!", "saveSuccess": "تم حفظ PDF بنجاح", "remove": "إزالة", "selectAtLeast2": "اختر ملفين PDF على الأقل!", "savedTo": "تم الحفظ في مجلد Download/PDF Reader", "pageTitle": "دمج PDF" },
+        "bn": { "selectPdfFiles": "PDF ফাইল নির্বাচন করুন", "clickToSelect": "PDF ফাইল নির্বাচন করতে ক্লিক করুন", "multiplePdf": "আপনি একাধিক PDF নির্বাচন করতে পারেন", "mergePdf": "PDF মার্জ করুন", "clearList": "তালিকা সাফ করুন", "save": "সংরক্ষণ করুন", "mergingPdf": "PDF মার্জ করা হচ্ছে...", "mergeSuccess": "PDF সফলভাবে মার্জ হয়েছে!", "saveSuccess": "PDF সফলভাবে সংরক্ষিত হয়েছে", "remove": "অপসারণ", "selectAtLeast2": "অন্তত 2টি PDF ফাইল নির্বাচন করুন!", "savedTo": "ডাউনলোড/PDF রিডার ফোল্ডারে সংরক্ষিত", "pageTitle": "PDF মার্জ" },
+        "de": { "selectPdfFiles": "PDF-Dateien auswählen", "clickToSelect": "Klicken Sie, um PDF-Dateien auszuwählen", "multiplePdf": "Sie können mehrere PDFs auswählen", "mergePdf": "PDF ZUSAMMENFÜHREN", "clearList": "LISTE LÖSCHEN", "save": "SPEICHERN", "mergingPdf": "PDFs werden zusammengeführt...", "mergeSuccess": "PDF erfolgreich zusammengeführt!", "saveSuccess": "PDF erfolgreich gespeichert", "remove": "Entfernen", "selectAtLeast2": "Wählen Sie mindestens 2 PDF-Dateien aus!", "savedTo": "Im Download/PDF Reader-Ordner gespeichert", "pageTitle": "PDF Zusammenführen" },
+        "en": { "selectPdfFiles": "Select PDF Files", "clickToSelect": "Click to select PDF files", "multiplePdf": "You can select multiple PDFs", "mergePdf": "MERGE PDF", "clearList": "CLEAR LIST", "save": "SAVE", "mergingPdf": "Merging PDFs...", "mergeSuccess": "PDF merged successfully!", "saveSuccess": "PDF Successfully Saved", "remove": "Remove", "selectAtLeast2": "Select at least 2 PDF files!", "savedTo": "Saved to Download/PDF Reader folder", "pageTitle": "PDF Merge" },
+        "es": { "selectPdfFiles": "Seleccionar archivos PDF", "clickToSelect": "Haga clic para seleccionar archivos PDF", "multiplePdf": "Puede seleccionar varios PDF", "mergePdf": "COMBINAR PDF", "clearList": "LIMPIAR LISTA", "save": "GUARDAR", "mergingPdf": "Combinando PDFs...", "mergeSuccess": "¡PDF combinado exitosamente!", "saveSuccess": "PDF guardado exitosamente", "remove": "Eliminar", "selectAtLeast2": "¡Seleccione al menos 2 archivos PDF!", "savedTo": "Guardado en carpeta Descargar/PDF Reader", "pageTitle": "Combinar PDF" },
+        "fr": { "selectPdfFiles": "Sélectionner les fichiers PDF", "clickToSelect": "Cliquez pour sélectionner les fichiers PDF", "multiplePdf": "Vous pouvez sélectionner plusieurs PDF", "mergePdf": "FUSIONNER PDF", "clearList": "EFFACER LA LISTE", "save": "ENREGISTRER", "mergingPdf": "Fusion des PDF...", "mergeSuccess": "PDF fusionné avec succès !", "saveSuccess": "PDF enregistré avec succès", "remove": "Supprimer", "selectAtLeast2": "Sélectionnez au moins 2 fichiers PDF !", "savedTo": "Enregistré dans le dossier Télécharger/PDF Reader", "pageTitle": "Fusionner PDF" },
+        "hi": { "selectPdfFiles": "PDF फ़ाइलें चुनें", "clickToSelect": "PDF फ़ाइलें चुनने के लिए क्लिक करें", "multiplePdf": "आप एक से अधिक PDF चुन सकते हैं", "mergePdf": "PDF मर्ज करें", "clearList": "सूची साफ करें", "save": "सहेजें", "mergingPdf": "PDF मर्ज किए जा रहे हैं...", "mergeSuccess": "PDF सफलतापूर्वक मर्ज हो गया!", "saveSuccess": "PDF सफलतापूर्वक सहेजा गया", "remove": "हटाएं", "selectAtLeast2": "कम से कम 2 PDF फ़ाइलें चुनें!", "savedTo": "डाउनलोड/PDF रीडर फोल्डर में सहेजा गया", "pageTitle": "PDF मर्ज" },
+        "id": { "selectPdfFiles": "Pilih File PDF", "clickToSelect": "Klik untuk memilih file PDF", "multiplePdf": "Anda dapat memilih beberapa PDF", "mergePdf": "GABUNGKAN PDF", "clearList": "HAPUS DAFTAR", "save": "SIMPAN", "mergingPdf": "Menggabungkan PDF...", "mergeSuccess": "PDF berhasil digabungkan!", "saveSuccess": "PDF Berhasil Disimpan", "remove": "Hapus", "selectAtLeast2": "Pilih setidaknya 2 file PDF!", "savedTo": "Disimpan di folder Download/PDF Reader", "pageTitle": "Gabungkan PDF" },
+        "ja": { "selectPdfFiles": "PDFファイルを選択", "clickToSelect": "クリックしてPDFファイルを選択", "multiplePdf": "複数のPDFを選択できます", "mergePdf": "PDFを結合", "clearList": "リストをクリア", "save": "保存", "mergingPdf": "PDFを結合中...", "mergeSuccess": "PDFの結合に成功しました！", "saveSuccess": "PDFの保存に成功しました", "remove": "削除", "selectAtLeast2": "少なくとも2つのPDFファイルを選択してください！", "savedTo": "ダウンロード/PDFリーダーフォルダーに保存されました", "pageTitle": "PDF結合" },
+        "ku": { "selectPdfFiles": "Pelê PDF-ê hilbijêrin", "clickToSelect": "Ji bo hilbijartina pelê PDF-ê bikirtînin", "multiplePdf": "Hûn dikarin çend PDF-ê hilbijêrin", "mergePdf": "PDF-Ê TEVLÎ HEV BIKE", "clearList": "LÎSTEYÊ PAK BIKE", "save": "TOMAR BIKE", "mergingPdf": "PDF-ê têne tevlîhevkirin...", "mergeSuccess": "PDF bi serketî hate tevlîhevkirin!", "saveSuccess": "PDF bi serketî hate tomarkirin", "remove": "Rakê", "selectAtLeast2": "Bi kêmî 2 pelê PDF-ê hilbijêrin!", "savedTo": "Li qeşa Daxistin/PDF Reader-ê hate tomarkirin", "pageTitle": "Tevlîhevkirina PDF" },
+        "pt": { "selectPdfFiles": "Selecionar arquivos PDF", "clickToSelect": "Clique para seleccionar archivos PDF", "multiplePdf": "Você pode seleccionar vários PDFs", "mergePdf": "MESCLAR PDF", "clearList": "LIMPAR LISTA", "save": "SALVAR", "mergingPdf": "Mesclando PDFs...", "mergeSuccess": "PDF mesclado com sucesso!", "saveSuccess": "PDF salvo com sucesso", "remove": "Remover", "selectAtLeast2": "Selecione pelo menos 2 arquivos PDF!", "savedTo": "Salvo na pasta Download/PDF Reader", "pageTitle": "Mesclar PDF" },
+        "ru": { "selectPdfFiles": "Выберите PDF файлы", "clickToSelect": "Нажмите, чтобы выбрать PDF файлы", "multiplePdf": "Вы можете выбрать несколько PDF", "mergePdf": "ОБЪЕДИНИТЬ PDF", "clearList": "ОЧИСТИТЬ СПИСОК", "save": "СОХРАНИТЬ", "mergingPdf": "Объединение PDF...", "mergeSuccess": "PDF успешно объединен!", "saveSuccess": "PDF успешно сохранен", "remove": "Удалить", "selectAtLeast2": "Выберите хотя бы 2 PDF файла!", "savedTo": "Сохранено в папке Загрузки/PDF Reader", "pageTitle": "Объединение PDF" },
+        "sw": { "selectPdfFiles": "Chagua faili za PDF", "clickToSelect": "Bonyeza kuchagua faili za PDF", "multiplePdf": "Unaweza kuchagua PDF nyingi", "mergePdf": "UNGA PDF", "clearList": "FUTA ORODHA", "save": "HIFADHI", "mergingPdf": "Inaunganisha PDF...", "mergeSuccess": "PDF imeunganishwa kikamilifu!", "saveSuccess": "PDF imehifadhiwa kikamilifu", "remove": "Ondoa", "selectAtLeast2": "Chagua angalau faili 2 za PDF!", "savedTo": "Imehifadhiwa kwenye folda ya Pakua/PDF Reader", "pageTitle": "Unganisha PDF" },
+        "tr": { "selectPdfFiles": "PDF Dosyalarını Seçin", "clickToSelect": "Tıklayarak PDF dosyalarını seçin", "multiplePdf": "Birden fazla PDF seçebilirsiniz", "mergePdf": "PDF BİRLEŞTİR", "clearList": "LİSTEYİ TEMİZLE", "save": "KAYDET", "mergingPdf": "PDF'ler birleştiriliyor...", "mergeSuccess": "PDF başarıyla birleştirildi!", "saveSuccess": "PDF Başarıyla Kaydedildi", "remove": "Kaldır", "selectAtLeast2": "En az 2 PDF dosyası seçin!", "savedTo": "Download/PDF Reader klasörüne kaydedildi", "pageTitle": "PDF Birleştirme" },
+        "ur": { "selectPdfFiles": "PDF فائلیں منتخب کریں", "clickToSelect": "PDF فائلیں منتخب کرنے کے لیے کلک کریں", "multiplePdf": "آپ ایک سے زیادہ PDF منتخب کر سکتے ہیں", "mergePdf": "PDF ملا دیں", "clearList": "فہرست صاف کریں", "save": "محفوظ کریں", "mergingPdf": "PDF ملائے جا رہے ہیں...", "mergeSuccess": "PDF کامیابی سے ملا دیا گیا!", "saveSuccess": "PDF کامیابی سے محفوظ ہو گیا", "remove": "ہٹا دیں", "selectAtLeast2": "کم از کم 2 PDF فائلیں منتخب کریں!", "savedTo": "ڈاؤن لوڈ/PDF ریڈر فولڈر میں محفوظ ہو گیا", "pageTitle": "PDF ملاوٹ" },
+        "za": { "selectPdfFiles": "PDF dosyayan weçiné", "clickToSelect": "PDF dosyayan weçiné ra tiknayé", "multiplePdf": "Şima şené PDFyé zaféri weçiné", "mergePdf": "PDFYAN PÊRO PÊ KERÉ", "clearList": "LÎSTE PAK KE", "save": "QEYD KE", "mergingPdf": "PDFyan pêro pê bené...", "mergeSuccess": "PDFyan bi serkewteyî pêro pê biy!", "saveSuccess": "PDF bi serkewteyî qeyd biy", "remove": "Jê bibe", "selectAtLeast2": "Taybetî 2 dosyayé PDFyan weçiné!", "savedTo": "Li qeşa Daxistin/PDF Reader-ê hate qeydkirin", "pageTitle": "PDFyan pêro pê kerdış" },
+        "zh": { "selectPdfFiles": "选择PDF文件", "clickToSelect": "点击选择PDF文件", "multiplePdf": "您可以选择多个PDF文件", "mergePdf": "合并PDF", "clearList": "清空列表", "save": "保存", "mergingPdf": "正在合并PDF...", "mergeSuccess": "PDF合并成功！", "saveSuccess": "PDF保存成功", "remove": "移除", "selectAtLeast2": "请选择至少2个PDF文件！", "savedTo": "已保存到下载/PDF阅读器文件夹", "pageTitle": "PDF合并" }
+    };
+
+    // --- TEMEL FONKSİYONLAR ---
+    function updateUIText() {
+        try {
+            const currentLang = languageConfig ? languageConfig.getCurrent() : 'tr';
+            const t = translations[currentLang] || translations['tr'];
+            
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('selectPdfFilesText').textContent = t.selectPdfFiles;
+            document.getElementById('clickToSelectText').textContent = t.clickToSelect;
+            document.getElementById('multiplePdfText').textContent = t.multiplePdf;
+            document.getElementById('mergeBtn').textContent = t.mergePdf;
+            document.getElementById('clearBtn').textContent = t.clearList;
+            document.getElementById('saveBtn').textContent = t.save;
+            document.getElementById('mergingPdfText').innerHTML = t.mergingPdf + ' <span id="progressText">0%</span>';
+            document.getElementById('savedToText').textContent = t.savedTo;
+            
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.textContent = t.remove;
+            });
+            
+        } catch (e) {
+            console.log('Çeviri yüklenemedi:', e);
+        }
+    }
+
+    function getTranslation(key) {
+        try {
+            const currentLang = languageConfig ? languageConfig.getCurrent() : 'tr';
+            const t = translations[currentLang] || translations['tr'];
+            return t[key] || key;
+        } catch (e) {
+            return key;
+        }
+    }
+
+    function goBack() {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+
+    // --- DOSYA İŞLEMLERİ ---
+    function addFilesToList(files) {
+        files.forEach(file => {
+            if (file.type === 'application/pdf') {
+                selectedFiles.push(file);
+            }
+        });
+        updateFileList();
+        updateButtons();
+    }
+
+    function updateFileList() {
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = '';
+
+        selectedFiles.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+                <span class="file-name">${file.name}</span>
+                <button class="remove-btn" onclick="removeFile(${index})">${getTranslation('remove')}</button>
+            `;
+            fileList.appendChild(fileItem);
+        });
+    }
+
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateFileList();
+        updateButtons();
+        hideSuccess();
+    }
+
+    function clearList() {
+        selectedFiles = [];
+        updateFileList();
+        updateButtons();
+        hideSuccess();
+    }
+
+    // --- BUTON YÖNETİMİ ---
+    function updateButtons() {
+        document.getElementById('mergeBtn').disabled = selectedFiles.length < 2;
+        document.getElementById('clearBtn').disabled = selectedFiles.length === 0;
+    }
+
+    function hideSuccess() {
+        document.getElementById('success').style.display = 'none';
+        document.getElementById('saveBtn').style.display = 'none';
+        mergedPdfBlob = null;
+    }
+
+    // --- PDF BİRLEŞTİRME ---
+    async function mergePDFs() {
+        if (selectedFiles.length < 2) {
+            alert(getTranslation('selectAtLeast2'));
+            return;
+        }
+
+        const progress = document.getElementById('progress');
+        const progressText = document.getElementById('progressText');
+        const mergeBtn = document.getElementById('mergeBtn');
+        
+        progress.style.display = 'block';
+        mergeBtn.disabled = true;
+        progressText.textContent = '0%';
+
+        try {
+            const { PDFDocument } = window.PDFLib || PDFLib;
+            const mergedPdf = await PDFDocument.create();
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                pages.forEach(page => mergedPdf.addPage(page));
+                
+                const progressPercent = Math.round(((i + 1) / selectedFiles.length) * 100);
+                progressText.textContent = `${progressPercent}%`;
+                
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+
+            const mergedPdfBytes = await mergedPdf.save();
+            mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+            
+            progress.style.display = 'none';
+            document.getElementById('successMessage').textContent = getTranslation('mergeSuccess');
+            document.getElementById('success').style.display = 'block';
+            document.getElementById('saveBtn').style.display = 'block';
+            
+        } catch (error) {
+            console.error('PDF birleştirme hatası:', error);
+            alert('PDF birleştirme sırasında hata oluştu: ' + error.message);
+            progress.style.display = 'none';
+        } finally {
+            mergeBtn.disabled = false;
+        }
+    }
+
+    // --- KAYDET İŞLEMİ (Android WebView için) ---
+    function saveMergedPDF() {
+        if (!mergedPdfBlob) {
+            alert('Önce PDF birleştirin!');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function() {
+            const base64data = reader.result.split(',')[1];
+            
+            // Android Kotlin WebView için
+            if (typeof Android !== 'undefined') {
+                // Android.savePDF(base64data, 'merged.pdf');
+                // Veya
+                Android.saveMergedPDF(base64data, 'merged.pdf');
+            } else {
+                // Fallback: tarayıcıda indirme
+                const url = URL.createObjectURL(mergedPdfBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'merged.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                document.getElementById('successMessage').textContent = getTranslation('saveSuccess');
+                document.getElementById('saveBtn').style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(mergedPdfBlob);
+    }
+
+    // --- GERİ TUŞU İŞLEMİ ---
+    window.androidBackPressed = function() {
+        goBack();
+        return false;
+    };
+
+    // --- SAYFA YÜKLENDİĞİNDE ---
+    document.addEventListener('DOMContentLoaded', function() {
+        updateUIText();
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            addFilesToList(files);
+            this.value = ''; // Input'u temizle
+        });
+
+        // Dil değiştiğinde UI'ı güncelle
+        if (languageConfig && languageConfig.onLanguageChange) {
+            languageConfig.onLanguageChange(updateUIText);
+        }
+    });
+
+    // --- TEMA DEĞİŞİKLİĞİ ---
+    const savedTheme = localStorage.getItem('pdfTheme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
+  </script>
+</body>
+</html>

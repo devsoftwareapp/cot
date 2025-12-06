@@ -25,6 +25,21 @@
         name="dcim"
         path="DCIM/" />
     
+    <!-- Pictures Directory -->
+    <external-path
+        name="pictures"
+        path="Pictures/" />
+    
+    <!-- Movies Directory -->
+    <external-path
+        name="movies"
+        path="Movies/" />
+    
+    <!-- Music Directory -->
+    <external-path
+        name="music"
+        path="Music/" />
+    
     <!-- Cache Directory -->
     <cache-path
         name="cache"
@@ -44,4 +59,9 @@
     <external-files-path
         name="external_files"
         path="/" />
+    
+    <!-- Root of external media -->
+    <external-media-path
+        name="external_media"
+        path="." />
 </paths>

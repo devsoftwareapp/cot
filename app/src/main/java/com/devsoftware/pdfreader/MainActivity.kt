@@ -20,7 +20,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import android.util.Base64
-import android.webkit.MimeTypeMap
+import android.webkit.WebSettings // Eklendi: Ayarlar için gerekli
 
 class MainActivity : AppCompatActivity() {
 
@@ -53,12 +53,21 @@ class MainActivity : AppCompatActivity() {
             builtInZoomControls = true
             displayZoomControls = false
             
+            // --- GÜNCELLEME BURADA (TTS DÜZELTMESİ) ---
+            databaseEnabled = true // TTS motorunun veritabanı erişimi için
+            
+            // PDF.js ve TTS'in çalışması için karışık içerik modunu açıyoruz
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            }
+            // ------------------------------------------
+
             // Ek ayarlar
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 allowUniversalAccessFromFileURLs = true
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                mediaPlaybackRequiresUserGesture = false
+                mediaPlaybackRequiresUserGesture = false // Otomatik okuma için kritik
             }
         }
 
@@ -69,13 +78,13 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
                 println("URL yükleme: $url")
-                
+                 
                 // Settings linki
                 if (url == "settings://all_files") {
                     openAllFilesPermission()
                     return true
                 }
-                
+                 
                 // Viewer.html kontrolü
                 if (url.contains("viewer.html")) {
                     isInViewer = true
@@ -96,7 +105,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 println("Sayfa yüklendi: $url")
-                
+                 
                 // Viewer'dan döndüğümüzde
                 if (url.contains("index.html") && isInViewer) {
                     isInViewer = false
@@ -401,7 +410,7 @@ class MainActivity : AppCompatActivity() {
             return try {
                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 val appFolder = File(downloadsDir, appFolderName)
-                
+                 
                 // Klasör yoksa oluştur
                 if (!appFolder.exists()) {
                     appFolder.mkdirs()

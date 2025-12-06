@@ -51,7 +51,7 @@
       
       --header-height: 64px;
       --tabs-height: 60px;
-      --top-bar-total: 124px; /* header + tabs */
+      --top-bar-total: 124px;
       --bottom-nav-height: 72px;
       
       --spacing-sm: 8px;
@@ -109,7 +109,6 @@
     .mt-3 { margin-top: 12px; }
     .mb-2 { margin-bottom: 8px; }
     .text-center { text-align: center; }
-    .hidden { display: none !important; }
 
     /* --- ARAMA MODU --- */
     body.is-searching .tabs-container,
@@ -123,7 +122,6 @@
         max-height: var(--header-height);
         box-shadow: none;
         border-bottom: 1px solid var(--border);
-        transform: translateY(0) !important;
     }
 
     body.is-searching .main-content {
@@ -149,7 +147,6 @@
         color: white;
         height: var(--header-height);
         max-height: var(--header-height);
-        transform: translateY(0) !important;
     }
     
     body.selection-mode .selection-header {
@@ -239,6 +236,53 @@
         display: none;
     }
 
+    /* --- ARAÇLAR KARTLARI STİLLERİ --- */
+    .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 16px;
+    }
+    
+    .tool-card {
+        background: var(--surface);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        box-shadow: var(--shadow-md);
+        min-height: 120px;
+    }
+    
+    .tool-card:active {
+        transform: scale(0.98);
+        background: rgba(0,0,0,0.02);
+    }
+    
+    .tool-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        font-size: 28px;
+    }
+    
+    .tool-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.3;
+    }
+
     /* --- 3. ÜST BAR (STICKY HEADER) --- */
     .top-bar-container {
         position: fixed;
@@ -250,23 +294,10 @@
         background: var(--surface);
         transition: transform 0.3s ease, max-height 0.3s ease, background-color 0.3s ease;
         box-shadow: var(--shadow-md);
-        transform: translateY(0);
-        will-change: transform;
     }
-    
-    .top-bar-container.hidden-tabs {
-        transform: translateY(-60px);
+    .top-bar-container.tabs-hidden {
         max-height: var(--header-height);
     }
-    
-    .top-bar-container.hidden-tabs .tabs-container {
-        opacity: 0;
-        height: 0;
-        border-bottom: none;
-        padding: 0;
-        pointer-events: none;
-    }
-    
     .app-header { 
         height: var(--header-height); 
         padding: 0 var(--spacing-lg); 
@@ -285,7 +316,11 @@
         width: 100%;
         transition: opacity 0.2s ease;
     }
-    
+    .header-content.hidden {
+        opacity: 0;
+        pointer-events: none;
+        display: none;
+    }
     .search-bar-container {
         position: absolute;
         top: 0;
@@ -338,9 +373,14 @@
         padding: 0 var(--spacing-lg); 
         border-bottom: 1px solid var(--border);
         transition: opacity 0.3s ease;
-        background: var(--surface);
     }
-    
+    .top-bar-container.tabs-hidden .tabs-container {
+        opacity: 0;
+        height: 0;
+        border-bottom: none;
+        padding: 0;
+        pointer-events: none;
+    }
     .tabs { display: flex; width: 100%; height: 100%; gap: var(--spacing-sm); }
     .tab { 
         flex: 1;
@@ -399,7 +439,6 @@
         z-index: var(--z-content);
         transition: padding 0.3s ease;
     }
-    
     .content-panel {
         position: absolute;
         top: 0;
@@ -430,7 +469,6 @@
         grid-template-columns: 1fr;
         padding: calc(var(--top-bar-total) + 16px) var(--card-gutter) 120px var(--card-gutter); 
         width: 100%;
-        transition: padding 0.3s ease;
     }
     
     .static-panel .grid {
@@ -438,7 +476,7 @@
         padding-bottom: 120px;
     }
 
-    /* --- 5. KART TASARIMI --- */
+    /* --- 5. PDF KART TASARIMI --- */
     .card { 
       background: var(--surface); 
       border-radius: var(--radius-md); 
@@ -844,7 +882,6 @@
         margin: 20px;
         border: 1px solid var(--border);
         box-shadow: var(--shadow-md);
-        display: none;
     }
     .permission-banner img {
         width: 120px;
@@ -873,29 +910,6 @@
     }
     .permission-banner button:hover {
         background: var(--secondary);
-    }
-    
-    /* --- GERİ TUŞU TOAST STİLLERİ --- */
-    #exitToast {
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%) translateY(20px);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 25px;
-        z-index: 9999;
-        font-size: 14px;
-        font-weight: 500;
-        opacity: 0;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        white-space: nowrap;
-    }
-    #exitToast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
@@ -1061,10 +1075,8 @@
     </div>
     
     <div class="content-panel static-panel" id="toolsPanel">
-        <div class="empty-state">
-            <div class="empty-icon material-symbols-rounded">tune</div>
-            <h3>Araçlar Sayfası</h3>
-            <p>PDF İşlemleri Burada Yer Alacak</p>
+        <div class="tools-grid" id="toolsGrid">
+            <!-- Araçlar kartları JavaScript ile eklenecek -->
         </div>
     </div>
 
@@ -1249,11 +1261,9 @@
     let isSelectionMode = false;
     let selectedCards = new Set();
 
-    // Data Storage - localStorage kullanımı
-    let importedFiles = JSON.parse(localStorage.getItem('importedFiles') || '[]');
-    let devicePDFs = JSON.parse(localStorage.getItem('devicePDFs') || '[]');
-    let recentFiles = JSON.parse(localStorage.getItem('recentFiles') || '[]');
-    let favoriteFiles = JSON.parse(localStorage.getItem('favoriteFiles') || '[]');
+    // Data Storage
+    let importedFiles = []; // PDF Yükle ile gelen dosyalar
+    let devicePDFs = []; // Cihazdan taranan PDF'ler
 
     // Scroll & Swipe State
     let lastScrollY = 0;
@@ -1265,20 +1275,80 @@
     let currentNav = 'home';
     const tabOrder = ['recent', 'device', 'favorites'];
     
-    // Geri tuşu için
-    let backPressedTime = 0;
-    let exitToast = null;
-    
-    // Sticky header için
-    let isHeaderHidden = false;
-    let scrollThreshold = 100;
+    // --- ARAÇLAR VERİLERİ ---
+    const toolsData = [
+      {
+        id: 1,
+        title: "PDF Birleştirme",
+        icon: "merge",
+        iconCode: "merge",
+        color: "#E53935",
+        page: "birlestirme.html"
+      },
+      {
+        id: 2,
+        title: "Sesli Okuma",
+        icon: "volume_up",
+        iconCode: "volume_up",
+        color: "#4CAF50",
+        page: "sesli_okuma.html"
+      },
+      {
+        id: 3,
+        title: "OCR Metin Çıkarma",
+        icon: "text_fields",
+        iconCode: "text_fields",
+        color: "#2196F3",
+        page: "orc.html"
+      },
+      {
+        id: 4,
+        title: "PDF İmzalama",
+        icon: "draw",
+        iconCode: "draw",
+        color: "#9C27B0",
+        page: "imza.html"
+      },
+      {
+        id: 5,
+        title: "PDF Sıkıştırma",
+        icon: "compress",
+        iconCode: "compress",
+        color: "#FF9800",
+        page: "sikistirma.html"
+      },
+      {
+        id: 6,
+        title: "PDF Sayfalarını Organize Etme",
+        icon: "reorder",
+        iconCode: "reorder",
+        color: "#795548",
+        page: "organize.html"
+      },
+      {
+        id: 7,
+        title: "Resimden PDF",
+        icon: "image",
+        iconCode: "image",
+        color: "#00BCD4",
+        page: "resimden_pdf.html"
+      },
+      {
+        id: 8,
+        title: "PDF'den Resim",
+        icon: "picture_as_pdf",
+        iconCode: "picture_as_pdf",
+        color: "#607D8B",
+        page: "pdf_resme.html"
+      }
+    ];
     
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       loadData();
+      loadTools();
       attachEvents();
-      setupBackButtonHandler();
       document.getElementById('recentPanel').scrollTop = 0;
       document.querySelector('.setting-tab').classList.add('active');
       document.querySelector('.setting-panel').classList.add('active');
@@ -1292,19 +1362,30 @@
           scanDeviceForPDFs();
         }
       }, 1000);
-      
-      // Uygulama ilk açılışında PDF Reader klasörünü oluştur
-      if (typeof Android !== 'undefined' && Android.createAppFolder) {
-        Android.createAppFolder();
-      }
     });
 
-    // Verileri localStorage'a kaydet
-    function saveData() {
-      localStorage.setItem('importedFiles', JSON.stringify(importedFiles));
-      localStorage.setItem('devicePDFs', JSON.stringify(devicePDFs));
-      localStorage.setItem('recentFiles', JSON.stringify(recentFiles));
-      localStorage.setItem('favoriteFiles', JSON.stringify(favoriteFiles));
+    // --- ARAÇLAR YÜKLEME ---
+    function loadTools() {
+      const toolsGrid = document.getElementById('toolsGrid');
+      if (!toolsGrid) return;
+      
+      let html = '';
+      toolsData.forEach(tool => {
+        html += `
+          <div class="tool-card" onclick="openToolPage('${tool.page}')">
+            <div class="tool-icon-wrapper" style="background: ${tool.color}20; color: ${tool.color};">
+              <span class="material-symbols-rounded">${tool.iconCode}</span>
+            </div>
+            <div class="tool-title">${tool.title}</div>
+          </div>
+        `;
+      });
+      
+      toolsGrid.innerHTML = html;
+    }
+    
+    function openToolPage(page) {
+      window.location.href = page;
     }
 
     function initTheme() {
@@ -1330,12 +1411,8 @@
     }
 
     function loadData() {
-      // Son kullanılanlar (20 dosya ile sınırla)
-      const recentToShow = recentFiles.slice(0, 20);
-      renderList('recentList', recentToShow);
-      
-      // Favoriler
-      renderList('favoritesList', favoriteFiles);
+      renderList('recentList', []); // Son kullanılanlar boş
+      renderList('favoritesList', []); // Favoriler boş
       
       // Cihaz PDF'lerini ve importedFiles'ı birleştir
       const allDeviceFiles = [...devicePDFs, ...importedFiles.filter(f => !f.path || !f.path.startsWith('/'))];
@@ -1357,60 +1434,15 @@
         } else {
             let html = '';
             files.forEach(file => {
-                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id, file.type);
+                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id);
             });
             list.innerHTML = html;
             attachLongPressEvents();
         }
     }
 
-    // Son kullanılanlara ekle
-    function addToRecent(fileData) {
-      // Aynı dosya varsa kaldır
-      recentFiles = recentFiles.filter(f => f.id !== fileData.id);
-      
-      // Yeni dosyayı başa ekle
-      recentFiles.unshift({
-        ...fileData,
-        lastOpened: Date.now(),
-        type: 'recent'
-      });
-      
-      // 50 dosya ile sınırla
-      if (recentFiles.length > 50) {
-        recentFiles = recentFiles.slice(0, 50);
-      }
-      
-      saveData();
-    }
-
-    // Favorilere ekle/çıkar
-    function toggleFavoriteInStorage(cardId, isFavorite) {
-      // Tüm listelerde güncelle
-      [importedFiles, devicePDFs, recentFiles].forEach(list => {
-        const file = list.find(f => f.id === cardId);
-        if (file) {
-          file.isFavorite = isFavorite;
-        }
-      });
-      
-      // Favoriler listesini güncelle
-      if (isFavorite) {
-        const file = importedFiles.find(f => f.id === cardId) || 
-                     devicePDFs.find(f => f.id === cardId) ||
-                     recentFiles.find(f => f.id === cardId);
-        if (file && !favoriteFiles.some(f => f.id === cardId)) {
-          favoriteFiles.push({...file, type: 'favorite'});
-        }
-      } else {
-        favoriteFiles = favoriteFiles.filter(f => f.id !== cardId);
-      }
-      
-      saveData();
-    }
-
     // KART OLUŞTURMA
-    function createCard(name, size, date, isFavorite, id, type = 'device') {
+    function createCard(name, size, date, isFavorite, id) {
       const MAX_LENGTH = 30;
       const truncatedName = name.length > MAX_LENGTH 
           ? name.substring(0, MAX_LENGTH) + '...' 
@@ -1445,8 +1477,7 @@
            data-date="${date}"
            data-favorite="${isFavorite ? 'true' : 'false'}"
            data-id="${id}"
-           data-type="${type}"
-           onclick="handleCardClick(this, '${name}', ${id}, '${type}')">
+           onclick="handleCardClick(this, '${name}', ${id})">
         
         <div class="selection-checkbox" onclick="event.stopPropagation(); toggleCardSelection(${id})"></div>
         
@@ -1468,7 +1499,7 @@
                 <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' ${fillStar}, 'wght' 500, 'GRAD' 0, 'opsz' 24;">star</span>
             </button>
             <button class="icon-button more-btn" 
-                    onclick="event.stopPropagation(); openContextMenu('${name}', '${size}', '${date}', ${id}, '${type}')">
+                    onclick="event.stopPropagation(); openContextMenu('${name}', '${size}', '${date}', ${id})">
                 <span class="material-symbols-rounded">more_vert</span>
             </button>
         </div>
@@ -1531,23 +1562,18 @@
             
             pdfPaths.forEach(path => {
                 const name = path.split('/').pop();
-                // Sadece PDF Reader klasöründeki dosyaları hariç tut
-                if (!path.includes('/PDF Reader/')) {
-                    devicePDFs.push({
-                        id: nextId++,
-                        name: name,
-                        size: getFileSizeFromPath(path),
-                        date: getFileDateFromPath(path),
-                        isFavorite: false,
-                        path: path,
-                        type: 'device'
-                    });
-                }
+                devicePDFs.push({
+                    id: nextId++,
+                    name: name,
+                    size: getFileSizeFromPath(path),
+                    date: getFileDateFromPath(path),
+                    isFavorite: false,
+                    path: path
+                });
             });
             
             // UI'ı güncelle
             checkPermissionAndUpdateUI();
-            saveData();
             loadData(); // Verileri yeniden yükle
             
         } catch (e) {
@@ -1556,28 +1582,14 @@
         }
     }
     
-    // Dosya boyutunu al (Android'den al)
+    // Dosya boyutunu al (simüle)
     function getFileSizeFromPath(path) {
-        try {
-            if (typeof Android !== 'undefined' && Android.getFileSize) {
-                const size = Android.getFileSize(path);
-                return formatBytes(size);
-            }
-        } catch (e) {
-            console.error('File size error:', e);
-        }
+        // Gerçek uygulamada Android'den dosya boyutu alınmalı
         return "~2.5 MB";
     }
     
-    // Dosya tarihini al (Android'den al)
+    // Dosya tarihini al (simüle)
     function getFileDateFromPath(path) {
-        try {
-            if (typeof Android !== 'undefined' && Android.getFileDate) {
-                return Android.getFileDate(path);
-            }
-        } catch (e) {
-            console.error('File date error:', e);
-        }
         const now = new Date();
         return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
     }
@@ -1619,14 +1631,11 @@
                     date: formattedDate,
                     isFavorite: false,
                     id: Date.now(), 
-                    base64: base64Data,
-                    type: 'imported'
+                    base64: base64Data // Base64 formatında saklıyoruz
                 };
 
                 // importedFiles dizisine ekle
                 importedFiles.unshift(newFile); 
-                // Son kullanılanlara ekle
-                addToRecent(newFile);
 
                 alert(`${newFile.name} başarıyla içe aktarıldı.`);
                 
@@ -1639,7 +1648,6 @@
                 switchTab('device', true);
                 
                 // Listeyi yeniden çiz
-                saveData();
                 loadData();
                 
                 // Input değerini temizle
@@ -1733,21 +1741,6 @@
         if (selectedCards.size === 0) return;
         const fileCount = selectedCards.size;
         alert(`${fileCount} adet dosya paylaşım için hazırlanıyor...`);
-        
-        // Android'de paylaşım için
-        if (typeof Android !== 'undefined' && Android.shareFiles) {
-            const selectedPaths = [];
-            selectedCards.forEach(cardId => {
-                const file = devicePDFs.find(f => f.id === cardId) || importedFiles.find(f => f.id === cardId);
-                if (file && file.path) {
-                    selectedPaths.push(file.path);
-                }
-            });
-            
-            if (selectedPaths.length > 0) {
-                Android.shareFiles(selectedPaths.join('||'));
-            }
-        }
     }
 
     function printSelectedCards() {
@@ -1763,17 +1756,14 @@
         }
         
         if (confirm(`${selectedCards.size} öğe silinecek. Emin misiniz?`)) {
-            // Tüm listelerden sil
+            // importedFiles ve devicePDFs dizilerinden sil
             selectedCards.forEach(cardId => {
                 importedFiles = importedFiles.filter(file => file.id !== cardId);
                 devicePDFs = devicePDFs.filter(file => file.id !== cardId);
-                recentFiles = recentFiles.filter(file => file.id !== cardId);
-                favoriteFiles = favoriteFiles.filter(file => file.id !== cardId);
             });
             
             alert(`${selectedCards.size} öğe silindi.`);
             exitSelectionMode();
-            saveData();
             loadData(); // Listeleri yenile
         }
     }
@@ -1802,9 +1792,17 @@
         const actionText = isFavorite ? 'Favorilere Eklendi' : 'Favorilerden Kaldırıldı';
         alert(`"${card.dataset.name}" ${actionText}`);
         
-        // Storage'da güncelle
-        toggleFavoriteInStorage(cardId, isFavorite);
-        loadData();
+        // importedFiles'da güncelle
+        let fileIndex = importedFiles.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            importedFiles[fileIndex].isFavorite = isFavorite;
+        }
+        
+        // devicePDFs'de güncelle
+        fileIndex = devicePDFs.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            devicePDFs[fileIndex].isFavorite = isFavorite;
+        }
     }
 
     // --- LONG PRESS VE CLICK YÖNETİMİ ---
@@ -1839,14 +1837,50 @@
         });
     }
 
-    // --- CONTEXT MENU FONKSİYONLARI ---
-    function openContextMenu(name, size, date, cardId, type) {
+    function handleCardClick(element, name, cardId) {
         if (isSelectionMode) {
             toggleCardSelection(cardId);
             return;
         }
         
-        currentContextFile = { name, cardId, type };
+        if (!isLongPress) {
+            // 1. Kart ID'sine göre dosya verisini bul
+            let fileData = importedFiles.find(f => f.id === cardId);
+            if (!fileData) {
+                fileData = devicePDFs.find(f => f.id === cardId);
+            }
+
+            // 2. Base64 verisi var mı kontrol et (importedFiles için)
+            if (fileData && fileData.base64) {
+                // 3. Base64 verisini URL parametresi olarak ekle
+                const url = "viewer.html?base64=" + 
+                            encodeURIComponent(fileData.base64) + 
+                            "&name=" + 
+                            encodeURIComponent(name);
+
+                // 4. Yönlendir
+                window.location.href = url;
+            } else if (fileData && fileData.path) {
+                // Cihaz PDF'si için farklı bir yaklaşım
+                const url = "viewer.html?file=" + 
+                            encodeURIComponent(fileData.path) + 
+                            "&name=" + 
+                            encodeURIComponent(name);
+                window.location.href = url;
+            } else {
+                alert("Dosya verisi bulunamadı!");
+            }
+        }
+    }
+
+    // --- CONTEXT MENU FONKSİYONLARI ---
+    function openContextMenu(name, size, date, cardId) {
+        if (isSelectionMode) {
+            toggleCardSelection(cardId);
+            return;
+        }
+        
+        currentContextFile = { name, cardId };
         contextTitle.textContent = name;
         contextMeta.textContent = `${size} • ${date}`;
         
@@ -1877,10 +1911,6 @@
                         // Dosyayı ilgili diziden sil
                         importedFiles = importedFiles.filter(f => f.id !== currentContextFile.cardId);
                         devicePDFs = devicePDFs.filter(f => f.id !== currentContextFile.cardId);
-                        recentFiles = recentFiles.filter(f => f.id !== currentContextFile.cardId);
-                        favoriteFiles = favoriteFiles.filter(f => f.id !== currentContextFile.cardId);
-                        
-                        saveData();
                         loadData();
                         alert('Dosya silindi.');
                     }
@@ -1903,217 +1933,6 @@
         });
     }
 
-    // --- STICKY HEADER FUNCTIONS ---
-    function handleScroll() {
-        if (document.body.classList.contains('is-searching') || 
-            document.body.classList.contains('selection-mode') ||
-            currentNav !== 'home') {
-            return;
-        }
-        
-        const currentPanel = document.querySelector('.content-panel.active');
-        if (!currentPanel) return;
-        
-        const currentY = currentPanel.scrollTop;
-        
-        // Yukarı kaydırma
-        if (currentY > lastScrollY && currentY > scrollThreshold) {
-            // Header'ı yukarı kaydır
-            if (!isHeaderHidden) {
-                topBar.classList.add('hidden-tabs');
-                isHeaderHidden = true;
-                
-                // Grid padding'i ayarla
-                const grid = currentPanel.querySelector('.grid');
-                if (grid) {
-                    grid.style.paddingTop = 'calc(var(--header-height) + 16px)';
-                }
-            }
-        } 
-        // Aşağı kaydırma
-        else if (currentY < lastScrollY || currentY <= 10) {
-            // Header'ı geri getir
-            if (isHeaderHidden) {
-                topBar.classList.remove('hidden-tabs');
-                isHeaderHidden = false;
-                
-                // Grid padding'i eski haline getir
-                const grid = currentPanel.querySelector('.grid');
-                if (grid) {
-                    grid.style.paddingTop = 'calc(var(--top-bar-total) + 16px)';
-                }
-            }
-        }
-        
-        lastScrollY = currentY;
-    }
-
-    // --- GERİ TUŞU İŞLEMLERİ ---
-    function setupBackButtonHandler() {
-        // History state ekle
-        if (window.history && window.history.replaceState) {
-            window.history.replaceState({ page: "home" }, "", window.location.href);
-        }
-        
-        // Geri tuşu için popstate listener
-        window.addEventListener('popstate', function(event) {
-            handleBackButton();
-        });
-    }
-    
-    // Geri tuşu toast mesajı göster
-    function showExitToast() {
-        // Toast var mı kontrol et
-        if (document.getElementById('exitToast')) {
-            document.getElementById('exitToast').remove();
-        }
-        
-        // Toast mesajı oluştur
-        const toast = document.createElement('div');
-        toast.id = 'exitToast';
-        toast.className = 'show';
-        toast.textContent = 'Çıkmak için tekrar geri tuşuna basın';
-        document.body.appendChild(toast);
-        
-        // 2 saniye sonra gizle
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(-50%) translateY(-20px)';
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }
-        }, 2000);
-    }
-    
-    // Geri tuşu işleyicisi
-    function handleBackButton() {
-        // Eğer selection modundaysa çık
-        if (isSelectionMode) {
-            exitSelectionMode();
-            return;
-        }
-        
-        // Eğer arama modundaysa çık
-        if (document.body.classList.contains('is-searching')) {
-            closeSearchBtn.click();
-            return;
-        }
-        
-        // Eğer drawer açıksa kapat
-        if (drawer.classList.contains('open')) {
-            drawer.classList.remove('open');
-            overlay.classList.remove('show');
-            return;
-        }
-        
-        // Eğer context menu açıksa kapat
-        if (contextSheet.classList.contains('show')) {
-            closeContextMenu();
-            return;
-        }
-        
-        // Eğer FAB menu açıksa kapat
-        if (fabMenu.classList.contains('show')) {
-            fabMenu.classList.remove('show');
-            return;
-        }
-        
-        // Ana sayfada değilsek ana sayfaya dön
-        if (currentNav !== 'home') {
-            switchNav('home');
-            return;
-        }
-        
-        // Ana sayfadaysak çıkış kontrolü
-        const now = Date.now();
-        if (backPressedTime + 2000 > now) {
-            // Çift tıklama ile çık - Android tarafında işlenecek
-            return 'exit';
-        } else {
-            // İlk tıklama, toast göster
-            showExitToast();
-            backPressedTime = now;
-            // History state ekle
-            if (window.history && window.history.pushState) {
-                window.history.pushState({ page: "home" }, "", window.location.href);
-            }
-            return 'stay';
-        }
-    }
-    
-    // Android geri tuşu fonksiyonu
-    window.androidBackPressed = function() {
-        return handleBackButton();
-    };
-    
-    // Viewer'a giderken - Son kullanılanlara ekle
-    function goToViewer(url, fileData) {
-        // Son kullanılanlara ekle
-        addToRecent(fileData);
-        
-        // Viewer'a git
-        window.location.href = url;
-    }
-    
-    // handleCardClick fonksiyonu - GÜNCELLENDİ
-    function handleCardClick(element, name, cardId, type) {
-        if (isSelectionMode) {
-            toggleCardSelection(cardId);
-            return;
-        }
-        
-        if (!isLongPress) {
-            // Dosya verisini bul
-            let fileData;
-            switch(type) {
-                case 'device':
-                    fileData = devicePDFs.find(f => f.id === cardId);
-                    break;
-                case 'imported':
-                    fileData = importedFiles.find(f => f.id === cardId);
-                    break;
-                case 'recent':
-                    fileData = recentFiles.find(f => f.id === cardId);
-                    break;
-                case 'favorite':
-                    fileData = favoriteFiles.find(f => f.id === cardId);
-                    break;
-                default:
-                    fileData = devicePDFs.find(f => f.id === cardId) || 
-                               importedFiles.find(f => f.id === cardId);
-            }
-
-            if (fileData) {
-                let url;
-                if (fileData.base64) {
-                    // Base64 verisi varsa
-                    url = "viewer.html?base64=" + 
-                          encodeURIComponent(fileData.base64) + 
-                          "&name=" + 
-                          encodeURIComponent(name) +
-                          "&id=" + cardId;
-                } else if (fileData.path) {
-                    // Dosya yolu varsa
-                    url = "viewer.html?file=" + 
-                          encodeURIComponent(fileData.path) + 
-                          "&name=" + 
-                          encodeURIComponent(name) +
-                          "&id=" + cardId;
-                }
-                
-                if (url) {
-                    goToViewer(url, fileData);
-                } else {
-                    alert("Dosya verisi bulunamadı!");
-                }
-            }
-        }
-    }
-
     // --- EVENTS ---
     function attachEvents() {
         
@@ -2129,10 +1948,6 @@
           if (currentNav !== 'home') {
               switchNav('home');
           }
-          
-          // Header'ı sıfırla
-          topBar.classList.remove('hidden-tabs');
-          isHeaderHidden = false;
       });
 
       closeSearchBtn.addEventListener('click', () => {
@@ -2146,10 +1961,21 @@
 
       searchInput.addEventListener('input', triggerSearch);
 
-      // SCROLL - GÜNCELLENDİ
+      // SCROLL
       panels.forEach(panel => {
         panel.addEventListener('scroll', (e) => {
-          handleScroll();
+          if (document.body.classList.contains('is-searching')) return;
+
+          if(currentNav !== 'home' || !panel.classList.contains('active')) return;
+          const currentY = e.target.scrollTop;
+          const direction = currentY > lastScrollY ? 'down' : 'up';
+          
+          if(currentY > 10 && direction === 'down') {
+            topBar.style.transform = `translateY(-${headerHeight}px)`;
+          } else if (direction === 'up') {
+            topBar.style.transform = 'translateY(0)';
+          }
+          lastScrollY = currentY;
         });
       });
 
@@ -2252,14 +2078,16 @@
         if(p.id === `${id}Panel`) {
             if(isClickOrNav) {
                 p.scrollTop = 0;
-                topBar.classList.remove('hidden-tabs');
-                isHeaderHidden = false;
+                topBar.style.transform = 'translateY(0)'; 
                 lastScrollY = 0;
-                
-                // Grid padding'i sıfırla
-                const grid = p.querySelector('.grid');
-                if (grid) {
-                    grid.style.paddingTop = 'calc(var(--top-bar-total) + 16px)';
+            } else {
+                const currentTransform = topBar.style.transform;
+                if (currentTransform === `translateY(-${headerHeight}px)`) {
+                     p.scrollTop = headerHeight + 1; 
+                     lastScrollY = headerHeight + 1; 
+                } else {
+                    p.scrollTop = 0;
+                    lastScrollY = 0;
                 }
             }
         }
@@ -2289,8 +2117,7 @@
       currentNav = id;
       
       panels.forEach(p => p.classList.remove('active'));
-      topBar.classList.remove('hidden-tabs');
-      isHeaderHidden = false;
+      topBar.style.transform = 'translateY(0)';
       lastScrollY = 0;
       fabButton.style.display = id === 'home' ? 'flex' : 'none';
 
@@ -2351,6 +2178,142 @@
         }
     }
 
+    // Geri tuşu için global değişken
+    let backPressedTime = 0;
+
+    // Geri tuşu toast mesajı göster
+    function showExitToast() {
+        // Toast mesajı oluştur
+        const toast = document.createElement('div');
+        toast.id = 'exitToast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            z-index: 9999;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            white-space: nowrap;
+        `;
+        
+        toast.textContent = 'Çıkmak için tekrar geri tuşuna basın';
+        document.body.appendChild(toast);
+        
+        // Görünür yap
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+        }, 10);
+        
+        // 2 saniye sonra gizle ve sil
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 2000);
+    }
+
+    // Android geri tuşu fonksiyonu (MainActivity'den çağrılacak)
+    window.androidBackPressed = function() {
+        // Mevcut sayfanın viewer.html olup olmadığını kontrol et
+        if (window.location.href.includes('viewer.html')) {
+            // Viewer'dan index.html'ye dön
+            window.location.href = 'file:///android_asset/web/index.html';
+            return true;
+        }
+        
+        // Eğer selection modundaysa çık
+        if (isSelectionMode) {
+            exitSelectionMode();
+            return false;
+        }
+        
+        // Eğer arama modundaysa çık
+        if (document.body.classList.contains('is-searching')) {
+            closeSearchBtn.click();
+            return false;
+        }
+        
+        // Eğer drawer açıksa kapat
+        if (drawer.classList.contains('open')) {
+            drawer.classList.remove('open');
+            overlay.classList.remove('show');
+            return false;
+        }
+        
+        // Eğer context menu açıksa kapat
+        if (contextSheet.classList.contains('show')) {
+            closeContextMenu();
+            return false;
+        }
+        
+        // Eğer FAB menu açıksa kapat
+        if (fabMenu.classList.contains('show')) {
+            fabMenu.classList.remove('show');
+            return false;
+        }
+        
+        // Ana sayfada değilsek ana sayfaya dön
+        if (currentNav !== 'home') {
+            switchNav('home');
+            return false;
+        }
+        
+        // Ana sayfadaysak çıkış kontrolü
+        const now = Date.now();
+        if (backPressedTime + 2000 > now) {
+            // Çift tıklama ile çık (Android tarafında işlenecek)
+            return 'exit_check';
+        } else {
+            // İlk tıklama, toast göster
+            showExitToast();
+            backPressedTime = now;
+            return false;
+        }
+    };
+
+    // Viewer'a giderken history state ekle
+    function goToViewer(url) {
+        // History state ekle (geri tuşu için)
+        if (window.history && window.history.pushState) {
+            window.history.pushState({ page: "viewer" }, "", window.location.href);
+        }
+        
+        // Viewer'a git
+        window.location.href = url;
+    }
+
+    // History state kontrolü
+    window.addEventListener('popstate', function(event) {
+        // Geri tuşu ile viewer'dan döndüysek
+        if (event.state && event.state.page === "viewer") {
+            // Ana sayfaya dön
+            currentNav = 'home';
+            switchNav('home');
+            switchTab('recent', true);
+        }
+    });
+
+    // DOM yüklendiğinde history state'i ayarla
+    document.addEventListener('DOMContentLoaded', () => {
+        // İlk history state'i ekle
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ page: "home" }, "", window.location.href);
+        }
+    });
+
     // Global fonksiyonlar
     window.setThemePreference = setThemePreference;
     window.sendHelpEmail = sendHelpEmail;
@@ -2372,7 +2335,7 @@
     window.handleFileSelect = handleFileSelect;
     window.scanDeviceForPDFs = scanDeviceForPDFs;
     window.onAndroidResume = onAndroidResume;
-    window.androidBackPressed = androidBackPressed;
+    window.openToolPage = openToolPage;
 
   </script>
 </body>

@@ -2,7 +2,64 @@
 
 <html dir="ltr" mozdisallowselectionprint>
   <head>
-          
+          <script>
+// ANDROID PDF SEÇME ENTEGRASYONU
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. URL'den PDF parametresini kontrol et
+    const urlParams = new URLSearchParams(window.location.search);
+    const pdfFile = urlParams.get('file');
+    
+    if (pdfFile) {
+        console.log("Android'den PDF yükleniyor:", pdfFile);
+        
+        // PDF.js viewer'ı başlat
+        if (typeof PDFViewerApplication !== 'undefined') {
+            PDFViewerApplication.open(pdfFile);
+            hideCenterButton();
+            
+            const toolbar = document.getElementById('customToolbar');
+            if (toolbar) {
+                toolbar.classList.add('visible');
+            }
+        }
+    }
+    
+    // 2. Center butonunu Android'e bağla
+    const centerButton = document.getElementById('centerPDFButton');
+    if (centerButton) {
+        centerButton.onclick = function() {
+            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
+                Android.selectSpeechPDF();
+            } else {
+                alert("Lütfen Android uygulamasından PDF seçin");
+            }
+        };
+    }
+    
+    // 3. Secondary Open butonunu Android'e bağla
+    const secondaryOpenBtn = document.getElementById('secondaryOpenFile');
+    if (secondaryOpenBtn) {
+        secondaryOpenBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
+                Android.selectSpeechPDF();
+            }
+            return false;
+        };
+    }
+    
+    // 4. Android'den dönen PDF'i işlemek için global fonksiyon
+    window.onPDFSelectedForSpeech = function(filePath) {
+        console.log("Android'den PDF alındı:", filePath);
+        
+        // URL parametresi ekleyerek sayfayı yeniden yükle
+        const newUrl = window.location.pathname + '?file=' + encodeURIComponent(filePath);
+        window.location.href = newUrl;
+    };
+});
+</script>
            
           
 <style>

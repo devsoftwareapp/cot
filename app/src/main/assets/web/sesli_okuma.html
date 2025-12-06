@@ -2603,6 +2603,55 @@ const customToolbarTranslations = {
     }
 };
 
+
+// TEST
+
+
+// --- ANDROID WEBVIEW TTS UYUMLULUK FIX'İ ---
+
+// Global TTS değişkenleri (Garbage Collection'ı önler)
+const synth = window.speechSynthesis;
+let availableVoices = [];
+let voiceLoadingAttempted = false;
+
+// Sadece bir kere sesleri yüklemeyi dener
+function loadAvailableVoices() {
+    availableVoices = synth.getVoices();
+    if (availableVoices.length > 0) {
+        voiceLoadingAttempted = true;
+        console.log("TTS: Sesler yüklendi, Adet:", availableVoices.length);
+        // Sesler yüklendiğinde, butonu oynatılabilir hale getirebilirsiniz.
+        // updateCustomToolbarLanguage(); // Buton durumunu da güncelle (opsiyonel)
+    } else if (!voiceLoadingAttempted) {
+        console.log("TTS: Sesler henüz yüklenmedi, bekliyor...");
+    }
+}
+
+// Ses listesinin değişme olayını dinle (Android için kritik)
+if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = function() {
+        console.log("TTS: onvoiceschanged tetiklendi.");
+        loadAvailableVoices();
+    };
+}
+
+// Sayfa yüklendiğinde hemen denemeyi başlat
+loadAvailableVoices(); 
+
+// --- FIX SONU ---
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Mevcut dili al
 function getCurrentLanguage() {
     // Lang.js'den dili al

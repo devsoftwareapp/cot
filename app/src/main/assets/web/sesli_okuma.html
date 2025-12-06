@@ -1,10 +1,33 @@
-<!doctype html>
+﻿<!doctype html>
 
 <html dir="ltr" mozdisallowselectionprint>
   <head>
 
-          
-<style>
+
+    
+    <meta charset="utf-8" />
+
+<script src="../cordova.js"></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    
+    <meta name="google" content="notranslate" />
+    
+    <title>PDF.js viewer</title>
+
+<!-- This snippet is used in production (included from viewer.html) -->
+<link rel="resource" type="application/l10n" href="locale/locale.json" />
+<script src="../build/pdf.mjs" type="module"></script>
+
+    <link rel="stylesheet" href="viewer.css" />
+
+  <script src="viewer.mjs" type="module"></script>
+  
+  
+  
+  
+  
+  <style>
 /* SESLİ OKUMA ÖZELLİKLERİ */
 .speech-highlight {
     background-color: rgba(255, 235, 59, 0.5) !important;
@@ -141,35 +164,20 @@
 
 </style>
 
-
-      
-      
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="google" content="notranslate" />
-    <title>PDF.js viewer</title>
-    
-    <script src="lang.js"></script>
-    
-    <script src="tesseract.min.js"></script>
-<script src="pdf.min.js"></script>
-<script>pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";</script>
-
-<link rel="resource" type="application/l10n" href="locale/locale.json" />
-<script src="../build/pdf.mjs" type="module"></script>
-
-    <link rel="stylesheet" href="viewer.css" />
-
-  <script src="viewer.mjs" type="module"></script>
+  
+  
+  
+  
+  
+  
+  
   
   
   </head>
   
-
-
-   
-
-
+  
+  
+  
 <!-- CUSTOM TOOLBAR - ALTTA MERKEZDE -->
 <div class="custom-toolbar" id="customToolbar">
     <button id="customPrev" title="Önceki Kelime">◀ GERİ</button>
@@ -181,28 +189,11 @@
 </div>
 
 
-
-
-
-
-
-
+  
+  
+  
 
   <body tabindex="0">
-      
-      
-   
-   
-
-
-
-
-
-
-
-
-
-      
     <div id="outerContainer">
       <span id="viewer-alert" class="visuallyHidden" role="alert"></span>
 
@@ -662,7 +653,13 @@
                       </button>
 
                       <div class="visibleMediumView">
-                                   
+                        <button id="secondaryPrint" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-print-button">
+                          <span data-l10n-id="pdfjs-print-button-label"></span>
+                        </button>
+
+                        <button id="secondaryDownload" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-save-button">
+                          <span data-l10n-id="pdfjs-save-button-label"></span>
+                        </button>
 
                       </div>
 
@@ -1293,20 +1290,213 @@
     </div>
     <!-- outerContainer -->
     <div id="printContainer"></div>
-    
-    
-    <!-- EV çiye   -->
-    
- 
- 
 
-    
-    
+<!-- pdf acma- kaydetme vs -->
+
+<!-- pdf acma- kaydetme vs -->
+
 
 
 
 
 <script>
+/* -----------------------------------------------------
+   1) Base64 ile PDF açma (index.html → viewer.html)
+----------------------------------------------------- */
+document.addEventListener("webviewerloaded", function () {
+  console.log("📄 PDF.js Yüklendi");
+
+  const params = new URLSearchParams(window.location.search);
+  const base64 = params.get("base64");
+  if (!base64) return;
+
+  try {
+    const pureBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
+    const binary = atob(pureBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([bytes], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    const wait = setInterval(() => {
+      if (window.PDFViewerApplication && PDFViewerApplication.initialized) {
+        clearInterval(wait);
+        PDFViewerApplication.open({ url: blobUrl });
+        console.log("✅ PDF Açıldı");
+      }
+    }, 80);
+  } catch (e) {
+    console.error("PDF açma hatası:", e);
+  }
+});
+
+/* -----------------------------------------------------
+   2) Cordova Ready Sonrası: Kaydet butonu aktif
+----------------------------------------------------- */
+document.addEventListener("deviceready", function () {
+  console.log("📱 Cordova Hazır");
+  initSaveButton();
+});
+
+// Tarayıcı test modu
+if (!window.cordova) {
+  console.log("🌐 Tarayıcı test modu");
+  setTimeout(initSaveButton, 2000);
+}
+
+/* -----------------------------------------------------
+   3) Kaydet butonunu bul ve event ekle
+----------------------------------------------------- */
+function initSaveButton() {
+  let tries = 0;
+
+  const timer = setInterval(() => {
+    tries++;
+    const btn = document.getElementById("secondaryDownload");
+
+    if (btn) {
+      clearInterval(timer);
+      console.log("✔ Kaydet butonu bulundu");
+      activateSaveButton(btn);
+    } else if (tries > 15) {
+      clearInterval(timer);
+      console.warn("❌ Kaydet butonu bulunamadı");
+    }
+  }, 300);
+}
+
+function activateSaveButton(btn) {
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+
+  newBtn.addEventListener(
+    "click",
+    function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("💾 Kaydet tıklandı");
+      saveEditedPDF();
+    },
+    true
+  );
+}
+
+/* -----------------------------------------------------
+   4) PDF.js'den düzenlenmiş PDF verisini al
+----------------------------------------------------- */
+function saveEditedPDF() {
+  if (!window.cordova) {
+    alert("Cordova yok, sadece cihazda çalışır.");
+    return;
+  }
+
+  if (!PDFViewerApplication || !PDFViewerApplication.pdfDocument) {
+    alert("PDF henüz yüklenmedi!");
+    return;
+  }
+
+  PDFViewerApplication.pdfDocument
+    .saveDocument()
+    .then((editedBuffer) => {
+      console.log("✏ Düzenlenmiş PDF Buffer alındı:", editedBuffer.byteLength);
+
+      const base64 = arrayBufferToBase64(editedBuffer);
+      saveBase64ToAndroid(base64);
+    })
+    .catch((err) => {
+      console.error("Düzenleme kaydı alınamadı:", err);
+      showAlert("PDF düzenleme verisi alınamadı: " + err, "Hata");
+    });
+}
+
+/* ArrayBuffer → Base64 */
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/* -----------------------------------------------------
+   5) Android Dosya Sistemine Kaydet (TÜM SÜRÜMLERDE ÇALIŞIR)
+----------------------------------------------------- */
+function saveBase64ToAndroid(base64Data) {
+  const root = cordova.file.externalRootDirectory; // ✔ Android 10–14 uyumlu
+  const fileName = "edited_" + Date.now() + ".pdf";
+
+  window.resolveLocalFileSystemURL(
+    root,
+    function (rootEntry) {
+      // Download
+      rootEntry.getDirectory(
+        "Download",
+        { create: true },
+        function (downloadDir) {
+          // PDF_Reader (otomatik oluşturulur)
+          downloadDir.getDirectory(
+            "PDF_Reader",
+            { create: true },
+            function (pdfDir) {
+              // Dosyayı oluştur
+              pdfDir.getFile(
+                fileName,
+                { create: true },
+                function (fileEntry) {
+                  fileEntry.createWriter(function (writer) {
+                    const byteChars = atob(base64Data);
+                    const byteArray = new Uint8Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) {
+                      byteArray[i] = byteChars.charCodeAt(i);
+                    }
+
+                    const blob = new Blob([byteArray], {
+                      type: "application/pdf",
+                    });
+
+                    writer.write(blob);
+
+                    showAlert(
+                      "PDF Kaydedildi:\nDownload/PDF_Reader/" + fileName,
+                      "Başarılı"
+                    );
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+    },
+    function (err) {
+      showAlert("Storage erişilemedi: " + err, "Hata");
+    }
+  );
+}
+
+/* -----------------------------------------------------
+   6) Alert Fonksiyonu
+----------------------------------------------------- */
+function showAlert(message, title) {
+  if (navigator.notification && navigator.notification.alert) {
+    navigator.notification.alert(message, null, title || "Bilgi", "Tamam");
+  } else {
+    alert((title ? title + ": " : "") + message);
+  }
+}
+
+
+
+<!-- EV CİYE -->
+
+
+
+
+
 // SIMPLE LANGUAGE DETECTOR (Local)
 window.simpleLanguageDetector = {
     detect: function(text) {
@@ -2625,146 +2815,7 @@ if (typeof PDFViewerApplication !== 'undefined') {
 }
 
 
-// =============================================
-// ANDROID ENTEGRASYONU - PDF SEÇME VE YÜKLEME
-// =============================================
 
-// URL'den PDF parametresini kontrol et ve yükle
-function checkAndLoadPDFFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pdfFile = urlParams.get('file');
-    
-    if (pdfFile) {
-        console.log("📱 Android'den PDF alındı:", pdfFile);
-        
-        // PDF.js viewer hazır mı kontrol et
-        if (typeof PDFViewerApplication !== 'undefined' && PDFViewerApplication.open) {
-            // Hemen yükle
-            console.log("✅ PDF.js hazır, PDF açılıyor...");
-            PDFViewerApplication.open(pdfFile);
-            hideCenterButton();
-            
-            const toolbar = document.getElementById('customToolbar');
-            if (toolbar) {
-                toolbar.classList.add('visible');
-            }
-        } else {
-            // Değilse, event listener ekle
-            console.log("⏳ PDF.js henüz hazır değil, bekleniyor...");
-            if (typeof PDFViewerApplication !== 'undefined') {
-                PDFViewerApplication.eventBus.on('loaded', function() {
-                    console.log("✅ PDF.js yüklendi, şimdi PDF açılıyor...");
-                    setTimeout(() => {
-                        PDFViewerApplication.open(pdfFile);
-                        hideCenterButton();
-                        
-                        const toolbar = document.getElementById('customToolbar');
-                        if (toolbar) {
-                            toolbar.classList.add('visible');
-                        }
-                    }, 500);
-                });
-            }
-        }
-    }
-}
-
-// Butonları Android'e bağla
-function setupAndroidButtons() {
-    // Center butonunu Android'e bağla
-    const centerButton = document.getElementById('centerPDFButton');
-    if (centerButton) {
-        const originalOnClick = centerButton.onclick;
-        centerButton.onclick = function() {
-            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
-                Android.selectSpeechPDF();
-            } else if (originalOnClick) {
-                originalOnClick.call(this);
-            } else {
-                console.warn("Android bridge bulunamadı!");
-            }
-        };
-    }
-    
-    // Secondary Open butonunu Android'e bağla
-    const secondaryOpenBtn = document.getElementById('secondaryOpenFile');
-    if (secondaryOpenBtn) {
-        const originalOnClick = secondaryOpenBtn.onclick;
-        secondaryOpenBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (typeof Android !== 'undefined' && Android.selectSpeechPDF) {
-                Android.selectSpeechPDF();
-            } else if (originalOnClick) {
-                originalOnClick.call(this, e);
-            }
-            return false;
-        };
-    }
-}
-
-// Android'den PDF seçildiğinde çağrılacak global fonksiyon
-window.onPDFSelectedForSpeech = function(filePath) {
-    console.log("📱 Android'den PDF seçildi:", filePath);
-    
-    // URL parametresi ekleyerek sayfayı yeniden yükle
-    const newUrl = window.location.pathname + '?file=' + encodeURIComponent(filePath);
-    window.location.href = newUrl;
-};
-
-// Mevcut initSpeechControls fonksiyonunu güncelle (Android butonlarını bağlamak için)
-const originalInitSpeechControls = initSpeechControls;
-initSpeechControls = function() {
-    // Önce orijinal fonksiyonu çalıştır
-    if (originalInitSpeechControls) {
-        originalInitSpeechControls();
-    }
-    
-    // Sonra Android butonlarını bağla
-    setupAndroidButtons();
-};
-
-// Mevcut setupPDFTextExtraction fonksiyonunu güncelle (PDF yükleme için)
-const originalSetupPDFTextExtraction = setupPDFTextExtraction;
-setupPDFTextExtraction = function() {
-    // Önce orijinal fonksiyonu çalıştır
-    if (originalSetupPDFTextExtraction) {
-        originalSetupPDFTextExtraction();
-    }
-    
-    // Sonra URL'den PDF kontrolü yap
-    if (typeof PDFViewerApplication !== 'undefined') {
-        PDFViewerApplication.eventBus.on('loaded', function() {
-            console.log("📄 PDF.js viewer tamamen yüklendi");
-            // Tekrar PDF kontrolü yap
-            setTimeout(() => {
-                checkAndLoadPDFFromURL();
-            }, 300);
-        });
-    }
-};
-
-// Sayfa yüklendiğinde Android entegrasyonunu başlat
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 sesli_okuma.html yüklendi, Android entegrasyonu başlatılıyor...");
-    
-    // URL'den PDF'i kontrol et ve yükle
-    setTimeout(() => {
-        checkAndLoadPDFFromURL();
-    }, 1000); // 1 saniye bekle, her şeyin yüklenmesi için
-});
-
-// PDF yüklendiğinde dili güncelle (MEVCUT KOD - DEĞİŞMEDİ)
-if (typeof PDFViewerApplication !== 'undefined') {
-    PDFViewerApplication.eventBus.on('documentloaded', function() {
-        setTimeout(updateCustomToolbarLanguage, 500);
-    });
-    
-    PDFViewerApplication.eventBus.on('documentunloaded', function() {
-        setTimeout(updateCustomToolbarLanguage, 500);
-    });
-}
 
 
 
@@ -2773,8 +2824,17 @@ if (typeof PDFViewerApplication !== 'undefined') {
         <!-- EV çiye   -->
         
         
-        
-        
+
+
+
+
+
+
     
+
+
+<!-- pdf acma- kaydetme vs -->
+    
+<!-- pdf acma- kaydetme vs -->
   </body>
 </html>

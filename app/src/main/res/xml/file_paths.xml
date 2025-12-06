@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- External Storage Paths -->
+    <external-path
+        name="external_storage"
+        path="." />
+    
+    <!-- Download Directory -->
+    <external-path
+        name="downloads"
+        path="Download/" />
+    
+    <!-- PDF Reader App Folder -->
+    <external-path
+        name="pdf_reader"
+        path="Download/PDF Reader/" />
+    
+    <!-- Documents Directory -->
+    <external-path
+        name="documents"
+        path="Documents/" />
+    
+    <!-- DCIM Directory -->
+    <external-path
+        name="dcim"
+        path="DCIM/" />
+    
+    <!-- Cache Directory -->
+    <cache-path
+        name="cache"
+        path="/" />
+    
+    <!-- Files Directory -->
+    <files-path
+        name="files"
+        path="/" />
+    
+    <!-- External Cache -->
+    <external-cache-path
+        name="external_cache"
+        path="/" />
+    
+    <!-- External Files -->
+    <external-files-path
+        name="external_files"
+        path="/" />
+</paths>

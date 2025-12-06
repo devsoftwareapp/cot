@@ -1,7 +1,7 @@
 // Dil ayarları
 const languageConfig = {
     
-    current: 'en',
+    current: 'tr',
     
     // Dil isimleri
     names: {

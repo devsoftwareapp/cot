@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.provider.Settings
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
@@ -17,18 +16,21 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var webView: WebView
-    private lateinit var tts: SesliTTS
+    // GLOBAL INSTANCE (TTS callback için)
+    companion object {
+        var instance: MainActivity? = null
+    }
 
+    lateinit var webView: WebView
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+
+    private lateinit var tts: SesliTTS
 
     @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        instance = this   // ÖNEMLİ ✔
         setContentView(R.layout.activity_main)
-
-        // TTS başlat
-        tts = SesliTTS(this)
 
         webView = findViewById(R.id.webView)
 
@@ -41,12 +43,14 @@ class MainActivity : AppCompatActivity() {
         settings.allowUniversalAccessFromFileURLs = true
         settings.allowFileAccessFromFileURLs = true
 
-        // ✔ TTS fonksiyonları da burada
-        webView.addJavascriptInterface(AndroidBridge(), "Android")
+        // TTS instance
+        tts = SesliTTS(this)
+        webView.addJavascriptInterface(tts, "Android")   // ÖNEMLİ ✔
+        webView.addJavascriptInterface(AndroidBridge(), "Bridge")
 
         webView.webViewClient = WebViewClient()
-        webView.webChromeClient = object : WebChromeClient() {
 
+        webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 webView: WebView?,
                 filePathCallback: ValueCallback<Array<Uri>>?,
@@ -58,9 +62,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // HTML YÜKLE
         webView.loadUrl("file:///android_asset/web/sesli_okuma.html")
     }
 
+    // PDF seçici
     private fun openPDFPicker() {
         try {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
@@ -83,48 +89,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ============================================================
-    // ANDROID ↔ JS KÖPRÜSÜ (TTS + Toast + İzin)
-    // ============================================================
     inner class AndroidBridge {
-
-        // ---- TOAST ----
         @JavascriptInterface
         fun showToast(msg: String) {
             runOnUiThread {
-                Toast.makeText(
-                    this@MainActivity,
-                    msg,
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
             }
         }
 
-        // ---- TTS: speakTextWithRate ----
-        @JavascriptInterface
-        fun speakTextWithRate(text: String, lang: String, rate: Float) {
-            tts.speakTextWithRate(text, lang, rate)
-        }
-
-        // ---- TTS: speakText ----
-        @JavascriptInterface
-        fun speakText(text: String, lang: String) {
-            tts.speakText(text, lang)
-        }
-
-        // ---- TTS: speak ----
-        @JavascriptInterface
-        fun speak(text: String, lang: String) {
-            tts.speak(text, lang)
-        }
-
-        // ---- TTS: stop ----
-        @JavascriptInterface
-        fun stop() {
-            tts.stop()
-        }
-
-        // ---- Permissions ----
         @JavascriptInterface
         fun requestPermission() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -137,13 +109,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        tts.shutdown()
-    }
-
     override fun onBackPressed() {
         if (webView.canGoBack()) webView.goBack()
         else super.onBackPressed()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        tts.shutdown()
     }
 }

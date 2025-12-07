@@ -1185,7 +1185,7 @@
 
 
 <!-- ========================================================= -->
-<!-- ====================== SPEECH BAR ======================== -->
+<!-- ====================== CUSTOM STYLE ====================== -->
 <!-- ========================================================= -->
 <style>
 #speechBar {
@@ -1504,21 +1504,35 @@ body {
     const lang = detectLang(text);
     const rate = ttsSpeed;
 
+    console.log("Speaking:", text.substring(0, 50) + "...", "Index:", ttsIndex);
+
     if (window.Android){
       try {
         setPlaying(true);
         
-        window.onTTSComplete = moveToNextSentence;
+        // Android TTS bittiğinde bu fonksiyonu çağıracak
+        window.onAndroidSpeechDone = function() {
+          console.log("ANDROID → onAndroidSpeechDone callback received");
+          // Küçük bir gecikme ekle
+          setTimeout(function() {
+            console.log("Moving to next sentence after Android TTS");
+            moveToNextSentence();
+          }, 50);
+        };
 
-        if (Android.speakTextWithRate)
+        if (Android.speakTextWithRate) {
+          console.log("Using speakTextWithRate");
           Android.speakTextWithRate(text, lang, rate);
-        else if (Android.speakText)
+        } else if (Android.speakText) {
+          console.log("Using speakText");
           Android.speakText(text, lang);
-        else
+        } else {
+          console.log("Using speak");
           Android.speak(text, lang);
+        }
 
       } catch(e){
-        console.error(e);
+        console.error("Android TTS error:", e);
         setPlaying(false);
       }
     } else {
@@ -1537,30 +1551,53 @@ body {
     utterance.lang = lang;
     utterance.rate = rate;
 
-    utterance.onstart = () => setPlaying(true);
-    utterance.onend   = moveToNextSentence;
-    utterance.onerror = () => setPlaying(false);
+    utterance.onstart = () => {
+      console.log("Browser TTS started");
+      setPlaying(true);
+    };
+    
+    utterance.onend = () => {
+      console.log("Browser TTS ended");
+      moveToNextSentence();
+    };
+    
+    utterance.onerror = (event) => {
+      console.error("Browser TTS error:", event);
+      setPlaying(false);
+    };
 
     speechSynthesis.speak(utterance);
   }
 
   function moveToNextSentence() {    
+    console.log("moveToNextSentence called, isPlaying:", isPlaying, "ttsIndex:", ttsIndex, "total:", sentences.length);
+    
     if (isPlaying && ttsIndex < sentences.length - 1) {
       ttsIndex++;
+      console.log("Moving to next sentence, new index:", ttsIndex);
       highlightCurrentSentence();
-      setTimeout(speak, 100);
-    } else {
+      // Hemen konuşmaya başla
+      speak();
+    } else if (isPlaying && ttsIndex >= sentences.length - 1) {
+      // Son cümledeysek dur
+      console.log("Last sentence reached, stopping");
       setPlaying(false);
       status("Bitti");
+    } else {
+      console.log("Not playing or invalid state");
+      setPlaying(false);
     }
   }
 
   function stopTTS(){
+    console.log("stopTTS called");
     if (utterance) {
       speechSynthesis.cancel();
       utterance = null;
     }
-    if (window.Android && Android.stop) Android.stop();
+    if (window.Android && Android.stop) {
+      Android.stop();
+    }
     setPlaying(false);
   }
 
@@ -1570,20 +1607,39 @@ body {
     status(p ? "Okunuyor [" + (ttsIndex+1) + "/" + sentences.length + "]" : "Hazır");
   }
 
+  // Android'den çağrılmak üzere global fonksiyon
+  window.nextSentence = function() {
+    console.log("Global nextSentence() called from Android");
+    moveToNextSentence();
+  };
+
 })();
 
-
-
+// Android callback'i - direkt global fonksiyon
 window.onAndroidSpeechDone = function () {
-    console.log("ANDROID → Speech finished");
-    nextSentence(); // otomatik ilerlet
+    console.log("Global onAndroidSpeechDone called");
+    // Hemen değil, biraz bekle (TTS tamamen bittiğinden emin ol)
+    setTimeout(function() {
+        if (window.moveToNextSentence) {
+            console.log("Calling moveToNextSentence");
+            window.moveToNextSentence();
+        } else {
+            console.error("moveToNextSentence function not found!");
+        }
+    }, 100);
 };
-
 
 </script>
 
 
 
+
+
+
+
+
+<!-- ========================================================= -->
+<!-- ====================== SPEECH BAR 
 
 <!-- pdf acma- kaydetme vs -->
 <!-- pdf acm✅✅✅✅a- kaydetme vs -->

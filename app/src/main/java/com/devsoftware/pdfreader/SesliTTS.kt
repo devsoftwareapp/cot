@@ -2,11 +2,16 @@ package com.devsoftware.pdfreader
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import java.util.Locale
 
-class SesliTTS(private val context: Context) : TextToSpeech.OnInitListener {
+class SesliTTS(
+    private val context: Context,
+    private val webView: WebView   // 🔥 WebView referansı EKLENDİ
+) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
     private var isReady = false
@@ -21,16 +26,35 @@ class SesliTTS(private val context: Context) : TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale.US)  // Default: ENGLISH
+            val result = tts?.setLanguage(Locale.US)
             isReady = result != TextToSpeech.LANG_MISSING_DATA &&
-                      result != TextToSpeech.LANG_NOT_SUPPORTED
+                    result != TextToSpeech.LANG_NOT_SUPPORTED
+
+            // 🔥 TTS CALLBACK → JS OTOMATIK İLERLEME
+            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+
+                override fun onStart(utteranceId: String?) {}
+
+                override fun onError(utteranceId: String?) {}
+
+                override fun onDone(utteranceId: String?) {
+                    // TTS bittikten sonra JS'e haber gönder
+                    webView.post {
+                        webView.evaluateJavascript(
+                            "window.onAndroidSpeechDone && window.onAndroidSpeechDone();",
+                            null
+                        )
+                    }
+                }
+            })
+
         } else {
             isReady = false
         }
     }
 
     // ============================================
-    // JS → Android: speakTextWithRate(text, lang, rate)
+    // speakTextWithRate(text, lang, rate)
     // ============================================
     @JavascriptInterface
     fun speakTextWithRate(text: String, lang: String, rate: Float) {
@@ -39,14 +63,21 @@ class SesliTTS(private val context: Context) : TextToSpeech.OnInitListener {
         try {
             tts?.language = Locale.forLanguageTag(lang)
             tts?.setSpeechRate(rate)
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts_id_rate")
+
+            tts?.speak(
+                text,
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "tts_done_id"    // 🔥 ID gerekli
+            )
+
         } catch (e: Exception) {
             Log.e("SesliTTS", "speakTextWithRate error: $e")
         }
     }
 
     // ============================================
-    // JS → Android: speakText(text, lang)
+    // speakText(text, lang)
     // ============================================
     @JavascriptInterface
     fun speakText(text: String, lang: String) {
@@ -54,26 +85,30 @@ class SesliTTS(private val context: Context) : TextToSpeech.OnInitListener {
 
         try {
             tts?.language = Locale.forLanguageTag(lang)
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts_id")
+
+            tts?.speak(
+                text,
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "tts_done_id"   // 🔥 Aynı ID
+            )
+
         } catch (e: Exception) {
             Log.e("SesliTTS", "speakText error: $e")
         }
     }
 
-    // Backwards compatible: speak(text, lang)
     @JavascriptInterface
     fun speak(text: String, lang: String) {
         speakText(text, lang)
     }
 
-    // ============================================
-    // JS → Android: stop()
-    // ============================================
     @JavascriptInterface
     fun stop() {
         try {
             tts?.stop()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     @JavascriptInterface
@@ -85,6 +120,7 @@ class SesliTTS(private val context: Context) : TextToSpeech.OnInitListener {
         try {
             tts?.stop()
             tts?.shutdown()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 }

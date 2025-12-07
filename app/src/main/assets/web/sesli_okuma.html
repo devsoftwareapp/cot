@@ -1,73 +1,125 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sesli Okuma - PDF Seç</title>
-  <style>
-    body{font-family:Arial,Helvetica,sans-serif;padding:18px}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-    button{padding:10px 14px;font-size:16px;cursor:pointer}
-    #status{margin-top:12px;color:#333}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PDF Sesli Okuma</title>
+<style>
+    body { font-family: Arial; margin: 0; padding: 0; }
+    #toolbar {
+        padding: 10px;
+        background: #f0f0f0;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 1px solid #ccc;
+    }
+    button { padding: 10px 16px; font-size: 16px; cursor: pointer; }
+    #pdfFrame {
+        width: 100%;
+        height: calc(100vh - 70px);
+        border: none;
+    }
+</style>
 </head>
 <body>
-  <h2>PDF Sesli Okuyucu</h2>
-  <div class="toolbar">
-    <button id="btnSelect">📄 PDF SEÇ</button>
-    <button id="btnOpenViewer" disabled>▶ Viewer'da Aç</button>
-  </div>
-  <div id="status">Henüz PDF seçilmedi.</div>
 
-  <script>
-    const btnSelect = document.getElementById('btnSelect');
-    const btnOpenViewer = document.getElementById('btnOpenViewer');
-    const status = document.getElementById('status');
+<div id="toolbar">
+    <button id="btnPDF">📄 PDF Seç</button>
+    <button id="btnBack">⏮</button>
+    <button id="btnPlay">▶</button>
+    <button id="btnStop">⏹</button>
+    <button id="btnNext">⏭</button>
+</div>
 
-    // PDF base64 verisi burada tutulur
-    let selectedBase64 = null;
+<iframe id="pdfFrame"></iframe>
 
-    btnSelect.onclick = function() {
-      if (window.Android && Android.openFilePicker) {
-        Android.openFilePicker();
-      } else {
-        alert('Android bağlantısı mevcut değil. Uygulamada açın.');
-      }
+<script>
+let pdfBase64 = null;
+let currentTextIndex = 0;
+let textChunks = [];
+let isPlaying = false;
+
+// PDF seç
+document.getElementById("btnPDF").onclick = () => {
+    if (Android && Android.openFilePicker) Android.openFilePicker();
+};
+
+// Android bu fonksiyonu çağırıyor
+function onPdfSelectedFromAndroid(base64) {
+    pdfBase64 = base64;
+    loadPDFinIframe();
+}
+
+// viewer.html'i iframe içine yükle
+function loadPDFinIframe() {
+    const iframe = document.getElementById("pdfFrame");
+    iframe.src = "viewer.html?base64=" + encodeURIComponent(pdfBase64);
+
+    // viewer yüklendiğinde mesaj gönder
+    iframe.onload = () => {
+        iframe.contentWindow.postMessage({ type: "LOAD_BASE64", data: pdfBase64 }, "*");
     };
+}
 
-    // Android tarafı seçimi tamamlayınca bu fonksiyonu çağırır
-    // MainActivity.onActivityResult -> evaluateJavascript("onPdfSelectedFromAndroid(base64)")
-    function onPdfSelectedFromAndroid(base64) {
-      if (!base64) {
-        status.textContent = 'PDF alınamadı veya boş.';
+// viewer.html → sesli_okuma.html iletişimi
+window.addEventListener("message", (event) => {
+    if (!event.data) return;
+
+    if (event.data.type === "TEXT_EXTRACTED") {
+        textChunks = event.data.text; 
+        console.log("Metin alındı:", textChunks);
+    }
+});
+
+// OYNAT
+document.getElementById("btnPlay").onclick = () => {
+    if (textChunks.length === 0) {
+        alert("Metin henüz yüklenmedi.");
         return;
-      }
-
-      selectedBase64 = base64;
-      status.textContent = 'PDF alındı (' + Math.round(base64.length/1024) + ' KB). "Viewer\'da Aç" ile görüntüleyin.';
-      btnOpenViewer.disabled = false;
     }
 
-    // Viewer'ı aç - aynı dizindeki viewer.html kullanılacak
-    btnOpenViewer.onclick = function() {
-      if (!selectedBase64) {
-        alert('Önce PDF seçin.');
-        return;
-      }
+    isPlaying = true;
+    speakChunk(currentTextIndex);
+};
 
-      // viewer.html'e base64 param ile yönlendir
-      // encodeURIComponent ile gönderiyoruz
-      const url = 'viewer.html?base64=' + encodeURIComponent(selectedBase64);
-      // navigate same folder
-      window.location.href = url;
-    };
+// DURDUR
+document.getElementById("btnStop").onclick = () => {
+    isPlaying = false;
+    if (Android && Android.stop) Android.stop();
+};
 
-    // Eğer istersen JS'ten TTS çağırma örneği:
-    // window.Android.speak(text, 'en-US', 1.0);
+// GERİ
+document.getElementById("btnBack").onclick = () => {
+    if (currentTextIndex > 0) currentTextIndex--;
+    speakChunk(currentTextIndex);
+};
 
-    // Güvenlik: büyük base64'leri localStorage'a koymak performansı düşürebilir.
-    // Bu demo yöntemiyle base64 direk query-string'e koyuluyor; eğer çok büyükse viewer.html'e 
-    // postMessage veya temp file + FileProvider kullan önerilir.
-  </script>
+// İLERİ
+document.getElementById("btnNext").onclick = () => {
+    if (currentTextIndex < textChunks.length - 1) currentTextIndex++;
+    speakChunk(currentTextIndex);
+};
+
+// Bir bölüm oku
+function speakChunk(i) {
+    if (!isPlaying) return;
+    const text = textChunks[i] || "";
+    if (Android && Android.speak) {
+        Android.speak(text, "tr-TR", 1.0);
+    }
+}
+
+// Android → Bu fonksiyon çağırıldığında bir chunk bitti
+function onTTSDone() {
+    if (!isPlaying) return;
+    currentTextIndex++;
+    if (currentTextIndex < textChunks.length) {
+        speakChunk(currentTextIndex);
+    }
+}
+</script>
+
 </body>
 </html>

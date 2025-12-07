@@ -16,7 +16,6 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    // GLOBAL INSTANCE (TTS callback için)
     companion object {
         var instance: MainActivity? = null
     }
@@ -29,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        instance = this   // ÖNEMLİ ✔
+        instance = this
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
@@ -43,9 +42,11 @@ class MainActivity : AppCompatActivity() {
         settings.allowUniversalAccessFromFileURLs = true
         settings.allowFileAccessFromFileURLs = true
 
-        // TTS instance
-        tts = SesliTTS(this)
-        webView.addJavascriptInterface(tts, "Android")   // ÖNEMLİ ✔
+        // ---------- TTS ----------
+        tts = SesliTTS(this, webView)
+        webView.addJavascriptInterface(tts, "Android")
+
+        // ---------- Bridge ----------
         webView.addJavascriptInterface(AndroidBridge(), "Bridge")
 
         webView.webViewClient = WebViewClient()
@@ -62,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // HTML YÜKLE
+        // ---------- HTML Yükle ----------
         webView.loadUrl("file:///android_asset/web/sesli_okuma.html")
     }
 
@@ -104,7 +105,8 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                     intent.data = Uri.parse("package:$packageName")
                     startActivity(intent)
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
             }
         }
     }

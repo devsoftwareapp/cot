@@ -1182,8 +1182,6 @@
 
 
 
-
-
 <!-- ========================================================= -->
 <!-- ====================== SPEECH BAR ======================== -->
 <!-- ========================================================= -->
@@ -1279,6 +1277,9 @@ body {
   <span id="speechStatus">Hazır</span>
 </div>
 
+<!-- Android WebView için görünmez PDF seçici -->
+<input id="fileInput" type="file" accept="application/pdf" style="display:none">
+
 <!-- ========================================================= -->
 <!-- ====================== SPEECH SCRIPT ===================== -->
 <!-- ========================================================= -->
@@ -1300,6 +1301,7 @@ body {
   const nextBtn   = document.getElementById("ttsNext");
   const statusEl  = document.getElementById("speechStatus");
   const rateSel   = document.getElementById("speechRate");
+  const fileInput = document.getElementById("fileInput");
 
   function status(t){ statusEl.textContent = t; }
 
@@ -1318,11 +1320,14 @@ body {
 
   function init(){
     chooseBtn.onclick = () => {
+      fileInput.click();   // 📌 Android'de ÇALIŞAN TEK DOĞRU YÖNTEM
+    };
 
-      const fileInput = document.getElementById("fileInput");
-      if (fileInput) fileInput.click();
-      else alert("PDF seçici bulunamadı (fileInput yok)!");
-
+    fileInput.onchange = (e) => {
+      if (!e.target.files.length) return;
+      const file = e.target.files[0];
+      const url = URL.createObjectURL(file);
+      PDFViewerApplication.open(url);
     };
 
     prevBtn.onclick = () => { 
@@ -1572,9 +1577,6 @@ body {
 
 })();
 </script>
-
-
-
 
 <!-- pdf acma- kaydetme vs -->
 <!-- pdf acm✅✅✅✅a- kaydetme vs -->

@@ -1126,11 +1126,6 @@
 
 <!-- pdf acma- kaydetme vs -->
 
-<!-- pdf acma- kaydetme vs -->
-
-
-
-
 
 <script>
 /* -----------------------------------------------------
@@ -1256,26 +1251,23 @@ function arrayBufferToBase64(buffer) {
 }
 
 /* -----------------------------------------------------
-   5) Android Dosya Sistemine Kaydet (TÜM SÜRÜMLERDE ÇALIŞIR)
+   5) Android Dosya Sistemine Kaydet
 ----------------------------------------------------- */
 function saveBase64ToAndroid(base64Data) {
-  const root = cordova.file.externalRootDirectory; // ✔ Android 10–14 uyumlu
+  const root = cordova.file.externalRootDirectory;
   const fileName = "edited_" + Date.now() + ".pdf";
 
   window.resolveLocalFileSystemURL(
     root,
     function (rootEntry) {
-      // Download
       rootEntry.getDirectory(
         "Download",
         { create: true },
         function (downloadDir) {
-          // PDF_Reader (otomatik oluşturulur)
           downloadDir.getDirectory(
             "PDF_Reader",
             { create: true },
             function (pdfDir) {
-              // Dosyayı oluştur
               pdfDir.getFile(
                 fileName,
                 { create: true },
@@ -1322,22 +1314,20 @@ function showAlert(message, title) {
   }
 }
 
-/* ------sesli icin */
+/* -----------------------------------------------------
+   7) 📢 SESLİ OKUMA – METİN ÇIKARTMA (iframe → parent)
+----------------------------------------------------- */
 
-
-
-// PDF çalışmaya başladıktan sonra PDF nesnesini yakalayacağız
 document.addEventListener("webviewerloaded", function () {
-    console.log("PDF Viewer loaded");
+    console.log("🔊 Sesli okuma metin çıkarma aktif");
 
-    // PDF yüklenince yakala
     if (PDFViewerApplication) {
         PDFViewerApplication.eventBus.on("documentloaded", extractAllText);
     }
 });
 
 async function extractAllText() {
-    console.log("Metin çıkarma başlatılıyor...");
+    console.log("ℹ Metin çıkartılıyor...");
 
     const pdf = PDFViewerApplication.pdfDocument;
     const totalPages = pdf.numPages;
@@ -1352,34 +1342,21 @@ async function extractAllText() {
         allTextChunks.push(strings);
     }
 
-    console.log("Metin çıkarıldı:", allTextChunks);
+    console.log("📤 Metin parent'a gönderildi");
 
-    // iframe → parent (sesli_okuma.html)
     window.parent.postMessage({
         type: "TEXT_EXTRACTED",
         text: allTextChunks
     }, "*");
 }
-
-
-
-
-
-
-
-  
 </script>
-
-
-
-
-
 
 
     
 
 
-<!-- pdf acma- kaydetme vs -->
+
+
     
 <!-- pdf acma- kaydetme vs -->
   </body>

@@ -6,6 +6,16 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import java.util.*
 
+class MainActivity : AppCompatActivity(), AndroidTTS.TTSCallback {
+
+    private lateinit var androidTTS: AndroidTTS
+
+    override fun onStart() {}
+    override fun onDone() {
+        webView.post { webView.evaluateJavascript("if(window.onTTSDone) onTTSDone();", null) }
+    }
+    override fun onError() {}
+
 class AndroidTTS(private val context: Context, private val callback: TTSCallback) :
     TextToSpeech.OnInitListener {
 

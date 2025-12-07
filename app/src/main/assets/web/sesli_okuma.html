@@ -1234,13 +1234,11 @@
   margin-left: 4px;
 }
 
-/* Aktif cümle vurgusu */
 .highlight-current-sentence {
   background-color: rgba(255, 255, 0, 0.5) !important;
   transition: background-color 0.3s ease !important;
 }
 
-/* Padding for fixed bar */
 body { 
   padding-top: 60px !important; 
   scroll-behavior: smooth !important;
@@ -1294,7 +1292,7 @@ body {
   let ttsSpeed = 1.0;
 
   let pdfTextItems = [];
-  let wordMap = []; // KELIME BAZLI HARITA
+  let wordMap = [];
 
   const chooseBtn = document.getElementById("choosePDF");
   const prevBtn   = document.getElementById("ttsPrev");
@@ -1312,7 +1310,6 @@ body {
       .filter(t => t.length > 0);
   }
 
-  /* INIT */
   function wait() {
     if (window.PDFViewerApplication && PDFViewerApplication.initialized) init();
     else setTimeout(wait, 80);
@@ -1321,9 +1318,11 @@ body {
 
   function init(){
     chooseBtn.onclick = () => {
-      const btn = document.getElementById("secondaryOpenFile");
-      if (btn) btn.click();
-      else alert("secondaryOpenFile bulunamadı!");
+
+      const fileInput = document.getElementById("fileInput");
+      if (fileInput) fileInput.click();
+      else alert("PDF seçici bulunamadı (fileInput yok)!");
+
     };
 
     prevBtn.onclick = () => { 
@@ -1356,7 +1355,6 @@ body {
     };
   }
 
-  /* PDF TEXT EXTRACTION */
   async function extractText(){
     status("Metin çıkarılıyor...");
 
@@ -1411,7 +1409,6 @@ body {
     status("Hazır (" + sentences.length + " cümle)");
   }
 
-  /* WORD-LEVEL SENTENCE MATCHING */
   function findSentenceWordRange(sentence) {
     const words = splitIntoWords(sentence);
     if (words.length === 0) return { start: -1, end: -1, page: 1 };
@@ -1446,7 +1443,6 @@ body {
     };
   }
 
-  /* HIGHLIGHT */
   function highlightCurrentSentence() {
     document.querySelectorAll('.highlight-current-sentence')
       .forEach(el => el.classList.remove('highlight-current-sentence'));
@@ -1479,11 +1475,8 @@ body {
     });
 
     if (highlighted.length > 0) scrollToElement(highlighted[0]);
-
-    console.log("Span bulunan:", highlighted.length);
   }
 
-  /* SCROLL */
   function scrollToElement(el) {
     const viewer = document.querySelector('.pdfViewer');
     if (!viewer) return;
@@ -1497,7 +1490,6 @@ body {
     }
   }
 
-  /* TTS */
   function speak(){
     if (!sentences.length){
       alert("Metin yok! PDF yükle.");
@@ -1552,7 +1544,7 @@ body {
     speechSynthesis.speak(utterance);
   }
 
-  function moveToNextSentence() {
+  function moveToNextSentence() {    
     if (isPlaying && ttsIndex < sentences.length - 1) {
       ttsIndex++;
       highlightCurrentSentence();

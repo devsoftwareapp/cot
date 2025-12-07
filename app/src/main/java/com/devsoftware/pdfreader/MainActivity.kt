@@ -23,7 +23,16 @@ import android.util.Base64
 import android.webkit.MimeTypeMap
 import android.webkit.WebSettings
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), AndroidTTS.TTSCallback {
+
+    private lateinit var androidTTS: AndroidTTS
+
+    override fun onStart() {}
+    override fun onDone() {
+        webView.post { webView.evaluateJavascript("if(window.onTTSDone) onTTSDone();", null) }
+    }
+    override fun onError() {}
+
 
     lateinit var webView: WebView
     private var backPressedTime: Long = 0
@@ -176,6 +185,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        androidTTS = AndroidTTS(this, this)
         webView.loadUrl("file:///android_asset/web/index.html")
         
         // Uygulama açıldığında PDF Reader klasörünü oluştur
@@ -838,12 +848,11 @@ class MainActivity : AppCompatActivity() {
         
         /** WebView'den gelen metni seslendir */
         @JavascriptInterface
+        
         fun speakText(text: String, lang: String, rate: Float) {
-            runOnUiThread {
-                // Android TextToSpeech (TTS) kullanılmalı
-                // Bu örnek için Toast gösteriyoruz, gerçek TTS için implementasyon gerekli
-                Toast.makeText(this@MainActivity, 
-                    "Seslendiriliyor: ${text.take(50)}...", 
+            androidTTS.speak(text, lang, rate)
+        }
+...", 
                     Toast.LENGTH_SHORT).show()
                 
                 println("Android TTS: $text (lang: $lang, rate: $rate)")
@@ -852,32 +861,25 @@ class MainActivity : AppCompatActivity() {
         
         /** Seslendirmeyi durdur */
         @JavascriptInterface
+        
         fun stopSpeaking() {
-            runOnUiThread {
-                Toast.makeText(this@MainActivity, 
-                    "Seslendirme durduruldu", 
-                    Toast.LENGTH_SHORT).show()
-            }
+            androidTTS.stop()
+        }
+
         }
         
         /** Seslendirmeyi duraklat */
         @JavascriptInterface
-        fun pauseSpeaking() {
-            runOnUiThread {
-                Toast.makeText(this@MainActivity, 
-                    "Seslendirme duraklatıldı", 
-                    Toast.LENGTH_SHORT).show()
-            }
+        
+        fun pauseSpeaking() { androidTTS.pause() }
+
         }
         
         /** Seslendirmeyi devam ettir */
         @JavascriptInterface
-        fun resumeSpeaking() {
-            runOnUiThread {
-                Toast.makeText(this@MainActivity, 
-                    "Seslendirme devam ediyor", 
-                    Toast.LENGTH_SHORT).show()
-            }
+        
+        fun resumeSpeaking() { /* resumes controlled by JS */ }
+
         }
         
         /** Toast mesajı göster */
@@ -947,7 +949,8 @@ class MainActivity : AppCompatActivity() {
         // Viewer'da mıyız kontrol et
         if (isInViewer) {
             // Viewer'dan index.html'ye dön
-            webView.loadUrl("file:///android_asset/web/index.html")
+            androidTTS = AndroidTTS(this, this)
+        webView.loadUrl("file:///android_asset/web/index.html")
             return
         }
         

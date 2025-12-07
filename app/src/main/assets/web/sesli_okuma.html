@@ -1184,6 +1184,8 @@
 
 
 
+
+
 <!-- ========================================================= -->
 <!-- ====================== CUSTOM STYLE ====================== -->
 <!-- ========================================================= -->
@@ -1288,6 +1290,7 @@ body {
   let sentences = [];
   let ttsIndex = 0;
   let isPlaying = false;
+  let utterance = null;
   let ttsSpeed = 1.0;
 
   let pdfTextItems = [];
@@ -1317,15 +1320,17 @@ body {
 
   function init(){
     chooseBtn.onclick = () => {
+
       const fileInput = document.getElementById("fileInput");
       if (fileInput) fileInput.click();
-      else alert("PDF seçici bulunamadı!");
+      else alert("PDF seçici bulunamadı (fileInput yok)!");
+
     };
 
     prevBtn.onclick = () => { 
       if (ttsIndex > 0) {
         ttsIndex--; 
-        Android.stop();
+        stopTTS();
         highlightCurrentSentence();
         speak(); 
       }
@@ -1334,25 +1339,21 @@ body {
     nextBtn.onclick = () => { 
       if (ttsIndex < sentences.length - 1) {
         ttsIndex++; 
-        Android.stop();
+        stopTTS();
         highlightCurrentSentence();
         speak(); 
       }
     };
     
-    playBtn.onclick = () => {
-      if (isPlaying) {
-        Android.stop();
-        setPlaying(false);
-      } else {
-        speak();
-      }
-    };
+    playBtn.onclick = () => isPlaying ? stopTTS() : speak();
 
     PDFViewerApplication.eventBus.on("documentloaded", extractText);
     
     rateSel.onchange = () => {
       ttsSpeed = parseFloat(rateSel.value);
+      if (isPlaying && utterance) {
+        utterance.rate = ttsSpeed;
+      }
     };
   }
 
@@ -1505,22 +1506,42 @@ body {
     const lang = detectLang(text);
     const rate = ttsSpeed;
 
-    console.log("Android TTS: Speaking sentence", ttsIndex + 1, "of", sentences.length);
+    console.log("Speaking:", text.substring(0, 50) + "...", "Index:", ttsIndex);
 
-    try {
-      setPlaying(true);
-      
-      if (Android.speakTextWithRate) {
-        Android.speakTextWithRate(text, lang, rate);
-      } else if (Android.speakText) {
-        Android.speakText(text, lang);
-      } else {
-        Android.speak(text, lang);
+    if (window.Android){
+      try {
+        setPlaying(true);
+        
+        // Android TTS bittiğinde "ttsNext" butonuna tıkla
+        window.onAndroidSpeechDone = function() {
+          console.log("ANDROID → TTS bitti, next butonuna tıklanıyor");
+          // Küçük gecikme ile next butonuna tıkla
+          setTimeout(function() {
+            if (ttsIndex < sentences.length - 1) {
+              nextBtn.click();
+            } else {
+              // Son cümlede ise dur
+              setPlaying(false);
+              status("Bitti");
+            }
+          }, 100);
+        };
+
+        if (Android.speakTextWithRate) {
+          Android.speakTextWithRate(text, lang, rate);
+        } else if (Android.speakText) {
+          Android.speakText(text, lang);
+        } else {
+          Android.speak(text, lang);
+        }
+
+      } catch(e){
+        console.error("Android TTS error:", e);
+        setPlaying(false);
       }
-
-    } catch(e){
-      console.error("Android TTS error:", e);
-      setPlaying(false);
+    } else {
+      // Tarayıcı TTS
+      speakBrowser(text, lang, rate);
     }
   }
 
@@ -1528,21 +1549,50 @@ body {
     return (/[çğıöşüÇĞİÖŞÜ]/.test(t)) ? "tr-TR" : "en-US";
   }
 
-  function moveToNextSentence() {    
-    console.log("moveToNextSentence called");
+  function speakBrowser(text, lang, rate){
+    stopTTS();
+
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = rate;
+
+    utterance.onstart = () => {
+      console.log("Browser TTS started");
+      setPlaying(true);
+    };
     
-    if (isPlaying && ttsIndex < sentences.length - 1) {
-      ttsIndex++;
-      console.log("Moving to next sentence:", ttsIndex + 1);
-      highlightCurrentSentence();
-      speak();
-    } else if (isPlaying && ttsIndex >= sentences.length - 1) {
-      console.log("Last sentence reached");
+    utterance.onend = () => {
+      console.log("Browser TTS ended, next butonuna tıklanıyor");
+      // Tarayıcı TTS bittiğinde de next butonuna tıkla
+      setTimeout(function() {
+        if (ttsIndex < sentences.length - 1) {
+          nextBtn.click();
+        } else {
+          // Son cümlede ise dur
+          setPlaying(false);
+          status("Bitti");
+        }
+      }, 100);
+    };
+    
+    utterance.onerror = (event) => {
+      console.error("Browser TTS error:", event);
       setPlaying(false);
-      status("Bitti");
-    } else {
-      setPlaying(false);
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
+  function stopTTS(){
+    console.log("stopTTS called");
+    if (utterance) {
+      speechSynthesis.cancel();
+      utterance = null;
     }
+    if (window.Android && Android.stop) {
+      Android.stop();
+    }
+    setPlaying(false);
   }
 
   function setPlaying(p){
@@ -1553,27 +1603,19 @@ body {
 
 })();
 
-// Android TTS bittiğinde bu fonksiyon çağrılacak
+// Android callback'i - ttsNext butonuna tıkla
 window.onAndroidSpeechDone = function () {
-    console.log("Android TTS finished, moving to next sentence");
-    setTimeout(function() {
-        if (window.moveToNextSentence) {
-            window.moveToNextSentence();
-        }
-    }, 100);
-};
-
-// Android'den direkt çağrılmak üzere global fonksiyon
-window.nextSentence = function() {
-    console.log("nextSentence called from Android");
-    if (window.moveToNextSentence) {
-        window.moveToNextSentence();
+    console.log("Global onAndroidSpeechDone - next butonuna tıklanıyor");
+    const nextBtn = document.getElementById("ttsNext");
+    if (nextBtn) {
+        // Hemen değil, biraz bekle
+        setTimeout(function() {
+            nextBtn.click();
+        }, 150);
     }
 };
 
 </script>
-
-
 
 
 

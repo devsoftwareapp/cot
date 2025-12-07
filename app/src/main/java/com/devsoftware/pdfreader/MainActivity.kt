@@ -14,11 +14,12 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var tts: SesliTTS
+
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
 
     @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
@@ -26,7 +27,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // DOĞRU ID KULLANILDI
+        // TTS başlat
+        tts = SesliTTS(this)
+
         webView = findViewById(R.id.webView)
 
         val settings = webView.settings
@@ -38,6 +41,7 @@ class MainActivity : AppCompatActivity() {
         settings.allowUniversalAccessFromFileURLs = true
         settings.allowFileAccessFromFileURLs = true
 
+        // ✔ TTS fonksiyonları da burada
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
         webView.webViewClient = WebViewClient()
@@ -54,7 +58,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // assets/web/sesli_okuma.html yükleniyor
         webView.loadUrl("file:///android_asset/web/sesli_okuma.html")
     }
 
@@ -80,13 +83,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ============================================================
+    // ANDROID ↔ JS KÖPRÜSÜ (TTS + Toast + İzin)
+    // ============================================================
     inner class AndroidBridge {
 
+        // ---- TOAST ----
         @JavascriptInterface
         fun showToast(msg: String) {
-            runOnUiThread { Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show() }
+            runOnUiThread {
+                Toast.makeText(
+                    this@MainActivity,
+                    msg,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
+        // ---- TTS: speakTextWithRate ----
+        @JavascriptInterface
+        fun speakTextWithRate(text: String, lang: String, rate: Float) {
+            tts.speakTextWithRate(text, lang, rate)
+        }
+
+        // ---- TTS: speakText ----
+        @JavascriptInterface
+        fun speakText(text: String, lang: String) {
+            tts.speakText(text, lang)
+        }
+
+        // ---- TTS: speak ----
+        @JavascriptInterface
+        fun speak(text: String, lang: String) {
+            tts.speak(text, lang)
+        }
+
+        // ---- TTS: stop ----
+        @JavascriptInterface
+        fun stop() {
+            tts.stop()
+        }
+
+        // ---- Permissions ----
         @JavascriptInterface
         fun requestPermission() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -94,10 +132,14 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                     intent.data = Uri.parse("package:$packageName")
                     startActivity(intent)
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) {}
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        tts.shutdown()
     }
 
     override fun onBackPressed() {

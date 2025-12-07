@@ -3,18 +3,7 @@ package com.devsoftware.pdfreader
 import android.content.Context
 import android.os.Build
 import android.speech.tts.TextToSpeech
-import android.util.Log
 import java.util.*
-
-class MainActivity : AppCompatActivity(), AndroidTTS.TTSCallback {
-
-    private lateinit var androidTTS: AndroidTTS
-
-    override fun onStart() {}
-    override fun onDone() {
-        webView.post { webView.evaluateJavascript("if(window.onTTSDone) onTTSDone();", null) }
-    }
-    override fun onError() {}
 
 class AndroidTTS(private val context: Context, private val callback: TTSCallback) :
     TextToSpeech.OnInitListener {
@@ -24,9 +13,9 @@ class AndroidTTS(private val context: Context, private val callback: TTSCallback
     private var isReady = false
 
     interface TTSCallback {
-        fun onStart()
-        fun onDone()
-        fun onError()
+        fun onTTSStart()
+        fun onTTSDone()
+        fun onTTSError()
     }
 
     init {
@@ -35,14 +24,12 @@ class AndroidTTS(private val context: Context, private val callback: TTSCallback
 
     override fun onInit(status: Int) {
         isReady = status == TextToSpeech.SUCCESS
-        if (!isReady) {
-            callback.onError()
-        }
+        if (!isReady) callback.onTTSError()
     }
 
     fun speak(text: String, langCode: String, rate: Float) {
         if (!isReady || tts == null) {
-            callback.onError()
+            callback.onTTSError()
             return
         }
 
@@ -54,12 +41,11 @@ class AndroidTTS(private val context: Context, private val callback: TTSCallback
         currentRate = rate
         tts!!.setSpeechRate(rate)
 
-        val params = HashMap<String, String>()
-        params[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = "TTS_ID"
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, "TTS_ID")
         } else {
+            val params = HashMap<String, String>()
+            params[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = "TTS_ID"
             @Suppress("DEPRECATION")
             tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, params)
         }
@@ -68,15 +54,15 @@ class AndroidTTS(private val context: Context, private val callback: TTSCallback
             android.speech.tts.UtteranceProgressListener() {
 
             override fun onStart(utteranceId: String?) {
-                callback.onStart()
+                callback.onTTSStart()
             }
 
             override fun onDone(utteranceId: String?) {
-                callback.onDone()
+                callback.onTTSDone()
             }
 
             override fun onError(utteranceId: String?) {
-                callback.onError()
+                callback.onTTSError()
             }
         })
     }
@@ -86,16 +72,11 @@ class AndroidTTS(private val context: Context, private val callback: TTSCallback
     }
 
     fun pause() {
-        // Gerçek pause sadece Android 26+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             tts?.playSilentUtterance(1, TextToSpeech.QUEUE_ADD, null)
         } else {
             stop()
         }
-    }
-
-    fun resume(text: String) {
-        speak(text, "tr-TR", currentRate)
     }
 
     fun isSpeaking(): Boolean {
@@ -108,9 +89,8 @@ class AndroidTTS(private val context: Context, private val callback: TTSCallback
 
     private fun getLocale(code: String): Locale {
         return try {
-            val parts = code.split("-")
-            if (parts.size == 2) Locale(parts[0], parts[1])
-            else Locale(code)
+            val p = code.split("-")
+            if (p.size == 2) Locale(p[0], p[1]) else Locale(code)
         } catch (e: Exception) {
             Locale.getDefault()
         }

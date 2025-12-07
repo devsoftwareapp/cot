@@ -27,41 +27,98 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale.US)
-            isReady = result != TextToSpeech.LANG_MISSING_DATA &&
-                    result != TextToSpeech.LANG_NOT_SUPPORTED
+            // İngilizce ve Türkçe dillerini deneyelim
+            val usResult = tts?.setLanguage(Locale.US)
+            val trResult = tts?.setLanguage(Locale("tr", "TR"))
+            
+            isReady = (usResult != TextToSpeech.LANG_MISSING_DATA &&
+                    usResult != TextToSpeech.LANG_NOT_SUPPORTED) ||
+                    (trResult != TextToSpeech.LANG_MISSING_DATA &&
+                    trResult != TextToSpeech.LANG_NOT_SUPPORTED)
 
             // ===== UTTERANCE LISTENER =====
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {}
+                override fun onStart(utteranceId: String?) {
+                    Log.d("SesliTTS", "TTS started: $utteranceId")
+                }
 
                 override fun onDone(utteranceId: String?) {
+                    Log.d("SesliTTS", "TTS finished: $utteranceId")
                     handler.post {
                         try {
+                            // 1. Yöntem: nextSentence() fonksiyonunu doğrudan çağır
                             webView.evaluateJavascript(
-                                "window.onAndroidSpeechDone && window.onAndroidSpeechDone();",
+                                "(function() { " +
+                                "   console.log('Android → TTS finished, calling nextSentence'); " +
+                                "   if (typeof nextSentence === 'function') { " +
+                                "       nextSentence(); " +
+                                "   } else if (typeof moveToNextSentence === 'function') { " +
+                                "       moveToNextSentence(); " +
+                                "   } else { " +
+                                "       console.error('nextSentence or moveToNextSentence not found'); " +
+                                "   } " +
+                                "})()",
                                 null
                             )
+                            
+                            // 2. Yöntem: window.onAndroidSpeechDone callback
+                            webView.evaluateJavascript(
+                                "if (window.onAndroidSpeechDone) { " +
+                                "   window.onAndroidSpeechDone(); " +
+                                "} else { " +
+                                "   console.log('onAndroidSpeechDone not defined'); " +
+                                "}",
+                                null
+                            )
+                            
                         } catch (e: Exception) {
                             Log.e("SesliTTS", "JS callback error: $e")
                         }
                     }
                 }
 
-                override fun onError(utteranceId: String?) {}
+                override fun onError(utteranceId: String?) {
+                    Log.e("SesliTTS", "TTS error: $utteranceId")
+                    handler.post {
+                        // Hata durumunda da sonraki cümleye geçmeyi dene
+                        webView.evaluateJavascript(
+                            "(function() { " +
+                            "   console.log('Android → TTS error, moving to next'); " +
+                            "   if (typeof moveToNextSentence === 'function') { " +
+                            "       moveToNextSentence(); " +
+                            "   } " +
+                            "})()",
+                            null
+                        )
+                    }
+                }
             })
         } else {
             isReady = false
+            Log.e("SesliTTS", "TTS initialization failed")
         }
     }
 
     @JavascriptInterface
     fun speakTextWithRate(text: String, lang: String, rate: Float) {
-        if (!isReady) return
+        if (!isReady) {
+            Log.e("SesliTTS", "TTS not ready")
+            return
+        }
         try {
-            tts?.language = Locale.forLanguageTag(lang)
+            val locale = if (lang.contains("tr")) {
+                Locale("tr", "TR")
+            } else {
+                Locale.US
+            }
+            
+            tts?.language = locale
             tts?.setSpeechRate(rate)
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "utt_progress")
+            
+            // Utterance ID'yi belirle
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "android_utterance")
+            Log.d("SesliTTS", "Speaking: $text (lang: $lang, rate: $rate)")
+            
         } catch (e: Exception) {
             Log.e("SesliTTS", "speakTextWithRate error: $e")
         }
@@ -69,18 +126,22 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
 
     @JavascriptInterface
     fun speakText(text: String, lang: String) {
-        if (!isReady) return
-        try {
-            tts?.language = Locale.forLanguageTag(lang)
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "utt_progress")
-        } catch (e: Exception) {
-            Log.e("SesliTTS", "speakText error: $e")
-        }
+        speakTextWithRate(text, lang, 1.0f)
+    }
+
+    @JavascriptInterface
+    fun speak(text: String, lang: String) {
+        speakText(text, lang)
     }
 
     @JavascriptInterface
     fun stop() {
-        try { tts?.stop() } catch (_: Exception) {}
+        try { 
+            tts?.stop() 
+            Log.d("SesliTTS", "TTS stopped")
+        } catch (e: Exception) {
+            Log.e("SesliTTS", "stop error: $e")
+        }
     }
 
     @JavascriptInterface
@@ -90,6 +151,9 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
         try {
             tts?.stop()
             tts?.shutdown()
-        } catch (_: Exception) {}
+            Log.d("SesliTTS", "TTS shutdown")
+        } catch (e: Exception) {
+            Log.e("SesliTTS", "shutdown error: $e")
+        }
     }
 }

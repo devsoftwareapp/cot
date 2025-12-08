@@ -2312,26 +2312,94 @@ function testAndroidConnection() {
 
 
   //  TEST Kaldirilacak
-// DOM yüklendiğinde
-document.addEventListener('DOMContentLoaded', () => {
-    // 2 saniye sonra bağlantıyı test et
-    setTimeout(() => {
-        const isConnected = testAndroidConnection();
-        console.log("Android bağlantı durumu:", isConnected);
-        
-        if (!isConnected) {
-            // Hata mesajı göster
-            const permissionContainer = document.getElementById('permissionContainer');
-            if (permissionContainer) {
-                permissionContainer.innerHTML += `
-                    <div style="color: red; margin-top: 10px; font-size: 12px;">
-                        ⚠️ Android bağlantısı kurulamadı. Uygulamayı yeniden başlatmayı deneyin.
-                    </div>
-                `;
+// Basit izin açma fonksiyonu
+function openPermissionSettings() {
+    try {
+        if (window.Android && Android.openAllFilesSettings) {
+            Android.openAllFilesSettings();
+        } else {
+            alert("Android bağlantısı yok");
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Buton event'ini bağla
+document.addEventListener('DOMContentLoaded', function() {
+    const permissionBtn = document.querySelector('#permissionContainer button');
+    if (permissionBtn) {
+        permissionBtn.onclick = openPermissionSettings;
+    }
+});
+
+// İzin callback'leri
+function onPermissionGranted() {
+    console.log("İzin verildi");
+    document.getElementById('permissionContainer').style.display = 'none';
+    document.getElementById('deviceList').style.display = 'grid';
+    scanDevicePDFs();
+}
+
+function onPermissionDenied() {
+    console.log("İzin yok");
+    document.getElementById('permissionContainer').style.display = 'block';
+    document.getElementById('deviceList').style.display = 'none';
+}
+
+// PDF tarama
+function scanDevicePDFs() {
+    try {
+        if (window.Android && Android.listPDFs) {
+            const result = Android.listPDFs();
+            if (result === "PERMISSION_DENIED") {
+                onPermissionDenied();
+                return;
+            }
+            
+            if (result !== "EMPTY" && result !== "ERROR") {
+                const pdfPaths = result.split('||');
+                renderPDFList(pdfPaths);
             }
         }
-    }, 2000);
-});
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderPDFList(paths) {
+    const container = document.getElementById('deviceList');
+    let html = '';
+    
+    paths.forEach(path => {
+        const name = path.split('/').pop();
+        html += `
+            <div class="card">
+                <div class="card-icon-svg-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
+                        <rect width="64" height="64" rx="10" fill="#E53935"/>
+                        <path d="M18 12h22l10 10v30a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z" fill="#FFFFFF"/>
+                        <polygon points="40,12 50,22 40,22" fill="#F0F0F0"/>
+                        <rect x="22" y="24" width="18" height="3" rx="1.5" fill="#FFFFFF"/>
+                        <rect x="22" y="30" width="20" height="3" rx="1.5" fill="#FFFFFF"/>
+                        <rect x="22" y="36" width="20" height="3" rx="1.5" fill="#FFFFFF"/>
+                        <text x="32" y="52" text-anchor="middle" font-weight="700" font-size="14" fill="#FFFFFF">PDF</text>
+                    </svg>
+                </div>
+                <div class="card-details">
+                    <h3 class="card-title">${name}</h3>
+                    <div class="card-meta">
+                        <span class="font-semibold">PDF</span>
+                        <span>•</span>
+                        <span>${path}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
 
     // TESTKALDİRİLACAK
 

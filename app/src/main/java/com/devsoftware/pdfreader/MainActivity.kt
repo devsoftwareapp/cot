@@ -176,6 +176,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /** Tüm Dosya İzni Ekranı Aç (JavaScript'ten çağrılır) */
+        @JavascriptInterface
+        fun openAllFilesPermission() {
+            this@MainActivity.openAllFilesPermission()
+        }
+
         /** PDF Tarama - PDF Reader klasörünü hariç tut */
         @JavascriptInterface
         fun listPDFs(): String {

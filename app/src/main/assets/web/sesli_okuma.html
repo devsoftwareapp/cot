@@ -11,6 +11,12 @@
     
     
 </script>
+
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+
     
     <meta charset="utf-8" />
 
@@ -31,7 +37,7 @@
   <script src="viewer.mjs" type="module"></script>
   
   
-
+<script src="tesseract.min.js"></script>
   
   
   
@@ -1185,10 +1191,6 @@
 
 
 
-
-<!-- ========================================================= -->
-<!-- ====================== CUSTOM STYLE ====================== -->
-<!-- ========================================================= -->
 <style>
 #speechBar {
   position: fixed;
@@ -1196,7 +1198,7 @@
   left: 0;
   width: 100%;
   height: auto;
-  min-height: 55px;
+  min-height: 85px;
   background: #222;
   color: #fff;
   z-index: 999999;
@@ -1209,31 +1211,179 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
+/* YENİ POPUP STYLES */
+#readMenu {
+    position: absolute;
+    top: 55px;
+    left: 100px;
+    background: #333;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    z-index: 1000000;
+    display: none;
+    overflow: hidden;
+    min-width: 150px;
+}
+
+#readMenu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0px 5px;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+#readMenu button:hover {
+    background: #444;
+}
+
+#readMenu button.selected {
+    background: #007bff;
+    color: #fff;
+    font-weight: bold;
+}
+
 #speechBar button {
-  padding: 8px 10px;
+  padding: 6px 10px;
   font-size: 13px;
   background: #333;
   color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  min-width: 40px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+#speechBar .material-icons {
+  font-size: 18px;
+}
+
+/* ========================================================= */
+/* 1. SATIR DÜZENİ (order: 1) */
+/* ========================================================= */
+#choosePDF, #startPageInput, #startPageBtn, #readModeBtn, #speechRate {
+  order: 1;
+  margin-bottom: 5px;
+}
+
+#choosePDF, #readModeBtn {
+  flex: 1;
   min-width: 70px;
-  touch-action: manipulation;
 }
-
-#speechRate {
-  background: #333;
-  color: #fff;
+#startPageInput {
+  flex: 0 0 auto;
+  width: 50px !important;
+  max-width: 60px;
+}
+#startPageBtn {
+  flex: 0 0 auto;
+  width: 30px !important;
+  height: 36px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #444;
   border-radius: 6px;
-  padding: 6px;
-  font-size: 13px;
-  touch-action: manipulation;
+}
+#startPageBtn .material-icons {
+  font-size: 16px !important;
+}
+#speechRate {
+  flex: 1;
+  min-width: 80px;
 }
 
+/* ========================================================= */
+/* 2. SATIR DÜZENİ (order: 2) - NAVİGASYON BUTONLARI */
+/* ========================================================= */
+#secondRowControls {
+  order: 2;
+  margin-top: 5px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* NAVİGASYON BUTONLARI */
+#ttsPrev, #ttsPlay, #ttsNext {
+  flex: 0 0 auto;
+  width: 50px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Oynatma butonunu biraz daha büyük yapalım */
+#ttsPlay {
+  width: 60px !important;
+  height: 45px !important;
+}
+
+/* İkon boyutları */
+#ttsPrev .material-icons,
+#ttsNext .material-icons,
+#ttsPlay .material-icons {
+  font-size: 22px !important;
+}
+
+/* Durum çubuğu düzenlemesi */
 #speechStatus {
+  flex: 0 0 auto;
+  min-width: 100px;
+  max-width: 150px;
   font-size: 12px;
   color: #ccc;
-  margin-left: 4px;
+  margin-left: 8px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 4px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* OCR Mesajı için */
+#ocrMessage {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  z-index: 1000001;
+  text-align: center;
+  display: none;
+  max-width: 400px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+/* Dil Seçici */
+#languageSelector {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #333;
+  color: white;
+  font-size: 13px;
+  min-width: 150px;
 }
 
 .highlight-current-sentence {
@@ -1241,34 +1391,110 @@
   transition: background-color 0.3s ease !important;
 }
 
-body { 
-  padding-top: 60px !important; 
+/* Orijinal PDF.js araç çubuğunu gizle */
+#toolbarContainer {
+  display: none !important;
+}
+
+/* Görüntüleyiciyi ekranın üstüne taşı */
+#viewerContainer {
+    padding-top: 0px !important;
+}
+
+body {
+  padding-top: 95px !important;
   scroll-behavior: smooth !important;
 }
 
-@media (max-width: 480px) {
-  #speechBar { gap: 6px; }
-  #speechBar button {
-    padding: 6px 8px;
-    font-size: 12px;
-    min-width: 62px;
+/* Mobile optimizasyonları */
+@media (max-width: 768px) {
+  #readMenu {
+      left: 60px;
+  }
+  #speechBar {
+    min-height: 100px;
+    gap: 6px;
+    padding: 6px;
+    justify-content: space-between;
+  }
+
+  /* Mobil 1. Satır: PDF, Sayfa, Mod, Hız, Dil */
+  #choosePDF, #startPageInput, #startPageBtn, #readModeBtn, #speechRate, #languageSelector {
+    order: 1;
+    margin-bottom: 4px;
+    flex: 1;
+  }
+  #startPageInput {
+    flex: 0 0 auto;
+    max-width: 50px;
+  }
+  #startPageBtn {
+    width: 28px !important;
+    height: 34px;
   }
   #speechRate {
-    font-size: 12px;
-    padding: 4px;
+    max-width: 60px;
   }
-  #speechStatus { font-size: 11px; }
+  #languageSelector {
+    min-width: 130px;
+    max-width: 150px;
+    font-size: 12px;
+  }
+
+  /* Mobil 2. Satır: Navigasyon, Status */
+  #secondRowControls {
+    order: 2;
+    margin-top: 4px;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  /* Mobilde buton boyutları */
+  #ttsPrev, #ttsPlay, #ttsNext {
+    width: 45px !important;
+    height: 38px !important;
+  }
+
+  #ttsPlay {
+    width: 50px !important;
+    height: 40px !important;
+  }
+
+  /* Mobilde ikon boyutları */
+  #ttsPrev .material-icons,
+  #ttsNext .material-icons,
+  #ttsPlay .material-icons {
+    font-size: 20px !important;
+  }
+
+  #speechStatus {
+    font-size: 11px;
+    padding: 5px 8px;
+    flex: 1;
+    min-width: 80px;
+    max-width: 100px;
+  }
+
+  body {
+    padding-top: 110px !important;
+  }
 }
 </style>
 
-<!-- ========================================================= -->
-<!-- ====================== CUSTOM BAR ======================== -->
-<!-- ========================================================= -->
 <div id="speechBar">
-  <button id="choosePDF">📄 PDF</button>
-  <button id="ttsPrev">⏮</button>
-  <button id="ttsPlay">▶</button>
-  <button id="ttsNext">⏭</button>
+  <button id="choosePDF" title="PDF Dosyası Seç">
+    <span class="material-icons">folder_open</span> PDF Seç
+  </button>
+
+  <!-- Sayfa input ve ok butonu -->
+  <input type="number" id="startPageInput" placeholder="Sayfa #" min="1" style="width: 50px; padding: 7px; border-radius: 6px; border: 1px solid #555; background: #333; color: white; font-size: 13px; text-align: center;">
+  <button id="startPageBtn" title="Bu Sayfadan Başla">
+    <span class="material-icons">arrow_forward</span>
+  </button>
+
+  <button id="readModeBtn" title="Okuma Modu Seç">
+    <span class="material-icons">menu_book</span> <span id="modeText">Auto</span>
+  </button>
 
   <select id="speechRate">
     <option value="0.75">0.75x</option>
@@ -1278,32 +1504,441 @@ body {
     <option value="2">2.0x</option>
   </select>
 
-  <span id="speechStatus">Hazır</span>
+  <!-- Dil Seçici - ALFABETİK SIRALI 4 KÜRTÇE LEHÇESİYLE -->
+  <select id="languageSelector" title="Dil Seçin">
+    <option value="auto">Auto Detect</option>
+    <option value="afr">Afrikaans</option>
+    <option value="sqi">Albanian (Shqip)</option>
+    <option value="ara">Arabic (العربية)</option>
+    <option value="hye">Armenian (Հայերեն)</option>
+    <option value="aze">Azerbaijani (Azərbaycan)</option>
+    <option value="eus">Basque (Euskara)</option>
+    <option value="bel">Belarusian (Беларуская)</option>
+    <option value="ben">Bengali (বাংলা)</option>
+    <option value="bos">Bosnian (Bosanski)</option>
+    <option value="bul">Bulgarian (Български)</option>
+    <option value="cat">Catalan (Català)</option>
+    <option value="chi_sim">Chinese Simplified (简体中文)</option>
+    <option value="chi_tra">Chinese Traditional (繁體中文)</option>
+    <option value="hrv">Croatian (Hrvatski)</option>
+    <option value="ces">Czech (Čeština)</option>
+    <option value="dan">Danish (Dansk)</option>
+    <option value="nld">Dutch (Nederlands)</option>
+    <option value="eng">English</option>
+    <option value="epo">Esperanto</option>
+    <option value="est">Estonian (Eesti)</option>
+    <option value="fil">Filipino (Tagalog)</option>
+    <option value="fin">Finnish (Suomi)</option>
+    <option value="fra">French (Français)</option>
+    <option value="glg">Galician (Galego)</option>
+    <option value="kat">Georgian (ქართული)</option>
+    <option value="deu">German (Deutsch)</option>
+    <option value="ell">Greek (Ελληνικά)</option>
+    <option value="guj">Gujarati (ગુજરાતી)</option>
+    <option value="heb">Hebrew (עברית)</option>
+    <option value="hin">Hindi (हिन्दी)</option>
+    <option value="hun">Hungarian (Magyar)</option>
+    <option value="isl">Icelandic (Íslenska)</option>
+    <option value="ind">Indonesian (Bahasa Indonesia)</option>
+    <option value="gle">Irish (Gaeilge)</option>
+    <option value="ita">Italian (Italiano)</option>
+    <option value="jpn">Japanese (日本語)</option>
+    <option value="jav">Javanese (ꦧꦱꦗꦮ)</option>
+    <option value="kan">Kannada (ಕನ್ನಡ)</option>
+    <option value="kaz">Kazakh (Қазақ тілі)</option>
+    <option value="kor">Korean (한국어)</option>
+    <!-- 4 KÜRTÇE LEHÇESİ -->
+    <option value="kur_kmr">Kurdî (Kurmancî) - Latin</option>
+    <option value="kur_zaz">Kurdî (Zazakî) - Latin</option>
+    <option value="kur_sor">Kurdî (Soranî) - Arabic</option>
+    <option value="kur_gor">Kurdî (Goranî) - Arabic</option>
+    <!-- DEVAM -->
+    <option value="kir">Kyrgyz (Кыргызча)</option>
+    <option value="lao">Lao (ລາວ)</option>
+    <option value="lat">Latin (Latina)</option>
+    <option value="lav">Latvian (Latviešu)</option>
+    <option value="lit">Lithuanian (Lietuvių)</option>
+    <option value="ltz">Luxembourgish (Lëtzebuergesch)</option>
+    <option value="mkd">Macedonian (Македонски)</option>
+    <option value="msa">Malay (Bahasa Melayu)</option>
+    <option value="mal">Malayalam (മലയാളം)</option>
+    <option value="mlt">Maltese (Malti)</option>
+    <option value="mri">Maori (Māori)</option>
+    <option value="mar">Marathi (मराठी)</option>
+    <option value="mon">Mongolian (Монгол)</option>
+    <option value="nep">Nepali (नेपाली)</option>
+    <option value="nor">Norwegian (Norsk)</option>
+    <option value="fas">Persian (فارسی)</option>
+    <option value="pol">Polish (Polski)</option>
+    <option value="por">Portuguese (Português)</option>
+    <option value="pan">Punjabi (ਪੰਜਾਬੀ)</option>
+    <option value="ron">Romanian (Română)</option>
+    <option value="rus">Russian (Русский)</option>
+    <option value="srp">Serbian (Српски)</option>
+    <option value="snd">Sindhi (سنڌي)</option>
+    <option value="sin">Sinhala (සිංහල)</option>
+    <option value="slk">Slovak (Slovenčina)</option>
+    <option value="slv">Slovenian (Slovenščina)</option>
+    <option value="som">Somali (Soomaali)</option>
+    <option value="spa">Spanish (Español)</option>
+    <option value="sun">Sundanese (Basa Sunda)</option>
+    <option value="swa">Swahili (Kiswahili)</option>
+    <option value="swe">Swedish (Svenska)</option>
+    <option value="tgk">Tajik (Тоҷикӣ)</option>
+    <option value="tam">Tamil (தமிழ்)</option>
+    <option value="tat">Tatar (Татарча)</option>
+    <option value="tel">Telugu (తెలుగు)</option>
+    <option value="tha">Thai (ไทย)</option>
+    <option value="tir">Tigrinya (ትግርኛ)</option>
+    <option value="tur">Turkish (Türkçe)</option>
+    <option value="tuk">Turkmen (Türkmençe)</option>
+    <option value="ukr">Ukrainian (Українська)</option>
+    <option value="urd">Urdu (اردو)</option>
+    <option value="uig">Uyghur (ئۇيغۇرچە)</option>
+    <option value="uzb">Uzbek (Oʻzbekcha)</option>
+    <option value="vie">Vietnamese (Tiếng Việt)</option>
+    <option value="cym">Welsh (Cymraeg)</option>
+    <option value="yor">Yoruba (Yorùbá)</option>
+  </select>
+
+  <div id="secondRowControls">
+      <button id="ttsPrev" title="Önceki Cümle">
+        <span class="material-icons">skip_previous</span>
+      </button>
+      <button id="ttsPlay" title="Oynat / Duraklat">
+        <span class="material-icons">play_arrow</span>
+      </button>
+      <button id="ttsNext" title="Sonraki Cümle">
+        <span class="material-icons">skip_next</span>
+      </button>
+
+      <span id="speechStatus">Hazır</span>
+  </div>
 </div>
 
-<!-- ========================================================= -->
-<!-- ====================== SPEECH SCRIPT ===================== -->
-<!-- ========================================================= -->
+<div id="readMenu">
+    <button id="autoReadOption" class="selected">Auto Read</button>
+    <button id="manualReadOption">Manual Read</button>
+</div>
+
+<!-- OCR Mesajı -->
+<div id="ocrMessage">
+  <div style="font-size: 18px; margin-bottom: 10px;">⏳ OCR İşleniyor...</div>
+  <div id="ocrProgress">Sayfa 1/1</div>
+  <div style="margin-top: 10px; font-size: 12px; color: #aaa;">
+    Bu işlem tarayıcıda çalışır ve biraz zaman alabilir.
+  </div>
+</div>
+
 <script>
 (function () {
 
+  // ==================== ANDROID WEBVIEW OPTIMIZATION ====================
+  // Android WebView için özel optimizasyonlar
+  const isAndroidWebView = /Android.*wv|Linux; Android/.test(navigator.userAgent) && 
+                         !/Chrome\/[.0-9]* Mobile/.test(navigator.userAgent);
+  
+  // ==================== DEĞİŞKENLER ====================
   let sentences = [];
   let ttsIndex = 0;
   let isPlaying = false;
+  let isManualStop = false;
+  let isAutoRead = true;
   let utterance = null;
   let ttsSpeed = 1.0;
+  let currentLanguage = 'auto';
+  let useOCR = false;
+  let ocrWorker = null;
 
-  let pdfTextItems = [];
-  let wordMap = [];
+  let pageWordMaps = {};
+  let pageSentences = {};
+  let pageStartIndexes = {};
+
+  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  let touchStartY = 0;
+  let touchEndY = 0;
 
   const chooseBtn = document.getElementById("choosePDF");
+  const startPageInput = document.getElementById("startPageInput");
+  const startPageBtn = document.getElementById("startPageBtn");
+  const readModeBtn = document.getElementById("readModeBtn");
+  const modeText = document.getElementById("modeText");
+  const readMenu = document.getElementById("readMenu");
+  const autoReadOption = document.getElementById("autoReadOption");
+  const manualReadOption = document.getElementById("manualReadOption");
   const prevBtn   = document.getElementById("ttsPrev");
   const playBtn   = document.getElementById("ttsPlay");
   const nextBtn   = document.getElementById("ttsNext");
   const statusEl  = document.getElementById("speechStatus");
   const rateSel   = document.getElementById("speechRate");
+  const langSel   = document.getElementById("languageSelector");
+  const playIcon  = playBtn.querySelector('.material-icons');
+  const ocrMessage = document.getElementById("ocrMessage");
+  const ocrProgress = document.getElementById("ocrProgress");
 
-  function status(t){ statusEl.textContent = t; }
+  // ==================== ANDROID TTS FONKSİYONLARI ====================
+  // Android WebView için TTS fonksiyonları
+  function initAndroidTTS() {
+    if (typeof Android !== 'undefined' && Android.initTTS) {
+      Android.initTTS();
+      return true;
+    }
+    return false;
+  }
+
+  function speakAndroid(text, lang, rate) {
+    if (typeof Android !== 'undefined') {
+      if (Android.speakTextWithRate) {
+        Android.speakTextWithRate(text, lang, rate);
+      } else if (Android.speakText) {
+        Android.speakText(text, lang);
+      } else if (Android.speak) {
+        Android.speak(text, lang);
+      } else {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function stopAndroidTTS() {
+    if (typeof Android !== 'undefined' && Android.stop) {
+      Android.stop();
+      return true;
+    }
+    return false;
+  }
+
+  // ==================== TTS DİL KODLARI ====================
+  const ttsLangMap = {
+    'afr': 'af-ZA',       // Afrikaans
+    'sqi': 'sq-AL',       // Albanian
+    'ara': 'ar-SA',       // Arabic
+    'hye': 'hy-AM',       // Armenian
+    'aze': 'az-AZ',       // Azerbaijani
+    'eus': 'eu-ES',       // Basque
+    'bel': 'be-BY',       // Belarusian
+    'ben': 'bn-BD',       // Bengali
+    'bos': 'bs-BA',       // Bosnian
+    'bul': 'bg-BG',       // Bulgarian
+    'cat': 'ca-ES',       // Catalan
+    'chi_sim': 'zh-CN',   // Chinese Simplified
+    'chi_tra': 'zh-TW',   // Chinese Traditional
+    'hrv': 'hr-HR',       // Croatian
+    'ces': 'cs-CZ',       // Czech
+    'dan': 'da-DK',       // Danish
+    'nld': 'nl-NL',       // Dutch
+    'eng': 'en-US',       // English
+    'epo': 'eo',          // Esperanto
+    'est': 'et-EE',       // Estonian
+    'fil': 'fil-PH',      // Filipino
+    'fin': 'fi-FI',       // Finnish
+    'fra': 'fr-FR',       // French
+    'glg': 'gl-ES',       // Galician
+    'kat': 'ka-GE',       // Georgian
+    'deu': 'de-DE',       // German
+    'ell': 'el-GR',       // Greek
+    'guj': 'gu-IN',       // Gujarati
+    'heb': 'he-IL',       // Hebrew
+    'hin': 'hi-IN',       // Hindi
+    'hun': 'hu-HU',       // Hungarian
+    'isl': 'is-IS',       // Icelandic
+    'ind': 'id-ID',       // Indonesian
+    'gle': 'ga-IE',       // Irish
+    'ita': 'it-IT',       // Italian
+    'jpn': 'ja-JP',       // Japanese
+    'jav': 'jv-ID',       // Javanese
+    'kan': 'kn-IN',       // Kannada
+    'kaz': 'kk-KZ',       // Kazakh
+    'kor': 'ko-KR',       // Korean
+    // KÜRTÇE LEHÇELERİ - Android TTS kullanılacak
+    'kur_kmr': 'ku-TR',   // Kurmanci (Latin)
+    'kur_zaz': 'ku-TR',   // Zazaki (Latin)
+    'kur_sor': 'ckb-IQ',  // Sorani (Arabic)
+    'kur_gor': 'ku-IR',   // Gorani (Arabic)
+    // DEVAM
+    'kir': 'ky-KG',       // Kyrgyz
+    'lao': 'lo-LA',       // Lao
+    'lat': 'la',          // Latin
+    'lav': 'lv-LV',       // Latvian
+    'lit': 'lt-LT',       // Lithuanian
+    'ltz': 'lb-LU',       // Luxembourgish
+    'mkd': 'mk-MK',       // Macedonian
+    'msa': 'ms-MY',       // Malay
+    'mal': 'ml-IN',       // Malayalam
+    'mlt': 'mt-MT',       // Maltese
+    'mri': 'mi-NZ',       // Maori
+    'mar': 'mr-IN',       // Marathi
+    'mon': 'mn-MN',       // Mongolian
+    'nep': 'ne-NP',       // Nepali
+    'nor': 'no-NO',       // Norwegian
+    'fas': 'fa-IR',       // Persian
+    'pol': 'pl-PL',       // Polish
+    'por': 'pt-PT',       // Portuguese
+    'pan': 'pa-IN',       // Punjabi
+    'ron': 'ro-RO',       // Romanian
+    'rus': 'ru-RU',       // Russian
+    'srp': 'sr-RS',       // Serbian
+    'snd': 'sd-PK',       // Sindhi
+    'sin': 'si-LK',       // Sinhala
+    'slk': 'sk-SK',       // Slovak
+    'slv': 'sl-SI',       // Slovenian
+    'som': 'so-SO',       // Somali
+    'spa': 'es-ES',       // Spanish
+    'sun': 'su-ID',       // Sundanese
+    'swa': 'sw-KE',       // Swahili
+    'swe': 'sv-SE',       // Swedish
+    'tgk': 'tg-TJ',       // Tajik
+    'tam': 'ta-IN',       // Tamil
+    'tat': 'tt-RU',       // Tatar
+    'tel': 'te-IN',       // Telugu
+    'tha': 'th-TH',       // Thai
+    'tir': 'ti-ET',       // Tigrinya
+    'tur': 'tr-TR',       // Turkish
+    'tuk': 'tk-TM',       // Turkmen
+    'ukr': 'uk-UA',       // Ukrainian
+    'urd': 'ur-PK',       // Urdu
+    'uig': 'ug-CN',       // Uyghur
+    'uzb': 'uz-UZ',       // Uzbek
+    'vie': 'vi-VN',       // Vietnamese
+    'cym': 'cy-GB',       // Welsh
+    'yor': 'yo-NG'        // Yoruba
+  };
+
+  // ==================== ANDROID TTS DİL KODLARI ====================
+  const androidLangMap = {
+    'afr': 'afr-ZAF',
+    'ara': 'ara-EGY',
+    'eng': 'eng-USA',
+    'fra': 'fra-FRA',
+    'deu': 'deu-DEU',
+    'spa': 'spa-ESP',
+    'ita': 'ita-ITA',
+    'por': 'por-BRA',
+    'rus': 'rus-RUS',
+    'tur': 'tur-TUR',
+    'kur_kmr': 'kur-TUR',
+    'kur_zaz': 'kur-TUR',
+    'kur_sor': 'kur-IRQ',
+    'kur_gor': 'kur-IRQ',
+    'chi_sim': 'zho-CHN',
+    'chi_tra': 'zho-TWN',
+    'jpn': 'jpn-JPN',
+    'kor': 'kor-KOR',
+    'hin': 'hin-IND',
+    'ben': 'ben-BGD'
+  };
+
+  // ==================== TESSERACT DİL KODLARI (OCR için) ====================
+  const tesseractLangMap = {
+    'afr': 'afr',
+    'sqi': 'sqi',
+    'ara': 'ara',
+    'hye': 'hye',
+    'aze': 'aze',
+    'eus': 'eus',
+    'bel': 'bel',
+    'ben': 'ben',
+    'bos': 'bos',
+    'bul': 'bul',
+    'cat': 'cat',
+    'chi_sim': 'chi_sim',
+    'chi_tra': 'chi_tra',
+    'hrv': 'hrv',
+    'ces': 'ces',
+    'dan': 'dan',
+    'nld': 'nld',
+    'eng': 'eng',
+    'epo': 'epo',
+    'est': 'est',
+    'fil': 'fil',
+    'fin': 'fin',
+    'fra': 'fra',
+    'glg': 'glg',
+    'kat': 'kat',
+    'deu': 'deu',
+    'ell': 'ell',
+    'guj': 'guj',
+    'heb': 'heb',
+    'hin': 'hin',
+    'hun': 'hun',
+    'isl': 'isl',
+    'ind': 'ind',
+    'gle': 'gle',
+    'ita': 'ita',
+    'jpn': 'jpn',
+    'jav': 'jav',
+    'kan': 'kan',
+    'kaz': 'kaz',
+    'kor': 'kor',
+    // KÜRTÇE LEHÇELERİ - Tesseract için
+    'kur_kmr': 'kur',
+    'kur_zaz': 'kur',
+    'kur_sor': 'kur',
+    'kur_gor': 'kur',
+    // DEVAM
+    'kir': 'kir',
+    'lao': 'lao',
+    'lat': 'lat',
+    'lav': 'lav',
+    'lit': 'lit',
+    'ltz': 'ltz',
+    'mkd': 'mkd',
+    'msa': 'msa',
+    'mal': 'mal',
+    'mlt': 'mlt',
+    'mri': 'mri',
+    'mar': 'mar',
+    'mon': 'mon',
+    'nep': 'nep',
+    'nor': 'nor',
+    'fas': 'fas',
+    'pol': 'pol',
+    'por': 'por',
+    'pan': 'pan',
+    'ron': 'ron',
+    'rus': 'rus',
+    'srp': 'srp',
+    'snd': 'snd',
+    'sin': 'sin',
+    'slk': 'slk',
+    'slv': 'slv',
+    'som': 'som',
+    'spa': 'spa',
+    'sun': 'sun',
+    'swa': 'swa',
+    'swe': 'swe',
+    'tgk': 'tgk',
+    'tam': 'tam',
+    'tat': 'tat',
+    'tel': 'tel',
+    'tha': 'tha',
+    'tir': 'tir',
+    'tur': 'tur',
+    'tuk': 'tuk',
+    'ukr': 'ukr',
+    'urd': 'urd',
+    'uig': 'uig',
+    'uzb': 'uzb',
+    'vie': 'vie',
+    'cym': 'cym',
+    'yor': 'yor'
+  };
+
+  // ==================== ANDROID TTS KULLANILACAK DİLLER ====================
+  const androidTTSLanguages = [
+    'kur_kmr',  // Kurmanci
+    'kur_zaz',  // Zazaki
+    'kur_sor',  // Sorani
+    'kur_gor'   // Gorani
+  ];
+
+  // ==================== UTILITY FUNCTIONS ====================
+  function status(t){
+    statusEl.textContent = t;
+    console.log("Status:", t);
+  }
 
   function splitIntoWords(text) {
     return text
@@ -1312,6 +1947,80 @@ body {
       .filter(t => t.length > 0);
   }
 
+  function showOCRMessage(show, text = "") {
+    if (show) {
+      ocrProgress.textContent = text;
+      ocrMessage.style.display = 'block';
+    } else {
+      ocrMessage.style.display = 'none';
+    }
+  }
+
+  // Android TTS kullanılacak mı kontrolü
+  function useAndroidTTS() {
+    return (typeof Android !== 'undefined') && androidTTSLanguages.includes(currentLanguage);
+  }
+
+  // ==================== READ MODE MANAGEMENT ====================
+  function updateReadMode(isAuto){
+    isAutoRead = isAuto;
+
+    if(isAuto){
+      modeText.textContent = "Auto";
+      autoReadOption.classList.add('selected');
+      manualReadOption.classList.remove('selected');
+      status("Mod: Otomatik İlerleme");
+    } else {
+      modeText.textContent = "Manual";
+      manualReadOption.classList.add('selected');
+      autoReadOption.classList.remove('selected');
+      status("Mod: Manuel İlerleme");
+
+      if (isPlaying) {
+          stopTTS(true);
+      }
+    }
+    readMenu.style.display = 'none';
+  }
+
+  // ==================== JUMP TO PAGE FUNCTION ====================
+  function jumpToPageAndStart(pageNum) {
+    if (!sentences.length) {
+        status("Hata: Metin çıkarılmadı. Lütfen PDF'i yükleyin.");
+        return;
+    }
+
+    const pageNumInt = parseInt(pageNum, 10);
+    const totalPages = PDFViewerApplication.pagesCount;
+
+    if (isNaN(pageNumInt) || pageNumInt < 1 || pageNumInt > totalPages) {
+        status(`Hata: Sayfa ${pageNumInt} geçersiz!`);
+        alert(`Lütfen 1 ile ${totalPages} arasında geçerli bir sayfa numarası girin.`);
+        return;
+    }
+
+    const startIndex = pageStartIndexes[pageNumInt];
+
+    if (startIndex !== undefined && startIndex < sentences.length) {
+        if (isPlaying) {
+            stopTTS(true);
+        }
+
+        ttsIndex = startIndex;
+
+        goToPage(pageNumInt);
+        highlightCurrentSentence();
+
+        startPageInput.value = '';
+
+        speak();
+
+    } else {
+        status(`Hata: Sayfa ${pageNumInt} için metin bulunamadı veya boş.`);
+    }
+  }
+
+  // ==================== INIT ====================
   function wait() {
     if (window.PDFViewerApplication && PDFViewerApplication.initialized) init();
     else setTimeout(wait, 80);
@@ -1319,132 +2028,407 @@ body {
   wait();
 
   function init(){
+    console.log("PDF Speech Reader Initialized with Tesseract OCR");
+    console.log("Android WebView detected:", isAndroidWebView);
+    
+    // Android TTS'yi başlat
+    if (typeof Android !== 'undefined') {
+      console.log("Android interface available");
+      if (Android.initTTS) {
+        Android.initTTS();
+        status("Android TTS başlatıldı");
+      }
+    }
+
     chooseBtn.onclick = () => {
-
       const fileInput = document.getElementById("fileInput");
-      if (fileInput) fileInput.click();
-      else alert("PDF seçici bulunamadı (fileInput yok)!");
-
+      if (fileInput) {
+        fileInput.click();
+      } else {
+        alert("PDF seçici bulunamadı!");
+      }
     };
 
-    prevBtn.onclick = () => { 
+    // YENİ: Sayfa ok butonu event listener
+    startPageBtn.onclick = () => {
+      const pageNum = startPageInput.value;
+      if (pageNum && parseInt(pageNum, 10) > 0) {
+        jumpToPageAndStart(pageNum);
+      } else {
+        status("Lütfen geçerli bir sayfa numarası girin!");
+      }
+    };
+
+    // YENİ: Input'ta Enter tuşuna basınca da çalışsın
+    startPageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const pageNum = startPageInput.value;
+        if (pageNum && parseInt(pageNum, 10) > 0) {
+          jumpToPageAndStart(pageNum);
+        }
+      }
+    });
+
+    readModeBtn.onclick = (e) => {
+        e.stopPropagation();
+        const newMode = !isAutoRead;
+        updateReadMode(newMode);
+    };
+
+    autoReadOption.onclick = () => updateReadMode(true);
+    manualReadOption.onclick = () => updateReadMode(false);
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#speechBar') === null && readMenu.style.display === 'block') {
+            readMenu.style.display = 'none';
+        }
+    });
+
+    prevBtn.onclick = () => {
       if (ttsIndex > 0) {
-        ttsIndex--; 
-        stopTTS();
+        ttsIndex--;
+        stopTTS(true);
         highlightCurrentSentence();
-        speak(); 
+        speak();
       }
     };
-    
-    nextBtn.onclick = () => { 
+
+    nextBtn.onclick = () => {
       if (ttsIndex < sentences.length - 1) {
-        ttsIndex++; 
-        stopTTS();
+        ttsIndex++;
+        stopTTS(true);
         highlightCurrentSentence();
-        speak(); 
+        speak();
       }
     };
-    
-    playBtn.onclick = () => isPlaying ? stopTTS() : speak();
+
+    playBtn.onclick = () => {
+        const targetPage = startPageInput.value;
+
+        if (isPlaying) {
+            stopTTS(true);
+        } else if (targetPage && parseInt(targetPage, 10) > 0) {
+            jumpToPageAndStart(targetPage);
+        } else if (sentences.length > 0) {
+
+            const cur = sentences[ttsIndex];
+
+            if (!isAutoRead && cur && !isPlaying) {
+                if (ttsIndex < sentences.length - 1) {
+                    ttsIndex++;
+                }
+            }
+
+            speak();
+        } else {
+            status("Hata: Önce bir PDF yükleyin!");
+        }
+    };
 
     PDFViewerApplication.eventBus.on("documentloaded", extractText);
-    
+
     rateSel.onchange = () => {
       ttsSpeed = parseFloat(rateSel.value);
       if (isPlaying && utterance) {
         utterance.rate = ttsSpeed;
       }
     };
+
+    langSel.onchange = () => {
+      currentLanguage = langSel.value;
+      const languageName = langSel.options[langSel.selectedIndex].text;
+      status(`Dil seçildi: ${languageName}`);
+      
+      // Android TTS kullanılıyorsa bilgi ver
+      if (useAndroidTTS()) {
+        status(`${languageName} - Android TTS kullanılıyor`);
+      }
+    };
+
+    setupMobileGestures();
   }
 
+  // ==================== MOBILE OPTIMIZATIONS ====================
+  function setupMobileGestures() {
+    if (!isMobile) return;
+    const viewer = document.querySelector('.pdfViewer') || document.querySelector('#viewerContainer');
+    if (!viewer) return;
+    viewer.addEventListener('touchstart', function(e) {
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    viewer.addEventListener('touchend', function(e) {
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipe();
+    }, { passive: true });
+  }
+
+  function handleSwipe() {
+    if (Math.abs(touchEndY - touchStartY) < 50) return;
+    if (touchEndY < touchStartY - 50) {
+      if (ttsIndex < sentences.length - 1) {
+        nextBtn.click();
+      }
+    } else if (touchEndY > touchStartY + 50) {
+      if (ttsIndex > 0) {
+        prevBtn.click();
+      }
+    }
+  }
+
+  // ==================== TEXT EXTRACTION WITH OCR FALLBACK ====================
   async function extractText(){
+    console.log("Extracting text with OCR fallback...");
     status("Metin çıkarılıyor...");
 
     const pdf = PDFViewerApplication.pdfDocument;
     const total = pdf.numPages;
 
-    let raw = "";
-    pdfTextItems = [];
-    wordMap = [];
+    sentences = [];
+    pageWordMaps = {};
+    pageSentences = {};
+    pageStartIndexes = {};
 
-    for (let i=1; i<=total; i++){
-      const page = await pdf.getPage(i);
-      const c = await page.getTextContent();
+    let globalSentenceIndex = 0;
+    let hasText = false;
 
-      raw += " " + c.items.map(x => x.str).join(" ");
+    // Önce normal metin çıkarmayı dene
+    for (let pageNum = 1; pageNum <= total; pageNum++){
+      try {
+        const page = await pdf.getPage(pageNum);
+        const c = await page.getTextContent();
+        
+        // Sayfada metin var mı kontrol et
+        const pageText = c.items.map(x => x.str).join(" ");
+        if (pageText.trim().length > 10) {
+          hasText = true;
+        }
 
-      c.items.forEach(item => {
-        const words = splitIntoWords(item.str);
-
-        words.forEach(w => {
-          wordMap.push({
-            word: w,
-            page: i,
-            original: item.str
+        let pageWordMap = [];
+        c.items.forEach(item => {
+          const words = splitIntoWords(item.str);
+          words.forEach(w => {
+            pageWordMap.push({
+              word: w,
+              page: pageNum,
+              original: item.str
+            });
           });
         });
 
-        pdfTextItems.push({
-          text: item.str,
-          page: i,
-          transform: item.transform
-        });
-      });
+        pageWordMaps[pageNum] = pageWordMap;
+
+        const pageRawSentences = pageText
+          .replace(/\s+/g, " ")
+          .match(/[^.!?]+[.!?]+/g) || [];
+
+        pageStartIndexes[pageNum] = globalSentenceIndex;
+
+        const pageSentenceObjects = [];
+
+        for (let s = 0; s < pageRawSentences.length; s++) {
+          const sentenceText = pageRawSentences[s].trim();
+          if (sentenceText.length < 2) continue;
+
+          const result = findSentenceWordRangeInPage(sentenceText, pageWordMap, pageNum);
+
+          const sentenceObj = {
+            text: sentenceText,
+            startIndex: result.start,
+            endIndex: result.end,
+            page: pageNum,
+            isLastInPage: (s === pageRawSentences.length - 1),
+            globalIndex: globalSentenceIndex,
+            pageWordMap: pageWordMap
+          };
+
+          pageSentenceObjects.push(sentenceObj);
+          sentences.push(sentenceObj);
+          globalSentenceIndex++;
+        }
+
+        pageSentences[pageNum] = pageSentenceObjects;
+
+        if (isMobile && pageNum % 3 === 0) {
+          status(`${pageNum}/${total} sayfa...`);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+      } catch (error) {
+        console.error(`Error processing page ${pageNum}:`, error);
+      }
     }
 
-    sentences = raw
-      .replace(/\s+/g, " ")
-      .match(/[^.!?]+[.!?]+/g) || [];
+    // Eğer metin çıkarılamadıysa OCR kullan
+    if (!hasText || sentences.length === 0) {
+      useOCR = true;
+      console.log("No text found, using OCR...");
+      status("OCR ile metin çıkarılıyor...");
+      await extractTextWithOCR();
+    } else {
+      console.log(`Extraction complete: ${sentences.length} sentences, ${total} pages`);
+      status(`Hazır (${sentences.length} cümle, ${total} sayfa)`);
+    }
 
-    sentences = sentences.map(s => {
-      const sentenceText = s.trim();
-      const result = findSentenceWordRange(sentenceText);
-
-      return {
-        text: sentenceText,
-        startIndex: result.start,
-        endIndex: result.end,
-        page: result.page
-      };
-    });
-
-    status("Hazır (" + sentences.length + " cümle)");
+    if (isMobile && sentences.length > 0) {
+      setTimeout(() => {
+        goToPage(1);
+      }, 500);
+    }
   }
 
-  function findSentenceWordRange(sentence) {
-    const words = splitIntoWords(sentence);
-    if (words.length === 0) return { start: -1, end: -1, page: 1 };
+  // ==================== OCR TEXT EXTRACTION ====================
+  async function extractTextWithOCR() {
+    const pdf = PDFViewerApplication.pdfDocument;
+    const total = pdf.numPages;
+    
+    showOCRMessage(true, `Sayfa 1/${total}`);
+    
+    // Tesseract worker'ı oluştur
+    if (!ocrWorker) {
+      ocrWorker = await Tesseract.createWorker({
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            ocrProgress.textContent = `Sayfa ${m.progress * total | 0 + 1}/${total}`;
+          }
+        }
+      });
+    }
+    
+    // Seçilen dili ayarla (auto ise İngilizce ile başla)
+    const ocrLang = currentLanguage === 'auto' ? 'eng' : tesseractLangMap[currentLanguage] || 'eng';
+    await ocrWorker.loadLanguage(ocrLang);
+    await ocrWorker.initialize(ocrLang);
+    
+    sentences = [];
+    pageWordMaps = {};
+    pageSentences = {};
+    pageStartIndexes = {};
+    
+    let globalSentenceIndex = 0;
+    
+    for (let pageNum = 1; pageNum <= total; pageNum++) {
+      try {
+        showOCRMessage(true, `Sayfa ${pageNum}/${total}`);
+        
+        // PDF sayfasını canvas'a çiz
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        
+        await page.render(renderContext).promise;
+        
+        // Canvas'dan OCR ile metin çıkar
+        const { data: { text } } = await ocrWorker.recognize(canvas);
+        
+        // Canvas'ı temizle
+        canvas.remove();
+        
+        // Metni işle
+        const pageText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        if (pageText.length > 0) {
+          // Kelime haritası oluştur
+          let pageWordMap = [];
+          const words = splitIntoWords(pageText);
+          words.forEach(w => {
+            pageWordMap.push({
+              word: w,
+              page: pageNum,
+              original: w
+            });
+          });
+          
+          pageWordMaps[pageNum] = pageWordMap;
+          
+          // Cümleleri ayır
+          const pageRawSentences = pageText.match(/[^.!?]+[.!?]+/g) || [pageText];
+          
+          pageStartIndexes[pageNum] = globalSentenceIndex;
+          
+          const pageSentenceObjects = [];
+          
+          for (let s = 0; s < pageRawSentences.length; s++) {
+            const sentenceText = pageRawSentences[s].trim();
+            if (sentenceText.length < 2) continue;
+            
+            const sentenceObj = {
+              text: sentenceText,
+              startIndex: 0, // OCR için basit indeksleme
+              endIndex: sentenceText.split(' ').length - 1,
+              page: pageNum,
+              isLastInPage: (s === pageRawSentences.length - 1),
+              globalIndex: globalSentenceIndex,
+              pageWordMap: pageWordMap,
+              fromOCR: true
+            };
+            
+            pageSentenceObjects.push(sentenceObj);
+            sentences.push(sentenceObj);
+            globalSentenceIndex++;
+          }
+          
+          pageSentences[pageNum] = pageSentenceObjects;
+        }
+        
+        // Her sayfa arasında kısa bekleme
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        console.error(`OCR error on page ${pageNum}:`, error);
+      }
+    }
+    
+    // Worker'ı temizle
+    if (ocrWorker) {
+      await ocrWorker.terminate();
+      ocrWorker = null;
+    }
+    
+    showOCRMessage(false);
+    
+    console.log(`OCR complete: ${sentences.length} sentences, ${total} pages`);
+    status(`OCR Tamamlandı (${sentences.length} cümle, ${total} sayfa)`);
+  }
 
+  function findSentenceWordRangeInPage(sentence, pageWordMap, pageNum) {
+    const words = splitIntoWords(sentence);
+    if (words.length === 0) return { start: -1, end: -1, page: pageNum };
     let start = -1;
     let end = -1;
-
-    for (let i = 0; i < wordMap.length; i++) {
-      if (wordMap[i].word === words[0]) {
-        let ok = true;
-
+    for (let i = 0; i < pageWordMap.length; i++) {
+      if (pageWordMap[i].word === words[0]) {
+        let match = true;
         for (let j = 1; j < words.length; j++) {
           const nextIndex = i + j;
-          if (!wordMap[nextIndex] || wordMap[nextIndex].word !== words[j]) {
-            ok = false;
+          if (!pageWordMap[nextIndex] || pageWordMap[nextIndex].word !== words[j]) {
+            match = false;
             break;
           }
         }
-
-        if (ok) {
+        if (match) {
           start = i;
           end = i + words.length - 1;
           break;
         }
       }
     }
-
     return {
       start,
       end,
-      page: start !== -1 ? wordMap[start].page : 1
+      page: pageNum
     };
   }
 
+  // ==================== HIGHLIGHT & NAVIGATION ====================
   function highlightCurrentSentence() {
     document.querySelectorAll('.highlight-current-sentence')
       .forEach(el => el.classList.remove('highlight-current-sentence'));
@@ -1452,49 +2436,144 @@ body {
     const cur = sentences[ttsIndex];
     if (!cur || cur.startIndex === -1) return;
 
-    const pageNum = cur.page;
-    const pageElement = document.querySelector(`.page[data-page-number="${pageNum}"]`);
-    if (!pageElement) return;
+    goToPage(cur.page);
 
-    const textLayer = pageElement.querySelector('.textLayer');
-    if (!textLayer) return;
+    setTimeout(() => {
+      const pageElement = document.querySelector(`.page[data-page-number="${cur.page}"]`);
+      if (!pageElement) return;
 
-    const spans = Array.from(textLayer.querySelectorAll('span[role="presentation"]'));
+      const textLayer = pageElement.querySelector('.textLayer');
+      if (!textLayer) return;
 
-    let wordCursor = 0;
-    let highlighted = [];
+      const spans = Array.from(textLayer.querySelectorAll('span[role="presentation"]'));
+      if (spans.length === 0) return;
 
-    spans.forEach(span => {
-      const spanWords = splitIntoWords(span.textContent);
+      let wordCursor = 0;
+      let highlighted = [];
 
-      spanWords.forEach(() => {
-        if (wordCursor >= cur.startIndex && wordCursor <= cur.endIndex) {
-          span.classList.add("highlight-current-sentence");
-          if (!highlighted.includes(span)) highlighted.push(span);
-        }
-        wordCursor++;
+      const pageWordMap = cur.pageWordMap || [];
+
+      spans.forEach(span => {
+        const spanWords = splitIntoWords(span.textContent);
+
+        spanWords.forEach(() => {
+          if (wordCursor >= cur.startIndex && wordCursor <= cur.endIndex) {
+            span.classList.add("highlight-current-sentence");
+            if (!highlighted.includes(span)) highlighted.push(span);
+          }
+          wordCursor++;
+        });
       });
-    });
 
-    if (highlighted.length > 0) scrollToElement(highlighted[0]);
+      if (highlighted.length > 0) {
+        scrollToElement(highlighted[0]);
+      }
+    }, 100);
+  }
+
+  function goToPage(pageNum) {
+    if (PDFViewerApplication.page !== pageNum) {
+      PDFViewerApplication.page = pageNum;
+    }
   }
 
   function scrollToElement(el) {
     const viewer = document.querySelector('.pdfViewer');
     if (!viewer) return;
 
-    const r = el.getBoundingClientRect();
-    const vr = viewer.getBoundingClientRect();
+    const scrollOptions = {
+      behavior: isMobile ? 'smooth' : 'smooth',
+      block: 'center',
+      inline: 'nearest'
+    };
 
-    if (r.top < vr.top || r.bottom > vr.bottom) {
-      const scrollTop = viewer.scrollTop + r.top - vr.top - 100;
-      viewer.scrollTo({ top: scrollTop, behavior: "smooth" });
+    el.scrollIntoView(scrollOptions);
+
+    if (isMobile) {
+      setTimeout(() => {
+        const r = el.getBoundingClientRect();
+        const vr = viewer.getBoundingClientRect();
+
+        if (r.top < vr.top + 100 || r.bottom > vr.bottom - 100) {
+          viewer.scrollTop += (r.top - vr.top - 150);
+        }
+      }, 200);
     }
   }
 
+  // ==================== PAGE TRANSITION CHECK ====================
+  function checkIfPageEndAndTransition() {
+    const currentSentence = sentences[ttsIndex];
+    if (!currentSentence) return false;
+
+    if (currentSentence.isLastInPage) {
+      const currentPage = currentSentence.page;
+      const totalPages = PDFViewerApplication.pagesCount;
+
+      if (currentPage < totalPages) {
+        goToPage(currentPage + 1);
+
+        const nextPageSentences = pageSentences[currentPage + 1];
+        if (nextPageSentences && nextPageSentences.length > 0) {
+          const nextPageStartIndex = pageStartIndexes[currentPage + 1];
+          if (nextPageStartIndex !== undefined) {
+            ttsIndex = nextPageStartIndex;
+
+            status(`Sayfa ${currentPage + 1}/${totalPages}`);
+
+            setTimeout(() => {
+              highlightCurrentSentence();
+              if (isPlaying && isAutoRead) {
+                speak();
+              } else if (isPlaying && !isAutoRead) {
+                setPlaying(false);
+              }
+            }, 300);
+
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // ==================== SET PLAYING ====================
+  function setPlaying(p){
+    isPlaying = p;
+    if (playIcon) {
+        playIcon.textContent = p ? "pause" : "play_arrow";
+    }
+
+    const cur = sentences[ttsIndex];
+    if (cur) {
+      const totalPages = PDFViewerApplication.pagesCount || 1;
+      let statusText = `Sayfa ${cur.page}/${totalPages} [${ttsIndex+1}/${sentences.length}]`;
+
+      if (!isAutoRead) {
+          statusText += " (M)";
+      }
+      
+      if (useOCR) {
+          statusText += " [OCR]";
+      }
+      
+      // Android TTS kullanılıyorsa belirt
+      if (useAndroidTTS()) {
+          statusText += " [Android TTS]";
+      }
+
+      status(p ? statusText : statusText.split('(')[0].trim());
+    } else {
+      status(p ? "Okunuyor..." : "Hazır");
+    }
+  }
+
+  // ==================== SPEECH FUNCTIONS ====================
   function speak(){
     if (!sentences.length){
-      alert("Metin yok! PDF yükle.");
+      status("Hata: Metin çıkarılmadı.");
       return;
     }
 
@@ -1502,27 +2581,52 @@ body {
     const text = cur.text;
 
     highlightCurrentSentence();
+    isManualStop = false;
 
-    const lang = detectLang(text);
+    // Dil tespiti veya seçimi
+    let lang;
+    if (currentLanguage === 'auto') {
+      lang = detectLang(text);
+    } else {
+      // TTS dil kodunu al
+      lang = ttsLangMap[currentLanguage] || 'en-US';
+    }
+
     const rate = ttsSpeed;
 
-    console.log("Speaking:", text.substring(0, 50) + "...", "Index:", ttsIndex);
+    // 4 Kürtçe lehçesi için Android TTS kullan
+    if (useAndroidTTS()) {
+      speakWithAndroidTTS(text, lang, rate);
+      return;
+    }
 
+    // Diğer diller için normal TTS
     if (window.Android){
       try {
         setPlaying(true);
-        
-        // Android TTS bittiğinde "ttsNext" butonuna tıkla
+
         window.onAndroidSpeechDone = function() {
-          console.log("ANDROID → TTS bitti, next butonuna tıklanıyor");
-          // Küçük gecikme ile next butonuna tıkla
+          if (isManualStop) {
+             isManualStop = false;
+             return;
+          }
+
+          if (checkIfPageEndAndTransition()) {
+            return;
+          }
+
+          if (!isAutoRead) {
+            setPlaying(false);
+            return;
+          }
+
           setTimeout(function() {
             if (ttsIndex < sentences.length - 1) {
-              nextBtn.click();
+              ttsIndex++;
+              speak();
             } else {
-              // Son cümlede ise dur
               setPlaying(false);
-              status("Bitti");
+              status("Okuma tamamlandı ✓");
             }
           }, 100);
         };
@@ -1538,83 +2642,281 @@ body {
       } catch(e){
         console.error("Android TTS error:", e);
         setPlaying(false);
+        status("TTS Hatası");
       }
     } else {
-      // Tarayıcı TTS
+      // Browser TTS
       speakBrowser(text, lang, rate);
     }
   }
 
+  // ==================== ANDROID TTS FOR KURDISH DIALECTS ====================
+  function speakWithAndroidTTS(text, lang, rate) {
+    stopTTS(false);
+    
+    try {
+      setPlaying(true);
+
+      // Android callback fonksiyonu
+      window.onAndroidSpeechDone = function() {
+        if (isManualStop) {
+          isManualStop = false;
+          return;
+        }
+
+        if (checkIfPageEndAndTransition()) {
+          return;
+        }
+
+        if (!isAutoRead) {
+          setPlaying(false);
+          return;
+        }
+
+        setTimeout(function() {
+          if (ttsIndex < sentences.length - 1) {
+            ttsIndex++;
+            speak();
+          } else {
+            setPlaying(false);
+            status("Okuma tamamlandı ✓");
+          }
+        }, 100);
+      };
+
+      // Android TTS'yi kullan
+      const androidLang = androidLangMap[currentLanguage] || lang;
+      
+      if (Android.speakTextWithRate) {
+        Android.speakTextWithRate(text, androidLang, rate);
+      } else if (Android.speakText) {
+        Android.speakText(text, androidLang);
+      } else if (Android.speak) {
+        Android.speak(text, androidLang);
+      } else {
+        throw new Error("Android TTS not available");
+      }
+      
+      status("Android TTS kullanılıyor...");
+      
+    } catch(e){
+      console.error("Android TTS error:", e);
+      setPlaying(false);
+      status("Android TTS Hatası");
+      
+      // Fallback: normal browser TTS
+      speakBrowser(text, lang, rate);
+    }
+  }
+
+  // ==================== GELİŞMİŞ DİL TESPİTİ ====================
   function detectLang(t){
-    return (/[çğıöşüÇĞİÖŞÜ]/.test(t)) ? "tr-TR" : "en-US";
+    const langPatterns = {
+      'ar-SA': /[ء-ي]/g,                    // Arabic
+      'bg-BG': /[а-яА-Я]/g,                 // Bulgarian
+      'zh-CN': /[\u4e00-\u9fff]/g,          // Chinese Simplified
+      'zh-TW': /[\u4e00-\u9fff]/g,          // Chinese Traditional
+      'cs-CZ': /[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/g, // Czech
+      'da-DK': /[æøåÆØÅ]/g,                 // Danish
+      'nl-NL': /[éëïÉËÏ]/g,                 // Dutch
+      'en-US': /\b(the|and|for|with|from|that|have|this|it|is|are|was|were)\b/gi,
+      'fi-FI': /[åäöÅÄÖ]/g,                 // Finnish
+      'fr-FR': /[àâçéèêëîïôûùüÿæœÀÂÇÉÈÊËÎÏÔÛÙÜŸÆŒ]/g, // French
+      'de-DE': /[äöüßÄÖÜ]/g,                // German
+      'el-GR': /[α-ωΑ-Ω]/g,                 // Greek
+      'he-IL': /[א-ת]/g,                    // Hebrew
+      'hi-IN': /[\u0900-\u097F]/g,          // Hindi
+      'hu-HU': /[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/g,     // Hungarian
+      'it-IT': /[àèéìíîòóùúÀÈÉÌÍÎÒÓÙÚ]/g,    // Italian
+      'ja-JP': /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/g, // Japanese
+      'ko-KR': /[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f]/g, // Korean
+      'ku-TR': /[êîûÊÎÛşŞçÇ]/g,             // Kurdish (Latin)
+      'ckb-IQ': /[ەێۆﺌﻰﻲﻯ]/g,               // Kurdish (Arabic - Sorani)
+      'no-NO': /[æøåÆØÅ]/g,                 // Norwegian
+      'fa-IR': /[پچژکگۀ‌]/g,                // Persian
+      'pl-PL': /[ąęćłńóśźżĄĆĘŁŃÓŚŹŻ]/g,     // Polish
+      'pt-PT': /[áàâãçéêíóôõúÁÀÂÃÇÉÊÍÓÔÕÚ]/g, // Portuguese
+      'ro-RO': /[ăâîșțĂÂÎȘȚ]/g,             // Romanian
+      'ru-RU': /[а-яА-ЯёЁ]/g,               // Russian
+      'es-ES': /[áéíóúüñÁÉÍÓÚÜÑ]/g,         // Spanish
+      'sv-SE': /[åäöÅÄÖ]/g,                 // Swedish
+      'tr-TR': /[çğıöşüÇĞİÖŞÜ]/g,           // Turkish
+      'uk-UA': /[ґєіїҐЄІЇ]/g               // Ukrainian
+    };
+
+    let maxScore = 0;
+    let detectedLang = 'en-US'; // Varsayılan İngilizce
+    
+    for (const [langCode, pattern] of Object.entries(langPatterns)) {
+      const matches = t.match(pattern);
+      if (matches) {
+        const score = matches.length / t.length * 100;
+        if (score > maxScore) {
+          maxScore = score;
+          detectedLang = langCode;
+        }
+      }
+    }
+
+    // Eğer hiçbir dil tespit edilemezse, kelime analizi yap
+    if (maxScore < 3) {
+      const words = splitIntoWords(t);
+      
+      // Her dil için tipik kelimeler
+      const languageWords = {
+        'en-US': ['the', 'and', 'for', 'with', 'from', 'that', 'have', 'this', 'it', 'is', 'are', 'was', 'were'],
+        'tr-TR': ['ve', 'bir', 'bu', 'de', 'da', 'ile', 'için', 'ama', 'veya', 'sonra'],
+        'es-ES': ['el', 'la', 'los', 'las', 'y', 'de', 'que', 'en', 'un', 'una'],
+        'fr-FR': ['le', 'la', 'les', 'et', 'de', 'que', 'en', 'un', 'une', 'des'],
+        'de-DE': ['der', 'die', 'das', 'und', 'von', 'zu', 'für', 'mit', 'ist', 'sind'],
+        'ar-SA': ['ال', 'في', 'من', 'على', 'أن', 'هذا', 'هذه', 'كان', 'يكون'],
+        'ru-RU': ['и', 'в', 'на', 'с', 'по', 'что', 'это', 'был', 'быть', 'есть'],
+        'ku-TR': ['û', 'her', 'di', 'ji', 'bi', 'wek', 'heye', 'ne', 'ye', 'bû'], // Kurmanci
+        'ckb-IQ': ['و', 'لە', 'بە', 'دە', 'کە', 'ئەو', 'ئێمە', 'هەر', 'نا'] // Sorani
+      };
+      
+      let maxWordCount = 0;
+      let wordDetectedLang = 'en-US';
+      
+      for (const [langCode, wordList] of Object.entries(languageWords)) {
+        let wordCount = 0;
+        words.forEach(word => {
+          if (wordList.includes(word.toLowerCase())) wordCount++;
+        });
+        
+        if (wordCount > maxWordCount) {
+          maxWordCount = wordCount;
+          wordDetectedLang = langCode;
+        }
+      }
+      
+      if (maxWordCount > 0) {
+        detectedLang = wordDetectedLang;
+      }
+    }
+
+    return detectedLang;
   }
 
   function speakBrowser(text, lang, rate){
-    stopTTS();
+    stopTTS(false);
 
     utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
     utterance.rate = rate;
+    utterance.volume = 1.0;
+    utterance.pitch = 1.0;
 
     utterance.onstart = () => {
-      console.log("Browser TTS started");
       setPlaying(true);
     };
-    
+
     utterance.onend = () => {
-      console.log("Browser TTS ended, next butonuna tıklanıyor");
-      // Tarayıcı TTS bittiğinde de next butonuna tıkla
+      if (isManualStop) {
+          isManualStop = false;
+          return;
+      }
+
+      if (checkIfPageEndAndTransition()) {
+        return;
+      }
+
+      if (!isAutoRead) {
+        setPlaying(false);
+        return;
+      }
+
       setTimeout(function() {
         if (ttsIndex < sentences.length - 1) {
-          nextBtn.click();
+          ttsIndex++;
+          speak();
         } else {
-          // Son cümlede ise dur
           setPlaying(false);
-          status("Bitti");
+          status("Okuma tamamlandı ✓");
         }
       }, 100);
     };
-    
+
     utterance.onerror = (event) => {
       console.error("Browser TTS error:", event);
       setPlaying(false);
+      status("TTS Hatası");
     };
 
-    speechSynthesis.speak(utterance);
+    if (isMobile) {
+      setTimeout(() => {
+        speechSynthesis.speak(utterance);
+      }, 50);
+    } else {
+      speechSynthesis.speak(utterance);
+    }
   }
 
-  function stopTTS(){
-    console.log("stopTTS called");
+  function stopTTS(isUserAction = false){
+    if (isUserAction) {
+        isManualStop = true;
+        status("Duraklatıldı...");
+    }
+
+    setPlaying(false);
+
     if (utterance) {
       speechSynthesis.cancel();
-      utterance = null;
     }
+    
+    // Audio element'larını da durdur
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    
+    // Android TTS'yi durdur
     if (window.Android && Android.stop) {
       Android.stop();
     }
-    setPlaying(false);
-  }
-
-  function setPlaying(p){
-    isPlaying = p;
-    playBtn.textContent = p ? "⏸" : "▶";
-    status(p ? "Okunuyor [" + (ttsIndex+1) + "/" + sentences.length + "]" : "Hazır");
   }
 
 })();
 
-// Android callback'i - ttsNext butonuna tıkla
+// ==================== ANDROID CALLBACK FUNCTIONS ====================
+// Android WebView callback'leri
 window.onAndroidSpeechDone = function () {
-    console.log("Global onAndroidSpeechDone - next butonuna tıklanıyor");
-    const nextBtn = document.getElementById("ttsNext");
-    if (nextBtn) {
-        // Hemen değil, biraz bekle
-        setTimeout(function() {
-            nextBtn.click();
-        }, 150);
-    }
+  // Bu fonksiyon Android tarafından çağrılacak
+  console.log("Android speech done callback");
 };
 
+window.onAndroidTTSReady = function () {
+  console.log("Android TTS ready");
+  document.getElementById("speechStatus").textContent = "Android TTS Hazır";
+};
+
+window.onAndroidTTSStart = function () {
+  console.log("Android TTS started");
+};
+
+window.onAndroidTTSEnd = function () {
+  console.log("Android TTS ended");
+  if (window.onAndroidSpeechDone) {
+    window.onAndroidSpeechDone();
+  }
+};
+
+// Mobile event listenerlar (Zoom engelleme)
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(e) {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) {
+    e.preventDefault();
+  }
+  lastTouchEnd = now;
+}, false);
 </script>
 
 
@@ -1622,32 +2924,8 @@ window.onAndroidSpeechDone = function () {
 
 
 
-<!-- ========================================================= -->
-<!-- ====================== SPEECH BAR 
 
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acm✅✅✅✅a- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- ✅✅✅✅✅✅kaydetme vs -->
 <!-- pdf acma- kaydetme vs -->
 <!-- pdf acma- kaydetme vs -->
 <!-- pdf acma- kaydetme vs -->

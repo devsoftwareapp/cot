@@ -16,10 +16,36 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
     private var tts: TextToSpeech? = null
     private var isReady = false
     private val handler = Handler(Looper.getMainLooper())
+    
+    // Dil kodları eşleştirmesi
+    private val localeMap = mapOf(
+        // Ana diller
+        "en-US" to Locale.US,
+        "tr-TR" to Locale("tr", "TR"),
+        "ku-TR" to Locale("ku", "TR"), // Kurmanci
+        "ckb-IQ" to Locale("ckb", "IQ"), // Sorani
+        "ku-IR" to Locale("ku", "IR"), // Gorani
+        
+        // Diğer diller
+        "ar-SA" to Locale("ar", "SA"),
+        "fr-FR" to Locale.FRANCE,
+        "de-DE" to Locale.GERMANY,
+        "es-ES" to Locale("es", "ES"),
+        "it-IT" to Locale.ITALY,
+        "pt-PT" to Locale("pt", "PT"),
+        "ru-RU" to Locale("ru", "RU"),
+        "zh-CN" to Locale.SIMPLIFIED_CHINESE,
+        "zh-TW" to Locale.TRADITIONAL_CHINESE,
+        "ja-JP" to Locale.JAPAN,
+        "ko-KR" to Locale.KOREA,
+        "hi-IN" to Locale("hi", "IN"),
+        "fa-IR" to Locale("fa", "IR")
+    )
 
     init {
         try {
             tts = TextToSpeech(context, this)
+            Log.d("SesliTTS", "TTS initialized")
         } catch (e: Exception) {
             Log.e("SesliTTS", "Init error: $e")
         }
@@ -27,47 +53,55 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            // İngilizce ve Türkçe dillerini deneyelim
-            val usResult = tts?.setLanguage(Locale.US)
-            val trResult = tts?.setLanguage(Locale("tr", "TR"))
+            // Birden fazla dil desteği
+            val defaultLocale = Locale.US
+            val result = tts?.setLanguage(defaultLocale)
             
-            isReady = (usResult != TextToSpeech.LANG_MISSING_DATA &&
-                    usResult != TextToSpeech.LANG_NOT_SUPPORTED) ||
-                    (trResult != TextToSpeech.LANG_MISSING_DATA &&
-                    trResult != TextToSpeech.LANG_NOT_SUPPORTED)
+            isReady = result != TextToSpeech.LANG_MISSING_DATA &&
+                     result != TextToSpeech.LANG_NOT_SUPPORTED
+            
+            if (isReady) {
+                Log.d("SesliTTS", "TTS ready with default locale: $defaultLocale")
+            } else {
+                // Varsayılan başarısız olursa Türkçe'yi dene
+                val trResult = tts?.setLanguage(Locale("tr", "TR"))
+                isReady = trResult != TextToSpeech.LANG_MISSING_DATA &&
+                         trResult != TextToSpeech.LANG_NOT_SUPPORTED
+                if (isReady) {
+                    Log.d("SesliTTS", "TTS ready with Turkish locale")
+                }
+            }
 
             // ===== UTTERANCE LISTENER =====
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
                     Log.d("SesliTTS", "TTS started: $utteranceId")
+                    handler.post {
+                        webView.evaluateJavascript(
+                            "console.log('Android → TTS started');",
+                            null
+                        )
+                    }
                 }
 
                 override fun onDone(utteranceId: String?) {
                     Log.d("SesliTTS", "TTS finished: $utteranceId")
                     handler.post {
                         try {
-                            // 1. Yöntem: nextSentence() fonksiyonunu doğrudan çağır
+                            // JavaScript callback'i çağır
                             webView.evaluateJavascript(
                                 "(function() { " +
-                                "   console.log('Android → TTS finished, calling nextSentence'); " +
-                                "   if (typeof nextSentence === 'function') { " +
-                                "       nextSentence(); " +
-                                "   } else if (typeof moveToNextSentence === 'function') { " +
-                                "       moveToNextSentence(); " +
+                                "   console.log('Android → TTS finished, calling window.onAndroidSpeechDone'); " +
+                                "   if (typeof window.onAndroidSpeechDone === 'function') { " +
+                                "       window.onAndroidSpeechDone(); " +
                                 "   } else { " +
-                                "       console.error('nextSentence or moveToNextSentence not found'); " +
+                                "       console.error('onAndroidSpeechDone not found'); " +
+                                "       // Fallback: Global callback'i dene" +
+                                "       if (typeof onAndroidSpeechDone === 'function') { " +
+                                "           onAndroidSpeechDone(); " +
+                                "       }" +
                                 "   } " +
                                 "})()",
-                                null
-                            )
-                            
-                            // 2. Yöntem: window.onAndroidSpeechDone callback
-                            webView.evaluateJavascript(
-                                "if (window.onAndroidSpeechDone) { " +
-                                "   window.onAndroidSpeechDone(); " +
-                                "} else { " +
-                                "   console.log('onAndroidSpeechDone not defined'); " +
-                                "}",
                                 null
                             )
                             
@@ -80,19 +114,33 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
                 override fun onError(utteranceId: String?) {
                     Log.e("SesliTTS", "TTS error: $utteranceId")
                     handler.post {
-                        // Hata durumunda da sonraki cümleye geçmeyi dene
+                        // Hata durumunda da callback'i çağır
                         webView.evaluateJavascript(
                             "(function() { " +
-                            "   console.log('Android → TTS error, moving to next'); " +
-                            "   if (typeof moveToNextSentence === 'function') { " +
-                            "       moveToNextSentence(); " +
-                            "   } " +
+                            "   console.error('Android → TTS error'); " +
+                            "   if (typeof window.onAndroidSpeechDone === 'function') { " +
+                            "       window.onAndroidSpeechDone(); " +
+                            "   }" +
                             "})()",
                             null
                         )
                     }
                 }
             })
+            
+            // WebView'a TTS'nin hazır olduğunu bildir
+            handler.post {
+                webView.evaluateJavascript(
+                    "(function() { " +
+                    "   console.log('Android → TTS ready'); " +
+                    "   if (typeof window.onAndroidTTSReady === 'function') { " +
+                    "       window.onAndroidTTSReady(); " +
+                    "   }" +
+                    "})()",
+                    null
+                )
+            }
+            
         } else {
             isReady = false
             Log.e("SesliTTS", "TTS initialization failed")
@@ -100,27 +148,80 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
     }
 
     @JavascriptInterface
+    fun initTTS() {
+        Log.d("SesliTTS", "initTTS called from JavaScript")
+        // TTS zaten başlatıldı, sadece hazır olup olmadığını kontrol et
+        if (isReady) {
+            handler.post {
+                webView.evaluateJavascript(
+                    "if (window.onAndroidTTSReady) window.onAndroidTTSReady();",
+                    null
+                )
+            }
+        }
+    }
+
+    @JavascriptInterface
     fun speakTextWithRate(text: String, lang: String, rate: Float) {
+        Log.d("SesliTTS", "speakTextWithRate called: text='$text', lang='$lang', rate=$rate")
+        
         if (!isReady) {
             Log.e("SesliTTS", "TTS not ready")
+            handler.post {
+                webView.evaluateJavascript(
+                    "console.error('Android → TTS not ready');",
+                    null
+                )
+            }
             return
         }
+        
         try {
-            val locale = if (lang.contains("tr")) {
-                Locale("tr", "TR")
+            // Dil kodunu Locale'e çevir
+            val locale = localeMap[lang] ?: run {
+                // Dil kodundan Locale oluşturmayı dene
+                val parts = lang.split("-")
+                if (parts.size == 2) {
+                    Locale(parts[0], parts[1])
+                } else {
+                    Locale.US // Varsayılan
+                }
+            }
+            
+            // Dil desteğini kontrol et
+            val langAvailable = tts?.isLanguageAvailable(locale) ?: TextToSpeech.LANG_NOT_SUPPORTED
+            val finalLocale = if (langAvailable >= TextToSpeech.LANG_AVAILABLE) {
+                locale
             } else {
+                Log.w("SesliTTS", "Language $lang not available, using default")
                 Locale.US
             }
             
-            tts?.language = locale
+            tts?.language = finalLocale
             tts?.setSpeechRate(rate)
             
-            // Utterance ID'yi belirle
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "android_utterance")
-            Log.d("SesliTTS", "Speaking: $text (lang: $lang, rate: $rate)")
+            // WebView'a konuşmanın başladığını bildir
+            handler.post {
+                webView.evaluateJavascript(
+                    "if (window.onAndroidTTSStart) window.onAndroidTTSStart();",
+                    null
+                )
+            }
+            
+            // Konuşmayı başlat
+            val utteranceId = "tts_${System.currentTimeMillis()}"
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+            
+            Log.d("SesliTTS", "Speaking: '${text.take(50)}...' (lang: $finalLocale, rate: $rate)")
             
         } catch (e: Exception) {
             Log.e("SesliTTS", "speakTextWithRate error: $e")
+            handler.post {
+                webView.evaluateJavascript(
+                    "console.error('Android → TTS error: ${e.message}');",
+                    null
+                )
+            }
         }
     }
 
@@ -139,13 +240,32 @@ class SesliTTS(private val context: Context, private val webView: WebView) :
         try { 
             tts?.stop() 
             Log.d("SesliTTS", "TTS stopped")
+            handler.post {
+                webView.evaluateJavascript(
+                    "console.log('Android → TTS stopped');",
+                    null
+                )
+            }
         } catch (e: Exception) {
             Log.e("SesliTTS", "stop error: $e")
         }
     }
 
     @JavascriptInterface
-    fun isReady(): Boolean = isReady
+    fun setPitch(pitch: Float) {
+        try {
+            tts?.setPitch(pitch)
+            Log.d("SesliTTS", "Pitch set to: $pitch")
+        } catch (e: Exception) {
+            Log.e("SesliTTS", "setPitch error: $e")
+        }
+    }
+
+    @JavascriptInterface
+    fun isReady(): Boolean {
+        Log.d("SesliTTS", "isReady called, returning: $isReady")
+        return isReady
+    }
 
     fun shutdown() {
         try {

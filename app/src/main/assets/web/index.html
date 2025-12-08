@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="tr" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF Reader | Dev Software</title>
   
   <style>
-    /* Material Symbols - WebView için optimize edilmiş */
+    /* Material Symbols - Optimized for WebView */
     .material-symbols-rounded {
       font-family: 'Material Symbols Rounded';
       font-weight: normal;
@@ -23,7 +23,7 @@
       -webkit-font-smoothing: antialiased;
     }
     
-    /* --- TEMEL STİLLER --- */
+    /* --- BASIC STYLES --- */
     :root {
       --background: #e8e8e8;
       --surface: #e8e8e8;
@@ -61,7 +61,7 @@
       flex-direction: column; 
     }
 
-    /* --- ÜST BAR --- */
+    /* --- TOP BAR --- */
     .top-bar {
       height: var(--header-height);
       background: var(--surface);
@@ -160,7 +160,7 @@
       border-radius: 3px 3px 0 0;
     }
     
-    /* --- ANA İÇERİK --- */
+    /* --- MAIN CONTENT --- */
     .main-content {
       flex: 1;
       margin-top: calc(var(--header-height) + var(--tabs-height));
@@ -178,7 +178,7 @@
       display: block;
     }
     
-    /* --- PDF KARTLARI --- */
+    /* --- PDF CARDS --- */
     .pdf-grid {
       display: flex;
       flex-direction: column;
@@ -284,7 +284,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
     
-    /* --- BOŞ DURUM --- */
+    /* --- EMPTY STATE --- */
     .empty-state {
       padding: 40px 20px;
       text-align: center;
@@ -297,7 +297,7 @@
       opacity: 0.5;
     }
     
-    /* --- SEÇİM MODU --- */
+    /* --- SELECTION MODE --- */
     body.selection-mode .pdf-card {
       padding-left: 40px;
       position: relative;
@@ -356,7 +356,7 @@
       gap: 4px;
     }
     
-    /* --- MENÜ --- */
+    /* --- MENU --- */
     .menu-overlay {
       position: fixed;
       top: 0;
@@ -466,10 +466,8 @@
 </head>
 <body>
 
-  <!-- Gizli dosya input -->
   <input type="file" id="fileInput" accept="application/pdf" style="display: none;">
 
-  <!-- ÜST BAR -->
   <div class="top-bar">
     <div class="normal-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
       <div class="logo-title">
@@ -486,7 +484,7 @@
     </div>
     
     <div class="selection-header">
-      <div class="selection-count" id="selectionCount">0 seçildi</div>
+      <div class="selection-count" id="selectionCount">0 selected</div>
       <div class="selection-actions">
         <button class="icon-btn" onclick="selectAll()">
           <span class="material-symbols-rounded">select_all</span>
@@ -504,70 +502,59 @@
     </div>
   </div>
 
-  <!-- TABS -->
   <div class="tabs-container">
     <div class="tab active" data-tab="recent">
       <span class="material-symbols-rounded">history</span>
-      <span>Son</span>
+      <span>Recent</span>
     </div>
     <div class="tab" data-tab="device">
       <span class="material-symbols-rounded">folder</span>
-      <span>Cihaz</span>
+      <span>Device</span>
     </div>
     <div class="tab" data-tab="favorites">
       <span class="material-symbols-rounded">star</span>
-      <span>Favoriler</span>
+      <span>Favorites</span>
     </div>
   </div>
 
-  <!-- ANA İÇERİK -->
   <main class="main-content">
-    <!-- SON PDF'LER -->
     <div class="content-panel active" id="recentPanel">
       <div class="pdf-grid" id="recentList">
-        <!-- PDF kartları buraya eklenecek -->
-      </div>
+        </div>
     </div>
     
-    <!-- CİHAZ PDF'LERİ -->
     <div class="content-panel" id="devicePanel">
       <div class="pdf-grid" id="deviceList">
-        <!-- Cihaz PDF'leri buraya eklenecek -->
-      </div>
+        </div>
     </div>
     
-    <!-- FAVORİLER -->
     <div class="content-panel" id="favoritesPanel">
       <div class="pdf-grid" id="favoritesList">
-        <!-- Favori PDF'ler buraya eklenecek -->
-      </div>
+        </div>
     </div>
   </main>
 
-  <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <div class="nav-item active" data-nav="home">
       <span class="material-symbols-rounded">home</span>
-      <span>Ana Sayfa</span>
+      <span>Home</span>
     </div>
     <div class="nav-item" data-nav="tools">
       <span class="material-symbols-rounded">build</span>
-      <span>Araçlar</span>
+      <span>Tools</span>
     </div>
     <div class="nav-item" data-nav="files">
       <span class="material-symbols-rounded">folder</span>
-      <span>Dosyalar</span>
+      <span>Files</span>
     </div>
   </nav>
 
-  <!-- FAB -->
   <div class="fab-container">
     <button class="fab" id="fabBtn">
       <span class="material-symbols-rounded">add</span>
     </button>
   </div>
 
-  <!-- MENÜ -->
   <div class="menu-overlay" id="menuOverlay"></div>
   <div class="menu-sidebar" id="menuSidebar">
     <div class="menu-header">
@@ -579,42 +566,41 @@
     <div class="menu-content">
       <div class="menu-item" onclick="openSettings()">
         <span class="material-symbols-rounded">settings</span>
-        <span>Ayarlar</span>
+        <span>Settings</span>
       </div>
       <div class="menu-item" onclick="openHelp()">
         <span class="material-symbols-rounded">help</span>
-        <span>Yardım</span>
+        <span>Help</span>
       </div>
       <div class="menu-item" onclick="openAbout()">
         <span class="material-symbols-rounded">info</span>
-        <span>Hakkında</span>
+        <span>About</span>
       </div>
     </div>
   </div>
 
-  <!-- CONTEXT MENÜ -->
   <div class="context-overlay" id="contextOverlay"></div>
   <div class="context-sheet" id="contextSheet">
     <div class="sheet-item" onclick="renamePdf()">
       <span class="material-symbols-rounded">edit</span>
-      <span>Yeniden Adlandır</span>
+      <span>Rename</span>
     </div>
     <div class="sheet-item" onclick="sharePdf()">
       <span class="material-symbols-rounded">share</span>
-      <span>Paylaş</span>
+      <span>Share</span>
     </div>
     <div class="sheet-item" onclick="printPdf()">
       <span class="material-symbols-rounded">print</span>
-      <span>Yazdır</span>
+      <span>Print</span>
     </div>
     <div class="sheet-item danger" onclick="deletePdf()">
       <span class="material-symbols-rounded">delete</span>
-      <span>Sil</span>
+      <span>Delete</span>
     </div>
   </div>
 
   <script>
-    // --- DEĞİŞKENLER ---
+    // --- VARIABLES ---
     let currentTab = 'recent';
     let currentNav = 'home';
     let isSelectionMode = false;
@@ -622,7 +608,7 @@
     let pdfs = [];
     let currentContextPdf = null;
 
-    // --- ANDROID BRIDGE FONKSİYONLARI ---
+    // --- ANDROID BRIDGE FUNCTIONS ---
     function androidCheckPermission() {
         if (typeof Android !== 'undefined' && Android.checkPermission) {
             return Android.checkPermission();
@@ -664,14 +650,14 @@
         }
     }
 
-    // --- UYGULAMA BAŞLATMA ---
+    // --- APP INIT ---
     document.addEventListener('DOMContentLoaded', function() {
         loadTheme();
         setupEventListeners();
         loadPDFs();
     });
 
-    // --- TEMA YÖNETİMİ ---
+    // --- THEME MANAGEMENT ---
     function loadTheme() {
         const savedTheme = localStorage.getItem('pdfTheme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -684,21 +670,21 @@
 
     // --- EVENT LISTENERS ---
     function setupEventListeners() {
-        // Tab tıklamaları
+        // Tab clicks
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 switchTab(this.dataset.tab);
             });
         });
         
-        // Nav tıklamaları
+        // Nav clicks
         document.querySelectorAll('.nav-item').forEach(nav => {
             nav.addEventListener('click', function() {
                 switchNav(this.dataset.nav);
             });
         });
         
-        // Menu butonu
+        // Menu button
         document.getElementById('menuBtn').addEventListener('click', openMenu);
         
         // Menu overlay
@@ -707,51 +693,51 @@
         // Context overlay
         document.getElementById('contextOverlay').addEventListener('click', closeContext);
         
-        // FAB butonu
+        // FAB button
         document.getElementById('fabBtn').addEventListener('click', openFabMenu);
         
-        // Dosya input
+        // File input
         document.getElementById('fileInput').addEventListener('change', handleFileSelect);
     }
 
-    // --- TAB YÖNETİMİ ---
+    // --- TAB MANAGEMENT ---
     function switchTab(tabId) {
         currentTab = tabId;
         
-        // Tab görünümü
+        // Tab display
         document.querySelectorAll('.tab').forEach(t => {
             t.classList.toggle('active', t.dataset.tab === tabId);
         });
         
-        // Panel görünümü
+        // Panel display
         document.querySelectorAll('.content-panel').forEach(p => {
             p.classList.toggle('active', p.id === tabId + 'Panel');
         });
         
-        // PDF'leri yükle
+        // Load PDFs
         loadPDFs();
     }
 
-    // --- NAV YÖNETİMİ ---
+    // --- NAV MANAGEMENT ---
     function switchNav(navId) {
         currentNav = navId;
         
-        // Nav görünümü
+        // Nav display
         document.querySelectorAll('.nav-item').forEach(n => {
             n.classList.toggle('active', n.dataset.nav === navId);
         });
         
-        // FAB'ı göster/gizle
+        // Show/Hide FAB
         document.getElementById('fabBtn').style.display = 
             (navId === 'home') ? 'flex' : 'none';
     }
 
-    // --- PDF YÜKLEME ---
+    // --- LOAD PDFs ---
     function loadPDFs() {
         let files = [];
         
         if (currentTab === 'device') {
-            // Android'den PDF listesini al
+            // Get PDF list from Android
             if (androidCheckPermission()) {
                 const pdfList = androidListPDFs();
                 if (pdfList) {
@@ -763,23 +749,23 @@
                             path: path,
                             isFavorite: false,
                             size: '2.5 MB',
-                            date: new Date().toLocaleDateString('tr-TR')
+                            date: new Date().toLocaleDateString('en-US')
                         };
                     });
                 }
             }
         } else if (currentTab === 'favorites') {
-            // Favoriler
+            // Favorites
             files = pdfs.filter(pdf => pdf.isFavorite);
         } else {
-            // Son kullanılanlar
-            files = pdfs.slice(0, 10); // Son 10 PDF
+            // Recent
+            files = pdfs.slice(0, 10); // Last 10 PDFs
         }
         
         renderPDFList(files);
     }
 
-    // --- PDF LİSTESİ RENDER ---
+    // --- RENDER PDF LIST ---
     function renderPDFList(files) {
         const containerId = currentTab + 'List';
         const container = document.getElementById(containerId);
@@ -788,7 +774,7 @@
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="material-symbols-rounded empty-icon">folder_open</div>
-                    <p>Henüz PDF dosyası yok</p>
+                    <p>No PDF files yet</p>
                 </div>
             `;
             return;
@@ -827,7 +813,7 @@
         container.innerHTML = html;
     }
 
-    // --- PDF TIKLAMA ---
+    // --- PDF CLICK ---
     function handlePdfClick(pdfId) {
         if (isSelectionMode) {
             toggleSelection(pdfId);
@@ -840,17 +826,17 @@
         }
     }
 
-    // --- FAVORİ İŞLEMLERİ ---
+    // --- FAVORITE ACTIONS ---
     function toggleFavorite(pdfId) {
         const pdf = pdfs.find(p => p.id == pdfId);
         if (pdf) {
             pdf.isFavorite = !pdf.isFavorite;
-            androidShowToast(pdf.isFavorite ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı');
+            androidShowToast(pdf.isFavorite ? 'Added to favorites' : 'Removed from favorites');
             loadPDFs();
         }
     }
 
-    // --- SEÇİM MODU ---
+    // --- SELECTION MODE ---
     function toggleSelection(pdfId) {
         if (!isSelectionMode) {
             enterSelectionMode();
@@ -904,7 +890,7 @@
     function deleteSelected() {
         if (selectedFiles.size === 0) return;
         
-        if (!confirm(`${selectedFiles.size} PDF silinecek. Emin misiniz?`)) return;
+        if (!confirm(`${selectedFiles.size} PDF(s) will be deleted. Are you sure?`)) return;
         
         const pdfsToDelete = getCurrentPDFs().filter(pdf => selectedFiles.has(pdf.id));
         let successCount = 0;
@@ -916,16 +902,16 @@
             }
         });
         
-        androidShowToast(`${successCount} PDF silindi`);
+        androidShowToast(`${successCount} PDF(s) deleted`);
         exitSelection();
         loadPDFs();
     }
     
     function updateSelectionUI() {
         document.getElementById('selectionCount').textContent = 
-            `${selectedFiles.size} seçildi`;
+            `${selectedFiles.size} selected`;
         
-        // Checkbox'ları güncelle
+        // Update checkboxes
         document.querySelectorAll('.pdf-card').forEach(card => {
             const pdfId = card.dataset.id;
             const checkbox = card.querySelector('.selection-checkbox');
@@ -937,14 +923,14 @@
     
     function getCurrentPDFs() {
         if (currentTab === 'device') {
-            // Device PDF'leri
+            // Device PDFs
             const pdfList = androidListPDFs();
             if (!pdfList) return [];
             
             return pdfList.split('||').map(path => {
                 const name = path.split('/').pop();
                 return {
-                    id: path, // path'i ID olarak kullan
+                    id: path, // use path as ID
                     name: name,
                     path: path,
                     isFavorite: false
@@ -957,7 +943,7 @@
         }
     }
 
-    // --- CONTEXT MENÜ ---
+    // --- CONTEXT MENU ---
     function openContextMenu(pdfId) {
         currentContextPdf = pdfs.find(p => p.id == pdfId);
         if (!currentContextPdf) return;
@@ -975,10 +961,10 @@
     function renamePdf() {
         if (!currentContextPdf) return;
         
-        const newName = prompt('Yeni isim:', currentContextPdf.name);
+        const newName = prompt('New name:', currentContextPdf.name);
         if (newName && newName.trim()) {
             currentContextPdf.name = newName.trim();
-            androidShowToast('PDF yeniden adlandırıldı');
+            androidShowToast('PDF renamed');
             loadPDFs();
         }
         closeContext();
@@ -992,24 +978,24 @@
     
     function printPdf() {
         if (!currentContextPdf) return;
-        androidShowToast('Yazdırma hazırlanıyor...');
+        androidShowToast('Preparing to print...');
         closeContext();
     }
     
     function deletePdf() {
         if (!currentContextPdf || !currentContextPdf.path) return;
         
-        if (confirm('Bu PDF\'i silmek istediğinize emin misiniz?')) {
+        if (confirm('Are you sure you want to delete this PDF?')) {
             if (androidDeletePDF(currentContextPdf.path)) {
                 pdfs = pdfs.filter(p => p.id !== currentContextPdf.id);
-                androidShowToast('PDF silindi');
+                androidShowToast('PDF deleted');
                 loadPDFs();
             }
         }
         closeContext();
     }
 
-    // --- MENÜ İŞLEMLERİ ---
+    // --- MENU ACTIONS ---
     function openMenu() {
         document.getElementById('menuOverlay').classList.add('show');
         document.getElementById('menuSidebar').classList.add('open');
@@ -1022,12 +1008,12 @@
     
     function openSettings() {
         closeMenu();
-        androidShowToast('Ayarlar açılıyor...');
+        androidShowToast('Opening settings...');
     }
     
     function openHelp() {
         closeMenu();
-        androidShowToast('Yardım açılıyor...');
+        androidShowToast('Opening help...');
     }
     
     function openAbout() {
@@ -1035,7 +1021,7 @@
         androidShowToast('PDF Reader v1.0 - Dev Software');
     }
 
-    // --- FAB MENÜ ---
+    // --- FAB MENU ---
     function openFabMenu() {
         document.getElementById('fileInput').click();
     }
@@ -1044,21 +1030,21 @@
         const file = event.target.files[0];
         if (!file) return;
         
-        // Dosyayı oku
+        // Read file
         const reader = new FileReader();
         reader.onload = function(e) {
             const newPdf = {
                 id: Date.now(),
                 name: file.name,
-                path: '', // Local dosya
+                path: '', // Local file
                 data: e.target.result, // Base64 data
                 isFavorite: false,
                 size: formatBytes(file.size),
-                date: new Date().toLocaleDateString('tr-TR')
+                date: new Date().toLocaleDateString('en-US')
             };
             
             pdfs.unshift(newPdf);
-            androidShowToast('PDF yüklendi');
+            androidShowToast('PDF uploaded');
             loadPDFs();
         };
         
@@ -1072,7 +1058,7 @@
         return (bytes / 1048576).toFixed(1) + ' MB';
     }
 
-    // --- ANDROID GERİ TUŞU ---
+    // --- ANDROID BACK BUTTON ---
     window.androidBackPressed = function() {
         if (isSelectionMode) {
             exitSelection();
@@ -1089,13 +1075,13 @@
             return false;
         }
         
-        // Ana sayfada değilsek ana sayfaya dön
+        // If not on home, go back to home
         if (currentNav !== 'home') {
             switchNav('home');
             return false;
         }
         
-        // Çıkış için true döndür (Android kapatacak)
+        // Return true to exit (Android will handle)
         return true;
     };
 

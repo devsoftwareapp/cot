@@ -1,30 +1,39 @@
 package com.devsoftware.pdfreader
 
-import android.content.Intent
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
-import com.devsoftware.pdfreader.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var b: ActivityMainBinding
+    private lateinit var webView: WebView
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        b = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(b.root)
 
-        // Index.html'e git
-        b.btnIndex.setOnClickListener {
-            startActivity(Intent(this, IndexActivity::class.java))
-        }
-        // Sesli Okuma
-        b.btnSesliOkuma.setOnClickListener {
-            startActivity(Intent(this, SesliOkumaActivity::class.java))
-        }
-        // PDF birleştirme
-        b.btnBirlestirme.setOnClickListener {
-            startActivity(Intent(this, BirlestirmeActivity::class.java))
+        webView = WebView(this)
+        setContentView(webView)
+
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.allowFileAccess = true
+
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = WebChromeClient()
+
+        // 🔥 Açılışta index.html yüklenir
+        webView.loadUrl("file:///android_asset/web/index.html")
+    }
+
+    override fun onBackPressed() {
+        if (this::webView.isInitialized && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
         }
     }
 }

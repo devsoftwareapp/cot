@@ -2293,6 +2293,48 @@
     window.scanDeviceForPDFs = scanDeviceForPDFs;
     window.checkPermissionOnResume = checkPermissionOnResume;
 
+
+
+
+// Android bağlantısını test et
+function testAndroidConnection() {
+    try {
+        if (typeof Android !== 'undefined' && Android.showToast) {
+            Android.showToast("Android bağlantısı başarılı!");
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error("Android bağlantı hatası:", e);
+        return false;
+    }
+}
+
+
+  //  TEST Kaldirilacak
+// DOM yüklendiğinde
+document.addEventListener('DOMContentLoaded', () => {
+    // 2 saniye sonra bağlantıyı test et
+    setTimeout(() => {
+        const isConnected = testAndroidConnection();
+        console.log("Android bağlantı durumu:", isConnected);
+        
+        if (!isConnected) {
+            // Hata mesajı göster
+            const permissionContainer = document.getElementById('permissionContainer');
+            if (permissionContainer) {
+                permissionContainer.innerHTML += `
+                    <div style="color: red; margin-top: 10px; font-size: 12px;">
+                        ⚠️ Android bağlantısı kurulamadı. Uygulamayı yeniden başlatmayı deneyin.
+                    </div>
+                `;
+            }
+        }
+    }, 2000);
+});
+
+    // TESTKALDİRİLACAK
+
   </script>
 </body>
 </html>

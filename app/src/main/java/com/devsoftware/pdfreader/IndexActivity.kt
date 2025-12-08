@@ -51,13 +51,18 @@ class IndexActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // Ayarlardan dönünce izin kontrol et
+        // Ayarlardan dönünce izin kontrol et ve JavaScript'i tetikle
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (Environment.isExternalStorageManager()) {
+                // İzin verildi
                 webView.evaluateJavascript("onPermissionGranted()", null)
             } else {
+                // İzin verilmedi
                 webView.evaluateJavascript("onPermissionDenied()", null)
             }
+        } else {
+            // Android 10 ve altı için otomatik izin verilmiş kabul et
+            webView.evaluateJavascript("onPermissionGranted()", null)
         }
     }
 }
@@ -74,8 +79,19 @@ class AndroidBridge(private val activity: Activity) {
     @JavascriptInterface
     fun openAllFilesSettings() {
         if (Build.VERSION.SDK_INT >= 30) {
-            val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-            intent.data = Uri.parse("package:${activity.packageName}")
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:${activity.packageName}")
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                // Bazı cihazlarda farklı intent gerekebilir
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:${activity.packageName}")
+                activity.startActivity(intent)
+            }
+        } else {
+            // Android 10 ve altı için normal depolama izni iste
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
             activity.startActivity(intent)
         }
     }
@@ -100,7 +116,7 @@ class AndroidBridge(private val activity: Activity) {
             if (list.isEmpty()) "EMPTY" else list.joinToString("||")
 
         } catch (e: Exception) {
-            "ERROR"
+            "ERROR: ${e.message}"
         }
     }
 }

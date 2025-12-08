@@ -1,98 +1,30 @@
 package com.devsoftware.pdfreader
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
 import com.devsoftware.pdfreader.databinding.ActivityMainBinding
-import com.devsoftware.pdfreader.fragment.*
-import com.google.android.material.navigation.NavigationBarView
 
 class MainActivity : AppCompatActivity() {
-    
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var drawerHelper: DrawerHelper
-    
+
+    private lateinit var b: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        
-        setupToolbar()
-        setupDrawer()
-        setupBottomNavigation()
-        
-        // Varsayılan fragment'ı yükle
-        loadFragment(HomeFragment())
-    }
-    
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        
-        binding.toolbar.btnMenu.setOnClickListener {
-            binding.drawerLayout.openDrawer(binding.navView)
+        b = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(b.root)
+
+        // Index.html'e git
+        b.btnIndex.setOnClickListener {
+            startActivity(Intent(this, IndexActivity::class.java))
         }
-        
-        binding.toolbar.btnSearch.setOnClickListener {
-            showSearchBar()
+        // Sesli Okuma
+        b.btnSesliOkuma.setOnClickListener {
+            startActivity(Intent(this, SesliOkumaActivity::class.java))
         }
-        
-        binding.toolbar.btnCloseSearch.setOnClickListener {
-            hideSearchBar()
-        }
-    }
-    
-    private fun setupDrawer() {
-        drawerHelper = DrawerHelper(this, binding.drawerLayout, binding.navView)
-        drawerHelper.setup()
-    }
-    
-    private fun setupBottomNavigation() {
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when(item.itemId) {
-                R.id.nav_home -> {
-                    loadFragment(HomeFragment())
-                    true
-                }
-                R.id.nav_tools -> {
-                    loadFragment(ToolsFragment())
-                    true
-                }
-                R.id.nav_files -> {
-                    loadFragment(FilesFragment())
-                    true
-                }
-                else -> false
-            }
-        }
-    }
-    
-    private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
-    }
-    
-    private fun showSearchBar() {
-        binding.toolbar.headerContent.isVisible = false
-        binding.toolbar.searchBar.isVisible = true
-        binding.toolbar.searchInput.requestFocus()
-    }
-    
-    private fun hideSearchBar() {
-        binding.toolbar.headerContent.isVisible = true
-        binding.toolbar.searchBar.isVisible = false
-        binding.toolbar.searchInput.text?.clear()
-    }
-    
-    override fun onBackPressed() {
-        if (binding.drawerLayout.isDrawerOpen(binding.navView)) {
-            binding.drawerLayout.closeDrawer(binding.navView)
-        } else if (binding.toolbar.searchBar.isVisible) {
-            hideSearchBar()
-        } else {
-            super.onBackPressed()
+        // PDF birleştirme
+        b.btnBirlestirme.setOnClickListener {
+            startActivity(Intent(this, BirlestirmeActivity::class.java))
         }
     }
 }

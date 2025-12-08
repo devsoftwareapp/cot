@@ -4,32 +4,9 @@
   <head>
 
 
-<script>
-function setupPDFPicker() {
-    const input = document.getElementById("pdfInput");
-    if (!input) return;
 
-    input.addEventListener("change", async function () {
-        const file = this.files[0];
-        if (!file) return;
 
-        const reader = new FileReader();
 
-        reader.onload = function () {
-            const base64 = reader.result.split(",")[1];
-            if (window.onPDFSelected) {
-                window.onPDFSelected(base64);
-            }
-        };
-
-        reader.readAsDataURL(file);
-    });
-}
-
-document.addEventListener("DOMContentLoaded", setupPDFPicker);
-</script>
-
-<!--- Note -->
 
     
 <script>
@@ -3282,6 +3259,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+<!-- pdf acma- kaydetme vs -->
+
+function openPDFPicker() {
+    console.log("PDF Seç butonuna tıklandı");
+    
+    // 1. viewer.html'deki butonu bul
+    const openFileBtn = document.getElementById('secondaryOpenFile');
+    
+    if (openFileBtn) {
+        console.log("Buton bulundu, tıklanıyor...");
+        openFileBtn.click();
+        return;
+    }
+    
+    // 2. Android WebView kontrolü - EĞER BUTON BULUNAMAZSA
+    if (typeof Android !== 'undefined') {
+        console.log("Android WebView detected, showing simple message");
+        
+        // Basit bir mesaj göster
+        const result = confirm("PDF dosyası seçmek için 'Dosya Aç' butonuna tıklayın.\n\nPDF görüntüleyicideki dosya açma butonunu kullanacaksınız.");
+        
+        if (result) {
+            // Kullanıcıya yardımcı ol
+            alert("PDF görüntüleyici toolbar'ına bakın ve '📂 Dosya Aç' butonuna tıklayın.");
+            
+            // Alternatif: PDF.js'nin file input'unu bul
+            try {
+                const fileInput = document.querySelector('input[type="file"]');
+                if (fileInput) {
+                    fileInput.click();
+                }
+            } catch(e) {
+                console.log("File input bulunamadı");
+            }
+        }
+    } else {
+        // Normal tarayıcı
+        alert("PDF seçmek için lütfen PDF görüntüleyicideki 'Dosya Aç' butonunu kullanın.");
+    }
+}
+
+
+  
 
 </script>
 

@@ -1,8 +1,6 @@
 <!doctype html>
 <html lang="tr" data-theme="light">
 <head>
-
-  <script src="cordova.js"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF Reader | Dev Software</title>
@@ -1004,9 +1002,9 @@
         <img src="images/permission1.png" alt="İzin Gerekiyor">
         <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
         <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
-        <button onclick="Android.requestPermission()">
-    Ayarlardan Erişim Ver
-</button>
+        <button onclick="location.href='settings://all_files'">
+            Ayarlardan Erişim Ver
+        </button>
       </div>
       
       <!-- PDF LİSTESİ -->
@@ -1228,9 +1226,6 @@
   </div>
 
   <script>
-
-
-
     // --- VARIABLES ---
     const topBar = document.getElementById('topBar');
     const mainContent = document.getElementById('mainContent');
@@ -2319,22 +2314,6 @@
         }
     });
 
-
-
-
-document.addEventListener("DOMContentLoaded", function () {
-    const btn = document.getElementById("permissionButton");
-    if (btn) {
-        btn.addEventListener("click", function () {
-            if (typeof Android !== "undefined" && Android.requestPermission) {
-                Android.requestPermission();
-            } else {
-                console.log("Android bridge yok!");
-            }
-        });
-    }
-});
-    
     // Global fonksiyonlar
     window.setThemePreference = setThemePreference;
     window.sendHelpEmail = sendHelpEmail;
@@ -2359,9 +2338,5 @@ document.addEventListener("DOMContentLoaded", function () {
     window.openToolPage = openToolPage;
 
   </script>
-
-
-
-  
 </body>
 </html>

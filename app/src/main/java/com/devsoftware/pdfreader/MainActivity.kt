@@ -1,123 +1,98 @@
 package com.devsoftware.pdfreader
 
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.webkit.JavascriptInterface
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import com.devsoftware.pdfreader.databinding.ActivityMainBinding
+import com.devsoftware.pdfreader.fragment.*
+import com.google.android.material.navigation.NavigationBarView
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        var instance: MainActivity? = null
-    }
-
-    lateinit var webView: WebView
-    private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
-
-    private lateinit var tts: SesliTTS
-
-    @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
+    
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var drawerHelper: DrawerHelper
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        instance = this
-        setContentView(R.layout.activity_main)
-
-        webView = findViewById(R.id.webView)
-
-        val settings = webView.settings
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
-        settings.mediaPlaybackRequiresUserGesture = false
-        settings.allowUniversalAccessFromFileURLs = true
-        settings.allowFileAccessFromFileURLs = true
-
-        // ---------- TTS ----------
-        tts = SesliTTS(this, webView)
-        webView.addJavascriptInterface(tts, "Android")
-
-        // ---------- Bridge ----------
-        webView.addJavascriptInterface(AndroidBridge(), "Bridge")
-
-        webView.webViewClient = WebViewClient()
-
-        webView.webChromeClient = object : WebChromeClient() {
-            override fun onShowFileChooser(
-                webView: WebView?,
-                filePathCallback: ValueCallback<Array<Uri>>?,
-                fileChooserParams: FileChooserParams?
-            ): Boolean {
-                fileChooserCallback = filePathCallback
-                openPDFPicker()
-                return true
-            }
-        }
-
-        // ---------- HTML Yükle ----------
-        webView.loadUrl("file:///android_asset/web/sesli_okuma.html")
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        
+        setupToolbar()
+        setupDrawer()
+        setupBottomNavigation()
+        
+        // Varsayılan fragment'ı yükle
+        loadFragment(HomeFragment())
     }
-
-    // PDF seçici
-    private fun openPDFPicker() {
-        try {
-            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-            intent.addCategory(Intent.CATEGORY_OPENABLE)
-            intent.type = "application/pdf"
-            startActivityForResult(intent, 1001)
-        } catch (e: Exception) {
-            Toast.makeText(this, "PDF seçici açılamadı: ${e.message}", Toast.LENGTH_LONG).show()
+    
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        
+        binding.toolbar.btnMenu.setOnClickListener {
+            binding.drawerLayout.openDrawer(binding.navView)
+        }
+        
+        binding.toolbar.btnSearch.setOnClickListener {
+            showSearchBar()
+        }
+        
+        binding.toolbar.btnCloseSearch.setOnClickListener {
+            hideSearchBar()
         }
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == 1001 && resultCode == RESULT_OK) {
-            data?.data?.let { uri ->
-                fileChooserCallback?.onReceiveValue(arrayOf(uri))
-                fileChooserCallback = null
-            }
-        }
+    
+    private fun setupDrawer() {
+        drawerHelper = DrawerHelper(this, binding.drawerLayout, binding.navView)
+        drawerHelper.setup()
     }
-
-    inner class AndroidBridge {
-        @JavascriptInterface
-        fun showToast(msg: String) {
-            runOnUiThread {
-                Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        @JavascriptInterface
-        fun requestPermission() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                try {
-                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                    intent.data = Uri.parse("package:$packageName")
-                    startActivity(intent)
-                } catch (_: Exception) {
+    
+    private fun setupBottomNavigation() {
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when(item.itemId) {
+                R.id.nav_home -> {
+                    loadFragment(HomeFragment())
+                    true
                 }
+                R.id.nav_tools -> {
+                    loadFragment(ToolsFragment())
+                    true
+                }
+                R.id.nav_files -> {
+                    loadFragment(FilesFragment())
+                    true
+                }
+                else -> false
             }
         }
     }
-
-    override fun onBackPressed() {
-        if (webView.canGoBack()) webView.goBack()
-        else super.onBackPressed()
+    
+    private fun loadFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        tts.shutdown()
+    
+    private fun showSearchBar() {
+        binding.toolbar.headerContent.isVisible = false
+        binding.toolbar.searchBar.isVisible = true
+        binding.toolbar.searchInput.requestFocus()
+    }
+    
+    private fun hideSearchBar() {
+        binding.toolbar.headerContent.isVisible = true
+        binding.toolbar.searchBar.isVisible = false
+        binding.toolbar.searchInput.text?.clear()
+    }
+    
+    override fun onBackPressed() {
+        if (binding.drawerLayout.isDrawerOpen(binding.navView)) {
+            binding.drawerLayout.closeDrawer(binding.navView)
+        } else if (binding.toolbar.searchBar.isVisible) {
+            hideSearchBar()
+        } else {
+            super.onBackPressed()
+        }
     }
 }

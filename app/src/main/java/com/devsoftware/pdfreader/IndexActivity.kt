@@ -23,6 +23,7 @@ class IndexActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         webView = WebView(this)
         setContentView(webView)
 
@@ -30,15 +31,17 @@ class IndexActivity : AppCompatActivity() {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.allowFileAccess = true
-        settings.allowUniversalAccessFromFileURLs = true
         settings.allowContentAccess = true
+        settings.allowUniversalAccessFromFileURLs = true
         settings.cacheMode = WebSettings.LOAD_NO_CACHE
 
         webView.webChromeClient = WebChromeClient()
         webView.webViewClient = WebViewClient()
 
-        webView.addJavascriptInterface(AndroidBridge(this), "Android")
+        // JS Bridge (Android objesi)
+        webView.addJavascriptInterface(AndroidBridge(this, webView), "Android")
 
+        // Ana sayfa yükleniyor
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 
@@ -49,19 +52,34 @@ class IndexActivity : AppCompatActivity() {
             super.onBackPressed()
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Ayarlardan geri dönüldü → izni tekrar kontrol et
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                // Web tarafına "izin verildi" sinyali gönder
+                webView.evaluateJavascript("onPermissionGranted()", null)
+            } else {
+                // Hâlâ izin yok
+                webView.evaluateJavascript("onPermissionDenied()", null)
+            }
+        }
+    }
 }
 
-class AndroidBridge(private val activity: Activity) {
+class AndroidBridge(private val activity: Activity, private val webView: WebView) {
 
+    // HTML -> Android: İzin durumu sor
     @JavascriptInterface
     fun checkPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Environment.isExternalStorageManager()
-        } else {
-            true
-        }
+        } else true
     }
 
+    // HTML -> Android: Ayarlara git
     @JavascriptInterface
     fun openAllFilesSettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -71,6 +89,7 @@ class AndroidBridge(private val activity: Activity) {
         }
     }
 
+    // HTML -> Android: PDF listesi al
     @JavascriptInterface
     fun listPDFs(): String {
         return try {
@@ -80,15 +99,15 @@ class AndroidBridge(private val activity: Activity) {
             }
 
             val root = File("/storage/emulated/0/")
-            val pdfList = ArrayList<String>()
+            val list = ArrayList<String>()
 
             root.walkTopDown().forEach { file ->
-                if (file.isFile && file.extension.lowercase() == "pdf") {
-                    pdfList.add(file.absolutePath)
+                if (file.isFile && file.extension.equals("pdf", true)) {
+                    list.add(file.absolutePath)
                 }
             }
 
-            pdfList.joinToString("||")
+            if (list.isEmpty()) "EMPTY" else list.joinToString("||")
 
         } catch (e: Exception) {
             "ERROR"

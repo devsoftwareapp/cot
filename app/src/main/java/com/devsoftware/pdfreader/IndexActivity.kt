@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -36,14 +37,11 @@ class IndexActivity : AppCompatActivity() {
         webView.webChromeClient = WebChromeClient()
         webView.webViewClient = WebViewClient()
 
-        // JavaScript arayüzü
         webView.addJavascriptInterface(AndroidBridge(this), "Android")
 
-        // index.html aç
         webView.loadUrl("file:///android_asset/web/index.html")
     }
 
-    // Android geri tuşu WebView'de geri gidiyorsa onu kullan
     override fun onBackPressed() {
         if (this::webView.isInitialized && webView.canGoBack()) {
             webView.goBack()
@@ -55,7 +53,6 @@ class IndexActivity : AppCompatActivity() {
 
 class AndroidBridge(private val activity: Activity) {
 
-    /** JS → Android : Tüm Dosya Erişim izni var mı? */
     @JavascriptInterface
     fun checkPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -65,7 +62,6 @@ class AndroidBridge(private val activity: Activity) {
         }
     }
 
-    /** JS: Ayarlar ekranına git */
     @JavascriptInterface
     fun openAllFilesSettings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -75,7 +71,6 @@ class AndroidBridge(private val activity: Activity) {
         }
     }
 
-    /** JS → Android : PDF dosyalarını listele */
     @JavascriptInterface
     fun listPDFs(): String {
         return try {
@@ -84,11 +79,11 @@ class AndroidBridge(private val activity: Activity) {
                 return "PERMISSION_DENIED"
             }
 
-            val dir = File("/storage/emulated/0/")
+            val root = File("/storage/emulated/0/")
             val pdfList = ArrayList<String>()
 
-            dir.walkTopDown().forEach { file ->
-                if (file.extension.lowercase() == "pdf") {
+            root.walkTopDown().forEach { file ->
+                if (file.isFile && file.extension.lowercase() == "pdf") {
                     pdfList.add(file.absolutePath)
                 }
             }

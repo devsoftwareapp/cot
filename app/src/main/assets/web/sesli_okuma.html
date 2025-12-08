@@ -3083,6 +3083,116 @@ window.onAndroidTTSReady = function() {
     }
 };
 
+
+
+/**
+ * Android Native Picker'dan PDF PATH geldiğinde çağrılır
+ * @param {string} filePath - PDF'in dosya yolu
+ */
+window.onAndroidPDFSelected = function(filePath) {
+    console.log("📄 Android PDF path received:", filePath);
+    
+    try {
+        if (typeof PDFViewerApplication !== 'undefined') {
+            console.log("✅ PDFViewerApplication bulundu, yükleniyor...");
+            
+            // 3 YÖNTEM DENEYELİM:
+            
+            // YÖNTEM 1: File protocol ile
+            try {
+                PDFViewerApplication.open('file://' + filePath);
+                console.log("✅ Yöntem 1: file:// ile açıldı");
+                showSuccess("PDF yüklendi ✓");
+                return;
+            } catch (e1) {
+                console.log("⚠️  Yöntem 1 başarısız:", e1);
+            }
+            
+            // YÖNTEM 2: Fetch ile blob
+            try {
+                fetch('file://' + filePath)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        PDFViewerApplication.open(blobUrl);
+                        console.log("✅ Yöntem 2: Blob URL ile açıldı");
+                        showSuccess("PDF yüklendi ✓");
+                        
+                        // Temizlik
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+                    })
+                    .catch(e => {
+                        console.log("⚠️  Yöntem 2 başarısız:", e);
+                        // Yöntem 3'e geç
+                        tryMethod3(filePath);
+                    });
+                return;
+            } catch (e2) {
+                console.log("⚠️  Yöntem 2 başarısız:", e2);
+            }
+            
+            // YÖNTEM 3: Android Bridge'den Base64 iste
+            tryMethod3(filePath);
+            
+        } else {
+            console.error("❌ PDFViewerApplication bulunamadı");
+            alert("PDF görüntüleyici yüklenmedi");
+        }
+    } catch (e) {
+        console.error("❌ PDF yükleme hatası:", e);
+        alert("PDF yüklenemedi:\n" + e.message);
+    }
+};
+
+function tryMethod3(filePath) {
+    console.log("🔄 Yöntem 3 deneniyor: Android Bridge");
+    
+    if (typeof Android !== 'undefined' && Android.getPDFData) {
+        // Android'den Base64 verisi iste
+        const base64Data = Android.getPDFData(filePath);
+        if (base64Data) {
+            // Base64'ten yükle
+            loadPDFFromBase64(base64Data);
+        } else {
+            alert("PDF verisi alınamadı");
+        }
+    } else {
+        alert("PDF yüklenemedi. Lütfen farklı bir yöntem deneyin.");
+    }
+}
+
+function loadPDFFromBase64(base64Data) {
+    try {
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        PDFViewerApplication.open(blobUrl);
+        console.log("✅ Base64'ten Blob URL ile açıldı");
+        showSuccess("PDF yüklendi ✓");
+        
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    } catch (e) {
+        console.error("Base64 yükleme hatası:", e);
+    }
+}
+
+function showSuccess(message) {
+    const statusEl = document.getElementById("speechStatus");
+    if (statusEl) {
+        statusEl.textContent = message;
+    }
+};
+
+
+
+
+
 </script>
 
 

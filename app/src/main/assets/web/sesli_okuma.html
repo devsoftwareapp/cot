@@ -2946,352 +2946,142 @@ document.addEventListener('touchend', function(e) {
 
 //pdf acma- ✅✅✅✅✅✅kaydetme vs 
 
+// ==================== YENİ PDF PİCKER KODLARI ====================
+// BU KODU MEVCUT KODUN EN SONUNA EKLEYİN
 
-// viewer.html'deki secondaryOpenFile butonunu bul ve tıkla
-function triggerViewerFilePicker() {
-    console.log("Triggering viewer.html file picker...");
-    
-    // 1. Önce viewer.html'in yüklü olup olmadığını kontrol et
-    if (typeof PDFViewerApplication === 'undefined') {
-        console.error("PDFViewerApplication not found - viewer.html not loaded?");
-        alert("PDF görüntüleyici yüklenmedi. Lütfen önce bir PDF açın.");
-        return;
-    }
-    
-    // 2. secondaryOpenFile butonunu bul
-    const openFileBtn = document.getElementById('secondaryOpenFile');
-    
-    if (openFileBtn) {
-        console.log("Found secondaryOpenFile button, clicking...");
-        
-        // Butona tıkla
-        openFileBtn.click();
-        
-        // Buton disabled mı kontrol et
-        if (openFileBtn.disabled) {
-            console.log("Button is disabled, trying to enable...");
-            openFileBtn.disabled = false;
-            openFileBtn.click();
-        }
-        
-        return true;
-    } 
-    
-    // 3. Fallback: alternatif buton ara
-    const toolbarViewer = document.getElementById('toolbarViewer');
-    if (toolbarViewer) {
-        const buttons = toolbarViewer.querySelectorAll('button');
-        for (let btn of buttons) {
-            if (btn.textContent.includes('Dosya') || btn.textContent.includes('Aç') || 
-                btn.title.includes('file') || btn.title.includes('open')) {
-                console.log("Found alternative file button:", btn);
-                btn.click();
-                return true;
-            }
-        }
-    }
-    
-    // 4. Eğer buton bulunamazsa, PDF.js API'sini kullan
-    console.log("Button not found, using PDF.js API...");
-    openPDFViaAPI();
-    
-    return false;
-}
-
-// PDF.js API ile dosya aç
-function openPDFViaAPI() {
-    try {
-        // PDF.js file input'u tetikle
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) {
-            fileInput.click();
-        } else {
-            // Yeni file input oluştur
-            createFileInput();
-        }
-    } catch (e) {
-        console.error("PDF.js API error:", e);
-        alert("PDF açma hatası: " + e.message);
-    }
-}
-
-// Yeni file input oluştur
-function createFileInput() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf';
-    input.style.display = 'none';
-    input.id = 'dynamicFileInput';
-    
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            console.log("File selected:", file.name);
-            
-            // PDF.js ile yükle
-            const reader = new FileReader();
-            reader.onload = function() {
-                const typedarray = new Uint8Array(reader.result);
-                PDFViewerApplication.open(typedarray);
-            };
-            reader.readAsArrayBuffer(file);
-        }
-        
-        // Input'u temizle
-        document.body.removeChild(input);
-    };
-    
-    document.body.appendChild(input);
-    input.click();
-}
-
-// Android WebView için optimize edilmiş versiyon
+/**
+ * PDF Seçme Fonksiyonu
+ * Önce Android Native Picker'ı dener, sonra viewer.html butonunu
+ */
 function openPDFPicker() {
-    console.log("openPDFPicker called");
+    console.log("📁 PDF Seç butonuna tıklandı");
     
-    // Android WebView kontrolü
-    if (typeof Android !== 'undefined') {
-        console.log("Android WebView detected");
-        
-        // Android native PDF seçiciyi kullan
-        openNativePDFPicker();
-    } else {
-        // Normal tarayıcı: viewer.html butonunu kullan
-        console.log("Normal browser, using viewer.html button");
-        triggerViewerFilePicker();
-    }
-}
-
-// Android Native PDF Picker
-function openNativePDFPicker() {
-    try {
-        // İzin kontrolü
-        if (Android.checkPermission && !Android.checkPermission()) {
-            alert("Dosya erişim izni gerekiyor. Lütfen izin verin.");
-            if (Android.openAllFilesPermission) {
-                Android.openAllFilesPermission();
-            }
-            return;
-        }
-        
-        // PDF listesini al
-        const pdfListStr = Android.listPDFs();
-        
-        if (pdfListStr === "PERMISSION_DENIED") {
-            alert("İzin reddedildi. Ayarlardan izin verin.");
-            return;
-        }
-        
-        if (!pdfListStr) {
-            alert("Cihazınızda PDF dosyası bulunamadı.");
-            return;
-        }
-        
-        // Android PDF seçici göster
-        showAndroidPDFSelector(pdfListStr);
-        
-    } catch (e) {
-        console.error("Android PDF picker error:", e);
-        // Fallback: viewer.html butonunu kullan
-        triggerViewerFilePicker();
-    }
-}
-
-// Android için basit PDF seçici
-function showAndroidPDFSelector(pdfListStr) {
-    const pdfs = pdfListStr.split("||").filter(p => p.trim());
-    
-    if (pdfs.length === 0) {
-        alert("PDF dosyası bulunamadı.");
+    // 1. ÖNCE: AndroidTTS'nin pickPDF fonksiyonunu dene
+    if (typeof AndroidTTS !== 'undefined' && AndroidTTS.pickPDF) {
+        console.log("✅ AndroidTTS.pickPDF kullanılıyor");
+        AndroidTTS.pickPDF();
         return;
     }
     
-    // Basit HTML dialog oluştur
-    const html = `
-        <div id="androidPdfDialog" style="
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 1000000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        ">
-            <div style="
-                background: #2a2a2a;
-                border-radius: 10px;
-                width: 100%;
-                max-width: 500px;
-                max-height: 80vh;
-                overflow: hidden;
-            ">
-                <div style="
-                    background: #1a1a1a;
-                    padding: 15px;
-                    border-bottom: 1px solid #444;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h3 style="margin: 0; color: white; font-size: 16px;">
-                        <span class="material-icons" style="vertical-align: middle; margin-right: 8px;">
-                            folder_open
-                        </span>
-                        PDF Seç (${pdfs.length})
-                    </h3>
-                    <button onclick="closeAndroidPDFDialog()" style="
-                        background: none;
-                        border: none;
-                        color: #aaa;
-                        font-size: 20px;
-                        cursor: pointer;
-                    ">×</button>
-                </div>
-                
-                <div style="padding: 15px; max-height: 60vh; overflow-y: auto;">
-                    ${pdfs.map((path, index) => {
-                        const fileName = path.split('/').pop();
-                        const displayPath = path.length > 60 ? '...' + path.slice(-60) : path;
-                        
-                        return `
-                        <div onclick="selectAndroidPDF('${path.replace(/'/g, "\\'")}')" 
-                             style="
-                                padding: 12px;
-                                margin-bottom: 8px;
-                                background: #333;
-                                border-radius: 6px;
-                                color: white;
-                                cursor: pointer;
-                                transition: background 0.2s;
-                                border-left: 4px solid #007bff;
-                             "
-                             onmouseover="this.style.background='#444'"
-                             onmouseout="this.style.background='#333'">
-                            <div style="font-weight: bold; margin-bottom: 4px;">
-                                ${fileName}
-                            </div>
-                            <div style="font-size: 11px; color: #aaa; word-break: break-all;">
-                                ${displayPath}
-                            </div>
-                        </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-    `;
+    // 2. SONRA: viewer.html'deki native butonu dene
+    const openFileBtn = document.getElementById('secondaryOpenFile');
+    if (openFileBtn) {
+        console.log("✅ secondaryOpenFile butonu kullanılıyor");
+        openFileBtn.click();
+        return;
+    }
     
-    // Eski dialog'u temizle
-    const oldDialog = document.getElementById('androidPdfDialog');
-    if (oldDialog) oldDialog.remove();
+    // 3. Alternatif: PDF.js'nin file input'unu bul
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    if (fileInputs.length > 0) {
+        console.log("✅ PDF.js file input kullanılıyor");
+        fileInputs[0].click();
+        return;
+    }
     
-    // Yeni dialog'u ekle
-    document.body.insertAdjacentHTML('beforeend', html);
+    // 4. EN SON: Kullanıcıyı yönlendir
+    console.log("⚠️  File picker bulunamadı, kullanıcıyı yönlendiriyoruz");
+    alert("📋 PDF Seçme Talimatları:\n\n" +
+          "1. PDF görüntüleyicide araç çubuğuna bakın\n" +
+          "2. '📂 Dosya Aç' veya 'Dosya' butonuna tıklayın\n" +
+          "3. Cihazınızdan PDF dosyası seçin\n\n" +
+          "Bu işlem Android'de otomatik çalışmaktadır.");
 }
 
-function selectAndroidPDF(pdfPath) {
-    console.log("Android PDF selected:", pdfPath);
+/**
+ * Android Native Picker'dan PDF geldiğinde çağrılır
+ * @param {string} base64Data - PDF'in base64 formatı
+ * @param {string} fileName - Dosya adı
+ */
+window.onAndroidPDFSelected = function(base64Data, fileName) {
+    console.log("📄 Android PDF seçildi:", fileName);
     
     try {
-        // Android'den PDF verisini al
-        const base64Data = Android.getPDFData(pdfPath);
+        // Base64'ten binary'e çevir
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
         
-        if (!base64Data) {
-            throw new Error("PDF verisi alınamadı");
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
         }
         
-        // PDF'yi yükle
-        const pdfData = base64Data;
-        const typedarray = new Uint8Array(atob(pdfData).split('').map(c => c.charCodeAt(0)));
-        
-        PDFViewerApplication.open(typedarray);
-        
-        // Dialog'u kapat
-        closeAndroidPDFDialog();
-        
-        // Başarı mesajı
-        const fileName = pdfPath.split('/').pop();
-        console.log("PDF loaded successfully:", fileName);
-        
+        // PDF.js ile yükle
+        if (typeof PDFViewerApplication !== 'undefined') {
+            PDFViewerApplication.open(bytes);
+            console.log("✅ PDF başarıyla yüklendi:", fileName);
+            
+            // Status bar'da göster
+            const statusEl = document.getElementById("speechStatus");
+            if (statusEl) {
+                statusEl.textContent = `📄 ${fileName}`;
+                setTimeout(() => {
+                    if (statusEl.textContent.includes(fileName)) {
+                        statusEl.textContent = "PDF yüklendi ✓";
+                    }
+                }, 3000);
+            }
+            
+        } else {
+            console.error("❌ PDFViewerApplication bulunamadı");
+            alert("PDF görüntüleyici yüklenmedi. Lütfen sayfayı yenileyin.");
+        }
     } catch (e) {
-        console.error("PDF yükleme hatası:", e);
+        console.error("❌ PDF yükleme hatası:", e);
         alert("PDF yüklenemedi: " + e.message);
     }
-}
+};
 
-function closeAndroidPDFDialog() {
-    const dialog = document.getElementById('androidPdfDialog');
-    if (dialog) dialog.remove();
-}
-
-// Sayfa yüklendiğinde buton event'ini bağla
+/**
+ * Sayfa yüklendiğinde buton event'lerini bağla
+ */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("sesli_okuma.html loaded");
+    console.log("🚀 DOM loaded, setting up PDF picker...");
     
-    // choosePDF butonuna tıklanınca
+    // choosePDF butonunu bul ve event bağla
     const chooseBtn = document.getElementById('choosePDF');
     if (chooseBtn) {
+        console.log("✅ choosePDF butonu bulundu, event bağlanıyor");
+        
         chooseBtn.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
             openPDFPicker();
         };
+        
+        // Touch event'leri için de bağla (mobil için)
+        chooseBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            openPDFPicker();
+        }, { passive: false });
+    } else {
+        console.warn("⚠️  choosePDF butonu bulunamadı");
     }
     
     // Android TTS hazırlığı
-    if (typeof Android !== 'undefined') {
-        console.log("Android interface available");
-        if (typeof initAndroidTTS === 'function') {
-            initAndroidTTS();
-        }
+    if (typeof AndroidTTS !== 'undefined' && AndroidTTS.isReady) {
+        setTimeout(() => {
+            if (AndroidTTS.isReady()) {
+                console.log("✅ AndroidTTS hazır");
+            }
+        }, 1000);
     }
 });
 
+/**
+ * Android callback'leri
+ */
+window.onAndroidSpeechDone = function() {
+    console.log("🔊 Android speech done");
+    // Mevcut TTS callback kodunuz burada çalışacak
+};
 
-
-
-function openPDFPicker() {
-    console.log("PDF Seç butonuna tıklandı");
-    
-    // 1. viewer.html'deki butonu bul
-    const openFileBtn = document.getElementById('secondaryOpenFile');
-    
-    if (openFileBtn) {
-        console.log("Buton bulundu, tıklanıyor...");
-        openFileBtn.click();
-        return;
+window.onAndroidTTSReady = function() {
+    console.log("🎯 Android TTS ready");
+    const statusEl = document.getElementById("speechStatus");
+    if (statusEl && !statusEl.textContent.includes("Hazır")) {
+        statusEl.textContent = "TTS Hazır ✓";
     }
-    
-    // 2. Android WebView kontrolü - EĞER BUTON BULUNAMAZSA
-    if (typeof Android !== 'undefined') {
-        console.log("Android WebView detected, showing simple message");
-        
-        // Basit bir mesaj göster
-        const result = confirm("PDF dosyası seçmek için 'Dosya Aç' butonuna tıklayın.\n\nPDF görüntüleyicideki dosya açma butonunu kullanacaksınız.");
-        
-        if (result) {
-            // Kullanıcıya yardımcı ol
-            alert("PDF görüntüleyici toolbar'ına bakın ve '📂 Dosya Aç' butonuna tıklayın.");
-            
-            // Alternatif: PDF.js'nin file input'unu bul
-            try {
-                const fileInput = document.querySelector('input[type="file"]');
-                if (fileInput) {
-                    fileInput.click();
-                }
-            } catch(e) {
-                console.log("File input bulunamadı");
-            }
-        }
-    } else {
-        // Normal tarayıcı
-        alert("PDF seçmek için lütfen PDF görüntüleyicideki 'Dosya Aç' butonunu kullanın.");
-    }
-}
-
-
+};
 
 </script>
 

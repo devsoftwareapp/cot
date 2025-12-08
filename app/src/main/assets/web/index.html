@@ -997,13 +997,26 @@
     </div>
 
     <div class="content-panel" id="devicePanel">
-      <!-- İZİN BANNERİ -->
-      <div class="permission-banner" id="permissionContainer">
-        <img src="images/permission1.png" alt="İzin Gerekiyor">
-        <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
-        <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
-        <button onclick="Android.openAllFilesSettings()">Ayarlardan Erişim Ver</button>
-      </div>
+        
+        
+        <!-- İZİN BANNERİ -->
+<div class="permission-banner" id="permissionContainer" style="display:none;">
+    <img src="images/permission1.png" alt="İzin Gerekiyor">
+    <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
+    <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
+
+    <!-- AYARLARA GİT BUTONU -->
+    <button onclick="Android.openAllFilesSettings()">
+        Ayarlardan Erişim Ver
+    </button>
+</div>
+        
+        
+ 
+      
+      
+      
+      
       
       <!-- PDF LİSTESİ -->
       <div class="grid" id="deviceList"></div>
@@ -2335,17 +2348,54 @@
     window.onAndroidResume = onAndroidResume;
     window.openToolPage = openToolPage;
 
+  </script>
   
+  
+  
+  
+  <script>
 function onPermissionGranted() {
-    console.log("İzin verildi!");
-    loadPDFsFromDevice(); // PDF taramasını burada tetikle
+    console.log("İzin verildi");
+
+    document.getElementById("permissionBox").style.display = "none";
+    document.getElementById("pdfList").style.display = "block";
+
+    loadPDFsFromDevice();
 }
 
 function onPermissionDenied() {
-    console.log("İzin verilmedi!");
-    alert("Tüm dosya erişimi iznine izin vermeniz gerekiyor.");
+    console.log("İzin yok");
+
+    document.getElementById("permissionBox").style.display = "block";
+    document.getElementById("pdfList").style.display = "none";
+}
+
+function loadPDFsFromDevice() {
+    let result = Android.listPDFs();
+
+    if (result === "PERMISSION_DENIED") {
+        onPermissionDenied();
+        return;
+    }
+
+    if (result === "EMPTY") {
+        document.getElementById("pdfList").innerHTML = "<p>PDF bulunamadı.</p>";
+        return;
+    }
+
+    let files = result.split("||");
+    let html = "";
+
+    files.forEach(f => {
+        html += `<div class="pdfItem">${f}</div>`;
+    });
+
+    document.getElementById("pdfList").innerHTML = html;
 }
 </script>
-
+  
+  
+  
+  
 </body>
 </html>

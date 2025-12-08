@@ -34,6 +34,12 @@
             'opsz' 48;
     }
     
+    /* Spin animasyonu */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
     /* --- 1. DEĞİŞKENLER --- */
     :root {
       --background: #e8e8e8;
@@ -897,8 +903,13 @@
         font-size: 14px;
         color: var(--text-secondary);
         margin-bottom: 16px;
+        line-height: 1.5;
     }
     .permission-banner button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         padding: 12px 20px;
         border-radius: 12px;
         background: var(--primary);
@@ -907,9 +918,19 @@
         font-weight: 600;
         cursor: pointer;
         transition: background-color var(--transition-fast);
+        margin: 0 auto;
+        font-size: 15px;
     }
     .permission-banner button:hover {
         background: var(--secondary);
+    }
+    
+    /* Loading indicator */
+    #loadingIndicator {
+        display: none;
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
     }
   </style>
 </head>
@@ -998,28 +1019,31 @@
 
     <div class="content-panel" id="devicePanel">
         
+        <!-- İZİN BANNERİ (İZİN YOKSA GÖSTERİLECEK) -->
+        <div class="permission-banner" id="permissionContainer">
+            <img src="images/permission1.png" alt="İzin Gerekiyor">
+            <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
+            <p>"Tüm Dosyalara Erişim" iznini vermeniz gerekiyor. Butona tıklayarak ayarlara yönlendirileceksiniz.</p>
+            
+            <!-- AYARLARA GİT BUTONU -->
+            <button onclick="openAndroidPermissionSettings()">
+                <span class="material-symbols-rounded">settings</span>
+                Ayarlardan Erişim Ver
+            </button>
+            
+            <p style="margin-top: 12px; font-size: 12px; color: var(--text-secondary);">
+                Not: Ayarlar sayfasında "Bu uygulamaya tüm dosyalara erişim izni ver" seçeneğini aktif etmeniz gerekmektedir.
+            </p>
+        </div>
         
-        <!-- İZİN BANNERİ -->
-<div class="permission-banner" id="permissionContainer" style="display:none;">
-    <img src="images/permission1.png" alt="İzin Gerekiyor">
-    <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
-    <p>Devam etmek için Tüm Dosya Erişimi izni verin.</p>
-
-    <!-- AYARLARA GİT BUTONU -->
-    <button onclick="Android.openAllFilesSettings()">
-        Ayarlardan Erişim Ver
-    </button>
-</div>
+        <!-- PDF LİSTESİ (İZİN VERİLDİĞİNDE GÖSTERİLECEK) -->
+        <div class="grid" id="deviceList"></div>
         
-        
- 
-      
-      
-      
-      
-      
-      <!-- PDF LİSTESİ -->
-      <div class="grid" id="deviceList"></div>
+        <!-- YÜKLENİYOR GÖSTERGESİ -->
+        <div id="loadingIndicator">
+            <div class="empty-icon material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</div>
+            <p>PDF'ler taranıyor...</p>
+        </div>
     </div>
 
     <div class="content-panel" id="favoritesPanel">
@@ -1354,6 +1378,159 @@
       }
     ];
     
+    // --- ANDROID İZİN FONKSİYONLARI ---
+
+    // Android'den izin kontrolü
+    function checkAndroidPermission() {
+        try {
+            if (typeof Android !== 'undefined' && Android.checkPermission) {
+                return Android.checkPermission();
+            }
+            return false;
+        } catch (e) {
+            console.error('Permission check error:', e);
+            return false;
+        }
+    }
+
+    // Android ayarlarını aç
+    function openAndroidPermissionSettings() {
+        try {
+            if (typeof Android !== 'undefined' && Android.openAllFilesSettings) {
+                Android.openAllFilesSettings();
+            } else {
+                alert("Android bağlantısı kurulamadı. Lütfen uygulama ayarlarından izin verin.");
+            }
+        } catch (e) {
+            console.error('Open settings error:', e);
+            alert("Ayarlar açılamadı: " + e.message);
+        }
+    }
+
+    // İzin durumuna göre UI güncelle
+    function updatePermissionUI(hasPermission) {
+        const permissionContainer = document.getElementById('permissionContainer');
+        const deviceList = document.getElementById('deviceList');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        
+        if (!hasPermission) {
+            // İzin yoksa banner göster, listeyi gizle
+            if (permissionContainer) permissionContainer.style.display = 'block';
+            if (deviceList) deviceList.style.display = 'none';
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        } else {
+            // İzin varsa banner gizle, listeyi göster ve PDF'leri tara
+            if (permissionContainer) permissionContainer.style.display = 'none';
+            if (deviceList) deviceList.style.display = 'grid';
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            
+            // PDF'leri tara
+            scanDeviceForPDFs();
+        }
+    }
+
+    // Cihaz PDF'lerini tarama
+    function scanDeviceForPDFs() {
+        try {
+            // Yükleniyor göster
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const deviceList = document.getElementById('deviceList');
+            
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            if (deviceList) deviceList.style.display = 'none';
+            
+            // Android bridge'den PDF listesini al
+            let pdfPaths = [];
+            if (typeof Android !== 'undefined' && Android.listPDFs) {
+                const result = Android.listPDFs();
+                console.log("PDF List Result:", result);
+                
+                if (result === "PERMISSION_DENIED") {
+                    updatePermissionUI(false);
+                    return;
+                }
+                
+                if (result && result.trim().length > 0 && result !== "EMPTY" && !result.startsWith("ERROR")) {
+                    pdfPaths = result.split('||').filter(p => p && p.trim().length > 0);
+                }
+            }
+            
+            // PDF'leri devicePDFs dizisine ekle
+            devicePDFs = [];
+            let nextId = 1000;
+            
+            pdfPaths.forEach(path => {
+                const name = path.split('/').pop();
+                devicePDFs.push({
+                    id: nextId++,
+                    name: name,
+                    size: getFileSizeFromPath(path),
+                    date: getFileDateFromPath(path),
+                    isFavorite: false,
+                    path: path
+                });
+            });
+            
+            // Yükleniyor gizle, listeyi göster
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            if (deviceList) deviceList.style.display = 'grid';
+            
+            // Listeyi render et
+            renderList('deviceList', devicePDFs);
+            
+        } catch (e) {
+            console.error('Device scan error:', e);
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            
+            // Hata durumunda boş liste göster
+            devicePDFs = [];
+            renderList('deviceList', devicePDFs);
+            alert("PDF tarama hatası: " + e.message);
+        }
+    }
+
+    // Android'den gelen izin durumu callback'leri
+    function onPermissionGranted() {
+        console.log("İzin verildi - onPermissionGranted çağrıldı");
+        updatePermissionUI(true);
+    }
+
+    function onPermissionDenied() {
+        console.log("İzin verilmedi - onPermissionDenied çağrıldı");
+        updatePermissionUI(false);
+    }
+
+    // Uygulama resume olduğunda izin kontrolü
+    function checkPermissionOnResume() {
+        const hasPermission = checkAndroidPermission();
+        console.log("Resume permission check:", hasPermission);
+        updatePermissionUI(hasPermission);
+    }
+
+    // Uygulama ilk açıldığında izin kontrolü
+    function checkInitialPermission() {
+        const hasPermission = checkAndroidPermission();
+        console.log("Initial permission check:", hasPermission);
+        updatePermissionUI(hasPermission);
+    }
+
+    // Dosya boyutu için yardımcı fonksiyon
+    function getFileSizeFromPath(path) {
+        // Gerçek uygulamada bu Android tarafından sağlanmalı
+        // Şimdilik sabit değer döndür
+        const sizes = ['1.2 MB', '2.5 MB', '3.8 MB', '750 KB', '4.2 MB'];
+        return sizes[Math.floor(Math.random() * sizes.length)];
+    }
+
+    // Dosya tarihi için yardımcı fonksiyon
+    function getFileDateFromPath(path) {
+        const now = new Date();
+        const day = Math.floor(Math.random() * 28) + 1;
+        const month = Math.floor(Math.random() * 12) + 1;
+        return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${now.getFullYear()}`;
+    }
+    
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
@@ -1367,12 +1544,20 @@
       const currentTheme = localStorage.getItem('pdfTheme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.querySelector(`.theme-option[data-theme-val="${currentTheme === 'dark' ? 'dark' : (currentTheme === 'light' ? 'light' : 'device')}"]`).classList.add('active');
       
-      // Uygulama açıldığında cihaz PDF'lerini kontrol et
+      // 1 saniye sonra ilk izin kontrolü yap
       setTimeout(() => {
-        if (currentNav === 'home') {
-          scanDeviceForPDFs();
-        }
+        checkInitialPermission();
       }, 1000);
+      
+      // Cihaz sekmesine geçildiğinde izin kontrolü
+      const deviceTab = document.querySelector('.tab[data-tab="device"]');
+      if (deviceTab) {
+        deviceTab.addEventListener('click', () => {
+          setTimeout(() => {
+            checkPermissionOnResume();
+          }, 300);
+        });
+      }
     });
 
     // --- ARAÇLAR YÜKLEME ---
@@ -1428,9 +1613,6 @@
       // Cihaz PDF'lerini ve importedFiles'ı birleştir
       const allDeviceFiles = [...devicePDFs, ...importedFiles.filter(f => !f.path || !f.path.startsWith('/'))];
       renderList('deviceList', allDeviceFiles);
-      
-      // İzin kontrolü yap
-      checkPermissionAndUpdateUI();
     }
 
     // Listeleri render eden yardımcı fonksiyon
@@ -1515,94 +1697,6 @@
             </button>
         </div>
       </div>`;
-    }
-
-    // --- ANDROID İZİN VE PDF TARAMA ---
-    
-    // Android'den izin kontrolü
-    function checkAndroidPermission() {
-        try {
-            if (typeof Android !== 'undefined' && Android.checkPermission) {
-                return Android.checkPermission();
-            }
-            return false;
-        } catch (e) {
-            console.error('Permission check error:', e);
-            return false;
-        }
-    }
-    
-    // İzin durumuna göre UI güncelle
-    function checkPermissionAndUpdateUI() {
-        const hasPermission = checkAndroidPermission();
-        const permissionContainer = document.getElementById('permissionContainer');
-        const deviceList = document.getElementById('deviceList');
-        
-        if (!hasPermission) {
-            // İzin yoksa banner göster, listeyi gizle
-            if (permissionContainer) permissionContainer.style.display = 'block';
-            if (deviceList) deviceList.style.display = 'none';
-        } else {
-            // İzin varsa banner gizle, listeyi göster
-            if (permissionContainer) permissionContainer.style.display = 'none';
-            if (deviceList) deviceList.style.display = 'grid';
-        }
-    }
-
-    // Cihaz PDF'lerini tarama
-    function scanDeviceForPDFs() {
-        try {
-            // Önce izin kontrolü
-            if (!checkAndroidPermission()) {
-                checkPermissionAndUpdateUI();
-                return;
-            }
-            
-            // Android bridge'den PDF listesini al
-            let pdfPaths = [];
-            if (typeof Android !== 'undefined' && Android.listPDFs) {
-                const result = Android.listPDFs();
-                if (result && result.trim().length > 0 && result !== "PERMISSION_DENIED") {
-                    pdfPaths = result.split('||').filter(p => p && p.trim().length > 0);
-                }
-            }
-            
-            // PDF'leri devicePDFs dizisine ekle
-            devicePDFs = [];
-            let nextId = 1000; // Cihaz PDF'leri için yüksek ID'ler
-            
-            pdfPaths.forEach(path => {
-                const name = path.split('/').pop();
-                devicePDFs.push({
-                    id: nextId++,
-                    name: name,
-                    size: getFileSizeFromPath(path),
-                    date: getFileDateFromPath(path),
-                    isFavorite: false,
-                    path: path
-                });
-            });
-            
-            // UI'ı güncelle
-            checkPermissionAndUpdateUI();
-            loadData(); // Verileri yeniden yükle
-            
-        } catch (e) {
-            console.error('Device scan error:', e);
-            checkPermissionAndUpdateUI();
-        }
-    }
-    
-    // Dosya boyutunu al (simüle)
-    function getFileSizeFromPath(path) {
-        // Gerçek uygulamada Android'den dosya boyutu alınmalı
-        return "~2.5 MB";
-    }
-    
-    // Dosya tarihini al (simüle)
-    function getFileDateFromPath(path) {
-        const now = new Date();
-        return `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
     }
 
     // --- DOSYA YÜKLEME İŞLEMLERİ ---
@@ -2104,9 +2198,11 @@
         }
       });
       
-      // Cihaz sekmesine geçildiğinde PDF'leri tara
+      // Cihaz sekmesine geçildiğinde izin kontrolü yap
       if (id === 'device') {
-          scanDeviceForPDFs();
+          setTimeout(() => {
+              checkPermissionOnResume();
+          }, 300);
       }
     }
 
@@ -2149,7 +2245,7 @@
 
     function handleFileSource(source) {
         if (source === 'device') {
-            scanDeviceForPDFs();
+            // Cihaz sekmesine geç
             switchNav('home'); 
             switchTab('device', true);
         } else if (source === 'browse_more') {
@@ -2171,160 +2267,6 @@
         document.querySelector('.help-form').reset();
     }
 
-    // Android'den döndüğünde çağrılacak
-    function onAndroidResume() {
-        try {
-            // İzin durumunu kontrol et
-            checkPermissionAndUpdateUI();
-            
-            // Eğer cihaz sekmesindeyse PDF'leri yeniden tara
-            if (currentNav === 'home') {
-                const activeTab = document.querySelector('.tab.active').dataset.tab;
-                if (activeTab === 'device') {
-                    scanDeviceForPDFs();
-                }
-            }
-        } catch (e) {
-            console.warn('onAndroidResume error', e);
-        }
-    }
-
-    // Geri tuşu için global değişken
-    let backPressedTime = 0;
-
-    // Geri tuşu toast mesajı göster
-    function showExitToast() {
-        // Toast mesajı oluştur
-        const toast = document.createElement('div');
-        toast.id = 'exitToast';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            z-index: 9999;
-            font-size: 14px;
-            font-weight: 500;
-            opacity: 0;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            white-space: nowrap;
-        `;
-        
-        toast.textContent = 'Çıkmak için tekrar geri tuşuna basın';
-        document.body.appendChild(toast);
-        
-        // Görünür yap
-        setTimeout(() => {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateX(-50%) translateY(0)';
-        }, 10);
-        
-        // 2 saniye sonra gizle ve sil
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(-50%) translateY(-20px)';
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, 2000);
-    }
-
-    // Android geri tuşu fonksiyonu (MainActivity'den çağrılacak)
-    window.androidBackPressed = function() {
-        // Mevcut sayfanın viewer.html olup olmadığını kontrol et
-        if (window.location.href.includes('viewer.html')) {
-            // Viewer'dan index.html'ye dön
-            window.location.href = 'file:///android_asset/web/index.html';
-            return true;
-        }
-        
-        // Eğer selection modundaysa çık
-        if (isSelectionMode) {
-            exitSelectionMode();
-            return false;
-        }
-        
-        // Eğer arama modundaysa çık
-        if (document.body.classList.contains('is-searching')) {
-            closeSearchBtn.click();
-            return false;
-        }
-        
-        // Eğer drawer açıksa kapat
-        if (drawer.classList.contains('open')) {
-            drawer.classList.remove('open');
-            overlay.classList.remove('show');
-            return false;
-        }
-        
-        // Eğer context menu açıksa kapat
-        if (contextSheet.classList.contains('show')) {
-            closeContextMenu();
-            return false;
-        }
-        
-        // Eğer FAB menu açıksa kapat
-        if (fabMenu.classList.contains('show')) {
-            fabMenu.classList.remove('show');
-            return false;
-        }
-        
-        // Ana sayfada değilsek ana sayfaya dön
-        if (currentNav !== 'home') {
-            switchNav('home');
-            return false;
-        }
-        
-        // Ana sayfadaysak çıkış kontrolü
-        const now = Date.now();
-        if (backPressedTime + 2000 > now) {
-            // Çift tıklama ile çık (Android tarafında işlenecek)
-            return 'exit_check';
-        } else {
-            // İlk tıklama, toast göster
-            showExitToast();
-            backPressedTime = now;
-            return false;
-        }
-    };
-
-    // Viewer'a giderken history state ekle
-    function goToViewer(url) {
-        // History state ekle (geri tuşu için)
-        if (window.history && window.history.pushState) {
-            window.history.pushState({ page: "viewer" }, "", window.location.href);
-        }
-        
-        // Viewer'a git
-        window.location.href = url;
-    }
-
-    // History state kontrolü
-    window.addEventListener('popstate', function(event) {
-        // Geri tuşu ile viewer'dan döndüysek
-        if (event.state && event.state.page === "viewer") {
-            // Ana sayfaya dön
-            currentNav = 'home';
-            switchNav('home');
-            switchTab('recent', true);
-        }
-    });
-
-    // DOM yüklendiğinde history state'i ayarla
-    document.addEventListener('DOMContentLoaded', () => {
-        // İlk history state'i ekle
-        if (window.history && window.history.replaceState) {
-            window.history.replaceState({ page: "home" }, "", window.location.href);
-        }
-    });
-
     // Global fonksiyonlar
     window.setThemePreference = setThemePreference;
     window.sendHelpEmail = sendHelpEmail;
@@ -2344,58 +2286,13 @@
     window.shareSelectedCards = shareSelectedCards; 
     window.printSelectedCards = printSelectedCards;
     window.handleFileSelect = handleFileSelect;
-    window.scanDeviceForPDFs = scanDeviceForPDFs;
-    window.onAndroidResume = onAndroidResume;
     window.openToolPage = openToolPage;
+    window.openAndroidPermissionSettings = openAndroidPermissionSettings;
+    window.onPermissionGranted = onPermissionGranted;
+    window.onPermissionDenied = onPermissionDenied;
+    window.scanDeviceForPDFs = scanDeviceForPDFs;
+    window.checkPermissionOnResume = checkPermissionOnResume;
 
   </script>
-  
-  
-  
-  
-  <script>
-function onPermissionGranted() {
-    console.log("İzin verildi");
-
-    document.getElementById("permissionBox").style.display = "none";
-    document.getElementById("pdfList").style.display = "block";
-
-    loadPDFsFromDevice();
-}
-
-function onPermissionDenied() {
-    console.log("İzin yok");
-
-    document.getElementById("permissionBox").style.display = "block";
-    document.getElementById("pdfList").style.display = "none";
-}
-
-function loadPDFsFromDevice() {
-    let result = Android.listPDFs();
-
-    if (result === "PERMISSION_DENIED") {
-        onPermissionDenied();
-        return;
-    }
-
-    if (result === "EMPTY") {
-        document.getElementById("pdfList").innerHTML = "<p>PDF bulunamadı.</p>";
-        return;
-    }
-
-    let files = result.split("||");
-    let html = "";
-
-    files.forEach(f => {
-        html += `<div class="pdfItem">${f}</div>`;
-    });
-
-    document.getElementById("pdfList").innerHTML = html;
-}
-</script>
-  
-  
-  
-  
 </body>
 </html>

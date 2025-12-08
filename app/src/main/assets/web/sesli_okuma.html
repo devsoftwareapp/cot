@@ -3,6 +3,35 @@
 <html dir="ltr" mozdisallowselectionprint>
   <head>
 
+
+<script>
+function setupPDFPicker() {
+    const input = document.getElementById("pdfInput");
+    if (!input) return;
+
+    input.addEventListener("change", async function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function () {
+            const base64 = reader.result.split(",")[1];
+            if (window.onPDFSelected) {
+                window.onPDFSelected(base64);
+            }
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", setupPDFPicker);
+</script>
+
+<!--- Note -->
+
+    
 <script>
     
     document.addEventListener("webviewerloaded", function () {
@@ -1501,10 +1530,13 @@ body {
 </style>
 
 <div id="speechBar">
-  <button id="choosePDF" title="PDF Dosyası Seç">
-    <span class="material-icons">folder_open</span> PDF Seç
-  </button>
 
+<button id="choosePDF" title="PDF Dosyası Seç" onclick="openPDFPicker()">
+    <span class="material-icons">folder_open</span> PDF Seç
+</button>
+
+
+  
   <!-- Sayfa input ve ok butonu -->
   <input type="number" id="startPageInput" placeholder="Sayfa #" min="1" style="width: 50px; padding: 7px; border-radius: 6px; border: 1px solid #555; background: #333; color: white; font-size: 13px; text-align: center;">
   <button id="startPageBtn" title="Bu Sayfadan Başla">

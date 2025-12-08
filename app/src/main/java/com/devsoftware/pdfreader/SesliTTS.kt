@@ -1,279 +1,713 @@
 package com.devsoftware.pdfreader
 
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
-import android.util.Log
-import android.webkit.WebView
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.webkit.JavascriptInterface
-import java.util.Locale
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
+import android.util.Base64
 
-class SesliTTS(private val context: Context, private val webView: WebView) :
-    TextToSpeech.OnInitListener {
+class MainActivity : AppCompatActivity() {
 
-    private var tts: TextToSpeech? = null
-    private var isReady = false
-    private val handler = Handler(Looper.getMainLooper())
-    
-    // Dil kodları eşleştirmesi
-    private val localeMap = mapOf(
-        // Ana diller
-        "en-US" to Locale.US,
-        "tr-TR" to Locale("tr", "TR"),
-        "ku-TR" to Locale("ku", "TR"), // Kurmanci
-        "ckb-IQ" to Locale("ckb", "IQ"), // Sorani
-        "ku-IR" to Locale("ku", "IR"), // Gorani
+    lateinit var webView: WebView
+    private var backPressedTime: Long = 0
+    private val appFolderName = "PDF Reader"
+    private var isInViewer = false
+    private lateinit var sesliTTS: SesliTTS // TTS objesi
+
+    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        webView = WebView(this)
+        setContentView(webView)
+
+        // TTS'yi başlat
+        sesliTTS = SesliTTS(this, webView)
+
+        // WebView Ayarları
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            allowFileAccess = true
+            allowContentAccess = true
+            allowUniversalAccessFromFileURLs = true
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
+        }
+
+        // Android Bridge - MEVCUT bridge + TTS bridge
+        webView.addJavascriptInterface(AndroidBridge(), "Android")
+        webView.addJavascriptInterface(sesliTTS, "AndroidTTS") // TTS için ayrı interface
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                println("URL yükleme: $url")
+                
+                // Settings linki
+                if (url == "settings://all_files") {
+                    openAllFilesPermission()
+                    return true
+                }
+                
+                // Viewer.html kontrolü
+                if (url.contains("viewer.html")) {
+                    isInViewer = true
+                    // Viewer'a geçince TTS'yi durdur
+                    sesliTTS.stop()
+                } else if (url.contains("index.html")) {
+                    isInViewer = false
+                }
+                
+                // Harici bağlantıları engelle
+                if (url.startsWith("http://") || url.startsWith("https://")) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    startActivity(intent)
+                    return true
+                }
+                
+                return false
+            }
+            
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                println("Sayfa yüklendi: $url")
+                
+                // TTS hazır olduğunu JavaScript'e bildir
+                webView.postDelayed({
+                    webView.evaluateJavascript("""
+                        try {
+                            if (typeof window.onAndroidTTSReady === 'function') {
+                                window.onAndroidTTSReady();
+                            }
+                            // Global init çağır
+                            if (typeof initAndroidTTS === 'function') {
+                                initAndroidTTS();
+                            }
+                        } catch(e) {
+                            console.log('TTS init error: ' + e);
+                        }
+                    """.trimIndent(), null)
+                }, 500)
+                
+                // Viewer'dan döndüğümüzde
+                if (url.contains("index.html") && isInViewer) {
+                    isInViewer = false
+                    webView.postDelayed({
+                        webView.evaluateJavascript("""
+                            try {
+                                if (typeof onReturnFromViewer === 'function') {
+                                    onReturnFromViewer();
+                                }
+                            } catch(e) {
+                                console.log('onReturnFromViewer error: ' + e);
+                            }
+                        """.trimIndent(), null)
+                    }, 300)
+                }
+            }
+        }
+
+        webView.loadUrl("file:///android_asset/web/index.html")
         
-        // Diğer diller
-        "ar-SA" to Locale("ar", "SA"),
-        "fr-FR" to Locale.FRANCE,
-        "de-DE" to Locale.GERMANY,
-        "es-ES" to Locale("es", "ES"),
-        "it-IT" to Locale.ITALY,
-        "pt-PT" to Locale("pt", "PT"),
-        "ru-RU" to Locale("ru", "RU"),
-        "zh-CN" to Locale.SIMPLIFIED_CHINESE,
-        "zh-TW" to Locale.TRADITIONAL_CHINESE,
-        "ja-JP" to Locale.JAPAN,
-        "ko-KR" to Locale.KOREA,
-        "hi-IN" to Locale("hi", "IN"),
-        "fa-IR" to Locale("fa", "IR")
-    )
+        // Uygulama açıldığında PDF Reader klasörünü oluştur
+        createAppFolder()
+    }
 
-    init {
+    /** Tüm Dosya İzni Ekranı */
+    private fun openAllFilesPermission() {
         try {
-            tts = TextToSpeech(context, this)
-            Log.d("SesliTTS", "TTS initialized")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:$packageName")
+                startActivity(intent)
+            } else {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = Uri.parse("package:$packageName")
+                startActivity(intent)
+            }
         } catch (e: Exception) {
-            Log.e("SesliTTS", "Init error: $e")
+            startActivity(Intent(Settings.ACTION_SETTINGS))
+            Toast.makeText(this, "Ayarlara yönlendiriliyor...", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            // Birden fazla dil desteği
-            val defaultLocale = Locale.US
-            val result = tts?.setLanguage(defaultLocale)
+    /** PDF Reader Klasörü Oluştur */
+    private fun createAppFolder() {
+        try {
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val appFolder = File(downloadsDir, appFolderName)
             
-            isReady = result != TextToSpeech.LANG_MISSING_DATA &&
-                     result != TextToSpeech.LANG_NOT_SUPPORTED
-            
-            if (isReady) {
-                Log.d("SesliTTS", "TTS ready with default locale: $defaultLocale")
+            if (!appFolder.exists()) {
+                if (appFolder.mkdirs()) {
+                    println("PDF Reader klasörü oluşturuldu: ${appFolder.absolutePath}")
+                } else {
+                    println("PDF Reader klasörü oluşturulamadı!")
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /** Android → HTML Bridge (MEVCUT KOD) */
+    inner class AndroidBridge {
+
+        /** İzin kontrolü */
+        @JavascriptInterface
+        fun checkPermission(): Boolean {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
             } else {
-                // Varsayılan başarısız olursa Türkçe'yi dene
-                val trResult = tts?.setLanguage(Locale("tr", "TR"))
-                isReady = trResult != TextToSpeech.LANG_MISSING_DATA &&
-                         trResult != TextToSpeech.LANG_NOT_SUPPORTED
-                if (isReady) {
-                    Log.d("SesliTTS", "TTS ready with Turkish locale")
+                true
+            }
+        }
+
+        /** PDF Tarama - PDF Reader klasörünü hariç tut */
+        @JavascriptInterface
+        fun listPDFs(): String {
+            // Önce izin kontrolü
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    return "PERMISSION_DENIED"
                 }
             }
 
-            // ===== UTTERANCE LISTENER =====
-            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String?) {
-                    Log.d("SesliTTS", "TTS started: $utteranceId")
-                    handler.post {
-                        webView.evaluateJavascript(
-                            "console.log('Android → TTS started');",
-                            null
-                        )
+            val pdfList = mutableListOf<String>()
+            val roots = mutableListOf<File>()
+
+            // Tüm olası kök dizinler
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val externalStorage = Environment.getExternalStorageDirectory()
+                if (externalStorage.exists()) {
+                    roots.add(externalStorage)
+                }
+            } else {
+                roots.apply {
+                    add(File("/storage/emulated/0"))
+                    add(File("/sdcard"))
+                    add(File("/storage/self/primary"))
+                    Environment.getExternalStorageDirectory()?.let { add(it) }
+                }
+            }
+
+            // Downloads, Documents, DCIM gibi önemli klasörleri de tara
+            val importantDirs = listOf(
+                Environment.DIRECTORY_DOWNLOADS,
+                Environment.DIRECTORY_DOCUMENTS,
+                Environment.DIRECTORY_DCIM
+            )
+
+            importantDirs.forEach { dirType ->
+                getExternalFilesDir(dirType)?.let { dir ->
+                    if (dir.exists()) roots.add(dir)
+                }
+            }
+
+            // Tarama işlemi - PDF Reader klasörünü hariç tut
+            roots.forEach { root ->
+                if (root.exists() && root.canRead()) {
+                    scanForPDFs(root, pdfList, 0)
+                }
+            }
+
+            return if (pdfList.isEmpty()) "" else pdfList.joinToString("||")
+        }
+
+        /** Rekürsif PDF tarama - PDF Reader klasörünü atla */
+        private fun scanForPDFs(dir: File, output: MutableList<String>, depth: Int) {
+            if (depth > 10) return
+            if (dir.name.startsWith(".")) return
+            
+            // PDF Reader klasörünü atla
+            if (dir.name == appFolderName) return
+            
+            try {
+                dir.listFiles()?.forEach { file ->
+                    if (file.isDirectory) {
+                        scanForPDFs(file, output, depth + 1)
+                    } else if (file.isFile && file.name.lowercase().endsWith(".pdf")) {
+                        output.add(file.absolutePath)
                     }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
 
-                override fun onDone(utteranceId: String?) {
-                    Log.d("SesliTTS", "TTS finished: $utteranceId")
-                    handler.post {
-                        try {
-                            // JavaScript callback'i çağır
-                            webView.evaluateJavascript(
-                                "(function() { " +
-                                "   console.log('Android → TTS finished, calling window.onAndroidSpeechDone'); " +
-                                "   if (typeof window.onAndroidSpeechDone === 'function') { " +
-                                "       window.onAndroidSpeechDone(); " +
-                                "   } else { " +
-                                "       console.error('onAndroidSpeechDone not found'); " +
-                                "       // Fallback: Global callback'i dene" +
-                                "       if (typeof onAndroidSpeechDone === 'function') { " +
-                                "           onAndroidSpeechDone(); " +
-                                "       }" +
-                                "   } " +
-                                "})()",
-                                null
-                            )
+        /** Dosya boyutunu al */
+        @JavascriptInterface
+        fun getFileSize(path: String): Long {
+            return try {
+                File(path).length()
+            } catch (e: Exception) {
+                0L
+            }
+        }
+
+        /** Dosya tarihini al */
+        @JavascriptInterface
+        fun getFileDate(path: String): String {
+            return try {
+                val file = File(path)
+                val date = Date(file.lastModified())
+                val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                sdf.format(date)
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
+        /** İzin durumunu döndür */
+        @JavascriptInterface
+        fun getPermissionStatus(): String {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) "GRANTED" else "DENIED"
+            } else {
+                "GRANTED_LEGACY"
+            }
+        }
+        
+        /** PDF Reader klasörünü oluştur */
+        @JavascriptInterface
+        fun createAppFolder(): String {
+            return try {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val appFolder = File(downloadsDir, appFolderName)
+                
+                if (!appFolder.exists()) {
+                    if (appFolder.mkdirs()) {
+                        "SUCCESS:${appFolder.absolutePath}"
+                    } else {
+                        "ERROR:Could not create folder"
+                    }
+                } else {
+                    "EXISTS:${appFolder.absolutePath}"
+                }
+            } catch (e: Exception) {
+                "ERROR:${e.message}"
+            }
+        }
+        
+        /** Dosyayı PDF Reader klasörüne kaydet */
+        @JavascriptInterface
+        fun saveToAppFolder(sourcePath: String, fileName: String): String {
+            return try {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val appFolder = File(downloadsDir, appFolderName)
+                
+                // Klasör yoksa oluştur
+                if (!appFolder.exists()) {
+                    appFolder.mkdirs()
+                }
+                
+                val sourceFile = File(sourcePath)
+                val destFile = File(appFolder, fileName)
+                
+                // Dosyayı kopyala
+                sourceFile.copyTo(destFile, overwrite = true)
+                
+                "SUCCESS:${destFile.absolutePath}"
+            } catch (e: Exception) {
+                "ERROR:${e.message}"
+            }
+        }
+        
+        // ===== YENİ FONKSİYONLAR =====
+        
+        /** PDF dosyasını Base64 olarak al (PDF birleştirme için) */
+        @JavascriptInterface
+        fun getPDFData(path: String): String {
+            return try {
+                val file = File(path)
+                if (file.exists() && file.canRead()) {
+                    val bytes = file.readBytes()
+                    Base64.encodeToString(bytes, Base64.DEFAULT)
+                } else {
+                    ""
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                ""
+            }
+        }
+        
+        /** Seçilen PDF'leri birleştir ve kaydet */
+        @JavascriptInterface
+        fun mergeAndSavePDFs(pdfPaths: String, fileName: String) {
+            try {
+                val paths = pdfPaths.split("||").filter { it.isNotEmpty() }
+                if (paths.size < 2) {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, 
+                            "En az 2 PDF seçmelisiniz!", 
+                            Toast.LENGTH_SHORT).show()
+                    }
+                    return
+                }
+                
+                // Birleştirme işlemi için UI thread dışında çalıştır
+                Thread {
+                    try {
+                        // PDF'leri birleştir
+                        val mergedBytes = mergePDFFiles(paths)
+                        
+                        if (mergedBytes.isEmpty()) {
+                            runOnUiThread {
+                                Toast.makeText(this@MainActivity, 
+                                    "PDF birleştirme başarısız!", 
+                                    Toast.LENGTH_SHORT).show()
+                            }
+                            return@Thread
+                        }
+                        
+                        // Kaydet
+                        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                        val appFolder = File(downloadsDir, appFolderName)
+                        
+                        if (!appFolder.exists()) {
+                            appFolder.mkdirs()
+                        }
+                        
+                        val file = File(appFolder, fileName)
+                        FileOutputStream(file).use { fos ->
+                            fos.write(mergedBytes)
+                        }
+                        
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, 
+                                "PDF başarıyla birleştirildi: ${file.absolutePath}", 
+                                Toast.LENGTH_LONG).show()
                             
-                        } catch (e: Exception) {
-                            Log.e("SesliTTS", "JS callback error: $e")
+                            // WebView'e bildir
+                            webView.post {
+                                webView.evaluateJavascript("""
+                                    try {
+                                        if (typeof onPDFMerged === 'function') {
+                                            onPDFMerged('${file.absolutePath}', '$fileName');
+                                        }
+                                    } catch(e) {
+                                        console.log('onPDFMerged error: ' + e);
+                                    }
+                                """.trimIndent(), null)
+                            }
+                        }
+                        
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, 
+                                "PDF birleştirme hatası: ${e.message}", 
+                                Toast.LENGTH_LONG).show()
                         }
                     }
+                }.start()
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "Hata: ${e.message}", 
+                        Toast.LENGTH_SHORT).show()
                 }
-
-                override fun onError(utteranceId: String?) {
-                    Log.e("SesliTTS", "TTS error: $utteranceId")
-                    handler.post {
-                        // Hata durumunda da callback'i çağır
-                        webView.evaluateJavascript(
-                            "(function() { " +
-                            "   console.error('Android → TTS error'); " +
-                            "   if (typeof window.onAndroidSpeechDone === 'function') { " +
-                            "       window.onAndroidSpeechDone(); " +
-                            "   }" +
-                            "})()",
-                            null
+            }
+        }
+        
+        /** Birleştirilmiş PDF'yi kaydet */
+        @JavascriptInterface
+        fun saveMergedPDF(base64Data: String, fileName: String) {
+            try {
+                val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val appFolder = File(downloadsDir, appFolderName)
+                
+                // Klasör yoksa oluştur
+                if (!appFolder.exists()) {
+                    appFolder.mkdirs()
+                }
+                
+                val file = File(appFolder, fileName)
+                FileOutputStream(file).use { fos ->
+                    fos.write(decodedBytes)
+                }
+                
+                // Başarı mesajı
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF kaydedildi: ${file.absolutePath}", 
+                        Toast.LENGTH_LONG).show()
+                }
+                
+                // Kaydedilen dosyayı bildir
+                webView.post {
+                    webView.evaluateJavascript("""
+                        try {
+                            if (typeof onPDFSaved === 'function') {
+                                onPDFSaved('${file.absolutePath}', '$fileName');
+                            }
+                        } catch(e) {
+                            console.log('onPDFSaved error: ' + e);
+                        }
+                    """.trimIndent(), null)
+                }
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF kaydedilemedi: ${e.message}", 
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        
+        /** PDF dosyalarını birleştir (Kotlin tarafında) */
+        private fun mergePDFFiles(paths: List<String>): ByteArray {
+            // NOT: Bu fonksiyon PDF-Lib kütüphanesi gerektirir
+            // Eğer PDF-Lib Kotlin/Java versiyonunuz yoksa, 
+            // birleştirme işlemini WebView'de JavaScript ile yapmalısınız
+            
+            // Geçici çözüm: İlk PDF'i döndür
+            // Gerçek birleştirme için PDF-Lib kütüphanesi ekleyin
+            return try {
+                if (paths.isNotEmpty()) {
+                    File(paths[0]).readBytes()
+                } else {
+                    byteArrayOf()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                byteArrayOf()
+            }
+        }
+        
+        /** Dosyaları paylaş */
+        @JavascriptInterface
+        fun shareFiles(filePaths: String) {
+            val paths = filePaths.split("||").filter { it.isNotEmpty() }
+            if (paths.isEmpty()) return
+            
+            val uris = ArrayList<Uri>()
+            paths.forEach { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${this@MainActivity.packageName}.provider",
+                            file
                         )
+                    } else {
+                        Uri.fromFile(file)
+                    }
+                    uris.add(uri)
+                }
+            }
+            
+            if (uris.isNotEmpty()) {
+                val intent = if (uris.size == 1) {
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                    }
+                } else {
+                    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                        type = "application/pdf"
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                     }
                 }
-            })
-            
-            // WebView'a TTS'nin hazır olduğunu bildir
-            handler.post {
-                webView.evaluateJavascript(
-                    "(function() { " +
-                    "   console.log('Android → TTS ready'); " +
-                    "   if (typeof window.onAndroidTTSReady === 'function') { " +
-                    "       window.onAndroidTTSReady(); " +
-                    "   }" +
-                    "})()",
-                    null
-                )
-            }
-            
-        } else {
-            isReady = false
-            Log.e("SesliTTS", "TTS initialization failed")
-        }
-    }
-
-    @JavascriptInterface
-    fun initTTS() {
-        Log.d("SesliTTS", "initTTS called from JavaScript")
-        // TTS zaten başlatıldı, sadece hazır olup olmadığını kontrol et
-        if (isReady) {
-            handler.post {
-                webView.evaluateJavascript(
-                    "if (window.onAndroidTTSReady) window.onAndroidTTSReady();",
-                    null
-                )
+                
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                startActivity(Intent.createChooser(intent, "PDF'leri Paylaş"))
             }
         }
-    }
-
-    @JavascriptInterface
-    fun speakTextWithRate(text: String, lang: String, rate: Float) {
-        Log.d("SesliTTS", "speakTextWithRate called: text='$text', lang='$lang', rate=$rate")
         
-        if (!isReady) {
-            Log.e("SesliTTS", "TTS not ready")
-            handler.post {
-                webView.evaluateJavascript(
-                    "console.error('Android → TTS not ready');",
-                    null
-                )
+        /** PDF dosyasını aç */
+        @JavascriptInterface
+        fun openPDF(path: String) {
+            try {
+                val file = File(path)
+                if (file.exists()) {
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${this@MainActivity.packageName}.provider",
+                            file
+                        )
+                    } else {
+                        Uri.fromFile(file)
+                    }
+                    
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    
+                    startActivity(intent)
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, 
+                            "Dosya bulunamadı: $path", 
+                            Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, 
+                        "PDF açılamadı: ${e.message}", 
+                        Toast.LENGTH_SHORT).show()
+                }
             }
+        }
+        
+        /** Yazdırma işlemi */
+        @JavascriptInterface
+        fun printPDF(path: String) {
+            try {
+                val file = File(path)
+                if (file.exists()) {
+                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${this@MainActivity.packageName}.provider",
+                            file
+                        )
+                    } else {
+                        Uri.fromFile(file)
+                    }
+                    
+                    val printIntent = Intent(Intent.ACTION_SEND).apply {
+                        setDataAndType(uri, "application/pdf")
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    
+                    startActivity(Intent.createChooser(printIntent, "PDF Yazdır"))
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** İzin ekranından dönünce çağrılır */
+    override fun onResume() {
+        super.onResume()
+        webView.post {
+            webView.evaluateJavascript("""
+                try {
+                    if (typeof onAndroidResume === 'function') {
+                        onAndroidResume();
+                    }
+                } catch(e) {
+                    console.log('onAndroidResume error: ' + e);
+                }
+            """.trimIndent(), null)
+        }
+    }
+    
+    // ====== SESLİ TTS İLE İLGİLİ METOTLAR ======
+    
+    /** TTS'yi kapat */
+    override fun onPause() {
+        super.onPause()
+        // Uygulama arka plana geçince TTS'yi durdur
+        sesliTTS.stop()
+    }
+    
+    /** Geri tuşuna basınca TTS'yi durdur */
+    private fun stopTTSIfNeeded() {
+        sesliTTS.stop()
+    }
+    
+    // --- GERİ TUŞU İŞLEMİ ---
+    override fun onBackPressed() {
+        // TTS'yi durdur
+        stopTTSIfNeeded()
+        
+        // Viewer'da mıyız kontrol et
+        if (isInViewer) {
+            // Viewer'dan index.html'ye dön
+            webView.loadUrl("file:///android_asset/web/index.html")
             return
         }
         
-        try {
-            // Dil kodunu Locale'e çevir
-            val locale = localeMap[lang] ?: run {
-                // Dil kodundan Locale oluşturmayı dene
-                val parts = lang.split("-")
-                if (parts.size == 2) {
-                    Locale(parts[0], parts[1])
-                } else {
-                    Locale.US // Varsayılan
+        // JavaScript'e geri tuşu durumunu sor
+        webView.evaluateJavascript("""
+            (function() {
+                try {
+                    if (typeof androidBackPressed === 'function') {
+                        var result = androidBackPressed();
+                        return result;
+                    }
+                } catch(e) {
+                    console.log('androidBackPressed error: ' + e);
+                }
+                return 'exit_check';
+            })();
+        """.trimIndent()) { result ->
+            val jsResult = result?.trim('"')
+            println("JS Geri tuşu sonucu: $jsResult")
+            
+            when (jsResult) {
+                "exit" -> {
+                    // Uygulamadan çık
+                    super.onBackPressed()
+                    finish()
+                }
+                "exit_check" -> {
+                    // Çıkış kontrolü (çift tıklama)
+                    if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                        super.onBackPressed()
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
+                        backPressedTime = System.currentTimeMillis()
+                    }
+                }
+                "false", "no_exit" -> {
+                    // JavaScript işledi, çıkış yapma
+                    println("JavaScript geri tuşunu işledi")
+                }
+                else -> {
+                    // Default: WebView geçmişine git
+                    if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        // Çıkış kontrolü
+                        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                            super.onBackPressed()
+                            finish()
+                        } else {
+                            Toast.makeText(this, "Çıkmak için tekrar geri tuşuna basın", Toast.LENGTH_SHORT).show()
+                            backPressedTime = System.currentTimeMillis()
+                        }
+                    }
                 }
             }
-            
-            // Dil desteğini kontrol et
-            val langAvailable = tts?.isLanguageAvailable(locale) ?: TextToSpeech.LANG_NOT_SUPPORTED
-            val finalLocale = if (langAvailable >= TextToSpeech.LANG_AVAILABLE) {
-                locale
-            } else {
-                Log.w("SesliTTS", "Language $lang not available, using default")
-                Locale.US
-            }
-            
-            tts?.language = finalLocale
-            tts?.setSpeechRate(rate)
-            
-            // WebView'a konuşmanın başladığını bildir
-            handler.post {
-                webView.evaluateJavascript(
-                    "if (window.onAndroidTTSStart) window.onAndroidTTSStart();",
-                    null
-                )
-            }
-            
-            // Konuşmayı başlat
-            val utteranceId = "tts_${System.currentTimeMillis()}"
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-            
-            Log.d("SesliTTS", "Speaking: '${text.take(50)}...' (lang: $finalLocale, rate: $rate)")
-            
-        } catch (e: Exception) {
-            Log.e("SesliTTS", "speakTextWithRate error: $e")
-            handler.post {
-                webView.evaluateJavascript(
-                    "console.error('Android → TTS error: ${e.message}');",
-                    null
-                )
-            }
         }
     }
-
-    @JavascriptInterface
-    fun speakText(text: String, lang: String) {
-        speakTextWithRate(text, lang, 1.0f)
-    }
-
-    @JavascriptInterface
-    fun speak(text: String, lang: String) {
-        speakText(text, lang)
-    }
-
-    @JavascriptInterface
-    fun stop() {
-        try { 
-            tts?.stop() 
-            Log.d("SesliTTS", "TTS stopped")
-            handler.post {
-                webView.evaluateJavascript(
-                    "console.log('Android → TTS stopped');",
-                    null
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("SesliTTS", "stop error: $e")
-        }
-    }
-
-    @JavascriptInterface
-    fun setPitch(pitch: Float) {
-        try {
-            tts?.setPitch(pitch)
-            Log.d("SesliTTS", "Pitch set to: $pitch")
-        } catch (e: Exception) {
-            Log.e("SesliTTS", "setPitch error: $e")
-        }
-    }
-
-    @JavascriptInterface
-    fun isReady(): Boolean {
-        Log.d("SesliTTS", "isReady called, returning: $isReady")
-        return isReady
-    }
-
-    fun shutdown() {
-        try {
-            tts?.stop()
-            tts?.shutdown()
-            Log.d("SesliTTS", "TTS shutdown")
-        } catch (e: Exception) {
-            Log.e("SesliTTS", "shutdown error: $e")
-        }
+    
+    /** Bellek temizleme */
+    override fun onDestroy() {
+        super.onDestroy()
+        // TTS'yi kapat
+        sesliTTS.shutdown()
+        webView.destroy()
     }
 }

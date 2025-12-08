@@ -15,7 +15,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import java.io.File
 
 class IndexActivity : AppCompatActivity() {
 
@@ -43,13 +42,12 @@ class IndexActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                // Sayfa yüklendiğinde izin kontrolü yap
                 checkAndUpdatePermission()
             }
         }
 
-        // JavaScript Interface EKLEYİN
-        webView.addJavascriptInterface(WebAppInterface(this), "Android")
+        // JavaScript Interface
+        webView.addJavascriptInterface(AndroidInterface(this), "Android")
 
         // Local HTML yükle
         webView.loadUrl("file:///android_asset/web/index.html")
@@ -57,7 +55,6 @@ class IndexActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Aktivite resume olduğunda izin kontrolü
         checkAndUpdatePermission()
     }
 
@@ -68,14 +65,15 @@ class IndexActivity : AppCompatActivity() {
             true // Android 10 ve altı için true
         }
 
-        // JavaScript'e izin durumunu bildir
         val jsCode = if (hasPermission) {
             "onPermissionGranted()"
         } else {
             "onPermissionDenied()"
         }
         
-        webView.evaluateJavascript(jsCode, null)
+        webView.post {
+            webView.evaluateJavascript(jsCode, null)
+        }
     }
 
     override fun onBackPressed() {
@@ -86,8 +84,8 @@ class IndexActivity : AppCompatActivity() {
         }
     }
 
-    // JavaScript Interface Class
-    inner class WebAppInterface(private val activity: Activity) {
+    // JavaScript Interface
+    inner class AndroidInterface(private val activity: Activity) {
 
         @JavascriptInterface
         fun checkPermission(): Boolean {
@@ -102,10 +100,29 @@ class IndexActivity : AppCompatActivity() {
         fun openAllFilesSettings() {
             activity.runOnUiThread {
                 try {
+                    // DOĞRUDAN "TÜM DOSYALARA ERİŞİM" EKRANINA GİT
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                        intent.data = Uri.parse("package:${activity.packageName}")
-                        activity.startActivity(intent)
+                        // Ana intent: Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
+                        val uri = Uri.parse("package:${activity.packageName}")
+                        
+                        // İlk deneme
+                        try {
+                            val intent1 = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                            intent1.data = uri
+                            activity.startActivity(intent1)
+                        } catch (e1: Exception) {
+                            // İkinci deneme
+                            try {
+                                val intent2 = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                                intent2.data = uri
+                                activity.startActivity(intent2)
+                            } catch (e2: Exception) {
+                                // Üçüncü deneme: Uygulama detayları
+                                val intent3 = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                intent3.data = uri
+                                activity.startActivity(intent3)
+                            }
+                        }
                     } else {
                         // Android 10 ve altı için
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -113,59 +130,66 @@ class IndexActivity : AppCompatActivity() {
                         activity.startActivity(intent)
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(activity, "Ayarlar açılamadı: ${e.message}", Toast.LENGTH_LONG).show()
+                    // Basit hata mesajı
+                    Toast.makeText(activity, "Ayarlar açılamadı", Toast.LENGTH_SHORT).show()
                 }
             }
         }
 
         @JavascriptInterface
         fun listPDFs(): String {
-            return try {
+            try {
                 // İzin kontrolü
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                    !Environment.isExternalStorageManager()) {
-                    return "PERMISSION_DENIED"
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (!Environment.isExternalStorageManager()) {
+                        return "PERMISSION_DENIED"
+                    }
                 }
 
                 val root = Environment.getExternalStorageDirectory()
-                val list = ArrayList<String>()
+                val list = mutableListOf<String>()
 
-                // PDF'leri tarama
-                scanForPDFs(root, list)
+                // PDF tarama
+                scanForPDFs(root, list, 0, 3)
 
-                if (list.isEmpty()) {
+                return if (list.isEmpty()) {
                     "EMPTY"
                 } else {
                     list.joinToString("||")
                 }
             } catch (e: Exception) {
-                "ERROR: ${e.message}"
+                return "ERROR"
             }
         }
 
-        private fun scanForPDFs(directory: File, pdfList: ArrayList<String>) {
-            try {
-                val files = directory.listFiles() ?: return
-                
-                for (file in files) {
-                    if (file.isDirectory) {
-                        // Alt dizinleri tarama (derinlik sınırı)
-                        if (!file.name.startsWith(".")) { // Gizli dosyaları atla
-                            scanForPDFs(file, pdfList)
-                        }
-                    } else if (file.isFile && file.name.lowercase().endsWith(".pdf")) {
-                        pdfList.add(file.absolutePath)
-                    }
+        private fun scanForPDFs(dir: android.os.storage.StorageVolume?, list: MutableList<String>, depth: Int, maxDepth: Int) {
+            if (depth > maxDepth) return
+            
+            dir?.directory?.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    scanForPDFs(file, list, depth + 1, maxDepth)
+                } else if (file.isFile && file.name.endsWith(".pdf", true)) {
+                    list.add(file.absolutePath)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            }
+        }
+
+        private fun scanForPDFs(dir: java.io.File, list: MutableList<String>, depth: Int, maxDepth: Int) {
+            if (depth > maxDepth) return
+            
+            dir.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    scanForPDFs(file, list, depth + 1, maxDepth)
+                } else if (file.isFile && file.name.endsWith(".pdf", true)) {
+                    list.add(file.absolutePath)
+                }
             }
         }
 
         @JavascriptInterface
-        fun showToast(message: String) {
+        fun showToast(msg: String) {
             activity.runOnUiThread {
-                Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
             }
         }
     }

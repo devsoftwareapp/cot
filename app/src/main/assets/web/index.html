@@ -2335,6 +2335,17 @@
     window.onAndroidResume = onAndroidResume;
     window.openToolPage = openToolPage;
 
-  </script>
+  
+function onPermissionGranted() {
+    console.log("İzin verildi!");
+    loadPDFsFromDevice(); // PDF taramasını burada tetikle
+}
+
+function onPermissionDenied() {
+    console.log("İzin verilmedi!");
+    alert("Tüm dosya erişimi iznine izin vermeniz gerekiyor.");
+}
+</script>
+
 </body>
 </html>

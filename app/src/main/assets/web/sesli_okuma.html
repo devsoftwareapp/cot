@@ -3,11 +3,18 @@
 <html dir="ltr" mozdisallowselectionprint>
   <head>
 
-
+<script>
+    
+    document.addEventListener("webviewerloaded", function () {
+    window.parent.postMessage({ type: "VIEWER_READY" }, "*");
+});
+    
+    
+</script>
     
     <meta charset="utf-8" />
 
-<script src="../cordova.js"></script>
+
     
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     
@@ -24,9 +31,17 @@
   <script src="viewer.mjs" type="module"></script>
   
   
+
+  
+  
+  
   </head>
 
   <body tabindex="0">
+      
+      
+
+      
     <div id="outerContainer">
       <span id="viewer-alert" class="visuallyHidden" role="alert"></span>
 
@@ -1102,7 +1117,7 @@
           <div class="buttonRow">
             <button id="printCancel" class="dialogButton" type="button"><span data-l10n-id="pdfjs-print-progress-close-button"></span></button>
           </div>
-ii        </dialog>
+        </dialog>
       </div>
       <!-- dialogContainer -->
 
@@ -1123,264 +1138,574 @@ ii        </dialog>
     </div>
     <!-- outerContainer -->
     <div id="printContainer"></div>
-
 <!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma-✅✅✅✅✅ kaydetme vs -->
 
 
+
+
+
+
+
+
+<!-- ========================================================= -->
+<!-- ====================== CUSTOM STYLE ====================== -->
+<!-- ========================================================= -->
+<style>
+#speechBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  min-height: 55px;
+  background: #222;
+  color: #fff;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+#speechBar button {
+  padding: 8px 10px;
+  font-size: 13px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 70px;
+  touch-action: manipulation;
+}
+
+#speechRate {
+  background: #333;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 13px;
+  touch-action: manipulation;
+}
+
+#speechStatus {
+  font-size: 12px;
+  color: #ccc;
+  margin-left: 4px;
+}
+
+.highlight-current-sentence {
+  background-color: rgba(255, 255, 0, 0.5) !important;
+  transition: background-color 0.3s ease !important;
+}
+
+body { 
+  padding-top: 60px !important; 
+  scroll-behavior: smooth !important;
+}
+
+@media (max-width: 480px) {
+  #speechBar { gap: 6px; }
+  #speechBar button {
+    padding: 6px 8px;
+    font-size: 12px;
+    min-width: 62px;
+  }
+  #speechRate {
+    font-size: 12px;
+    padding: 4px;
+  }
+  #speechStatus { font-size: 11px; }
+}
+</style>
+
+<!-- ========================================================= -->
+<!-- ====================== CUSTOM BAR ======================== -->
+<!-- ========================================================= -->
+<div id="speechBar">
+  <button id="choosePDF">📄 PDF</button>
+  <button id="ttsPrev">⏮</button>
+  <button id="ttsPlay">▶</button>
+  <button id="ttsNext">⏭</button>
+
+  <select id="speechRate">
+    <option value="0.75">0.75x</option>
+    <option value="1" selected>1.0x</option>
+    <option value="1.25">1.25x</option>
+    <option value="1.5">1.5x</option>
+    <option value="2">2.0x</option>
+  </select>
+
+  <span id="speechStatus">Hazır</span>
+</div>
+
+<!-- ========================================================= -->
+<!-- ====================== SPEECH SCRIPT ===================== -->
+<!-- ========================================================= -->
 <script>
-/* -----------------------------------------------------
-   1) Base64 ile PDF açma (index.html → viewer.html)
------------------------------------------------------ */
-document.addEventListener("webviewerloaded", function () {
-  console.log("📄 PDF.js Yüklendi");
+(function () {
 
-  const params = new URLSearchParams(window.location.search);
-  const base64 = params.get("base64");
-  if (!base64) return;
+  let sentences = [];
+  let ttsIndex = 0;
+  let isPlaying = false;
+  let utterance = null;
+  let ttsSpeed = 1.0;
 
-  try {
-    const pureBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
-    const binary = atob(pureBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
+  let pdfTextItems = [];
+  let wordMap = [];
 
-    const blob = new Blob([bytes], { type: "application/pdf" });
-    const blobUrl = URL.createObjectURL(blob);
+  const chooseBtn = document.getElementById("choosePDF");
+  const prevBtn   = document.getElementById("ttsPrev");
+  const playBtn   = document.getElementById("ttsPlay");
+  const nextBtn   = document.getElementById("ttsNext");
+  const statusEl  = document.getElementById("speechStatus");
+  const rateSel   = document.getElementById("speechRate");
 
-    const wait = setInterval(() => {
-      if (window.PDFViewerApplication && PDFViewerApplication.initialized) {
-        clearInterval(wait);
-        PDFViewerApplication.open({ url: blobUrl });
-        console.log("✅ PDF Açıldı");
+  function status(t){ statusEl.textContent = t; }
+
+  function splitIntoWords(text) {
+    return text
+      .replace(/[\r\n]+/g, " ")
+      .split(/\s+/)
+      .filter(t => t.length > 0);
+  }
+
+  function wait() {
+    if (window.PDFViewerApplication && PDFViewerApplication.initialized) init();
+    else setTimeout(wait, 80);
+  }
+  wait();
+
+  function init(){
+    chooseBtn.onclick = () => {
+
+      const fileInput = document.getElementById("fileInput");
+      if (fileInput) fileInput.click();
+      else alert("PDF seçici bulunamadı (fileInput yok)!");
+
+    };
+
+    prevBtn.onclick = () => { 
+      if (ttsIndex > 0) {
+        ttsIndex--; 
+        stopTTS();
+        highlightCurrentSentence();
+        speak(); 
       }
-    }, 80);
-  } catch (e) {
-    console.error("PDF açma hatası:", e);
+    };
+    
+    nextBtn.onclick = () => { 
+      if (ttsIndex < sentences.length - 1) {
+        ttsIndex++; 
+        stopTTS();
+        highlightCurrentSentence();
+        speak(); 
+      }
+    };
+    
+    playBtn.onclick = () => isPlaying ? stopTTS() : speak();
+
+    PDFViewerApplication.eventBus.on("documentloaded", extractText);
+    
+    rateSel.onchange = () => {
+      ttsSpeed = parseFloat(rateSel.value);
+      if (isPlaying && utterance) {
+        utterance.rate = ttsSpeed;
+      }
+    };
   }
-});
 
-/* -----------------------------------------------------
-   2) Cordova Ready Sonrası: Kaydet butonu aktif
------------------------------------------------------ */
-document.addEventListener("deviceready", function () {
-  console.log("📱 Cordova Hazır");
-  initSaveButton();
-});
+  async function extractText(){
+    status("Metin çıkarılıyor...");
 
-// Tarayıcı test modu
-if (!window.cordova) {
-  console.log("🌐 Tarayıcı test modu");
-  setTimeout(initSaveButton, 2000);
-}
+    const pdf = PDFViewerApplication.pdfDocument;
+    const total = pdf.numPages;
 
-/* -----------------------------------------------------
-   3) Kaydet butonunu bul ve event ekle
------------------------------------------------------ */
-function initSaveButton() {
-  let tries = 0;
+    let raw = "";
+    pdfTextItems = [];
+    wordMap = [];
 
-  const timer = setInterval(() => {
-    tries++;
-    const btn = document.getElementById("secondaryDownload");
+    for (let i=1; i<=total; i++){
+      const page = await pdf.getPage(i);
+      const c = await page.getTextContent();
 
-    if (btn) {
-      clearInterval(timer);
-      console.log("✔ Kaydet butonu bulundu");
-      activateSaveButton(btn);
-    } else if (tries > 15) {
-      clearInterval(timer);
-      console.warn("❌ Kaydet butonu bulunamadı");
+      raw += " " + c.items.map(x => x.str).join(" ");
+
+      c.items.forEach(item => {
+        const words = splitIntoWords(item.str);
+
+        words.forEach(w => {
+          wordMap.push({
+            word: w,
+            page: i,
+            original: item.str
+          });
+        });
+
+        pdfTextItems.push({
+          text: item.str,
+          page: i,
+          transform: item.transform
+        });
+      });
     }
-  }, 300);
-}
 
-function activateSaveButton(btn) {
-  const newBtn = btn.cloneNode(true);
-  btn.parentNode.replaceChild(newBtn, btn);
+    sentences = raw
+      .replace(/\s+/g, " ")
+      .match(/[^.!?]+[.!?]+/g) || [];
 
-  newBtn.addEventListener(
-    "click",
-    function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("💾 Kaydet tıklandı");
-      saveEditedPDF();
-    },
-    true
-  );
-}
+    sentences = sentences.map(s => {
+      const sentenceText = s.trim();
+      const result = findSentenceWordRange(sentenceText);
 
-/* -----------------------------------------------------
-   4) PDF.js'den düzenlenmiş PDF verisini al
------------------------------------------------------ */
-function saveEditedPDF() {
-  if (!window.cordova) {
-    alert("Cordova yok, sadece cihazda çalışır.");
-    return;
-  }
-
-  if (!PDFViewerApplication || !PDFViewerApplication.pdfDocument) {
-    alert("PDF henüz yüklenmedi!");
-    return;
-  }
-
-  PDFViewerApplication.pdfDocument
-    .saveDocument()
-    .then((editedBuffer) => {
-      console.log("✏ Düzenlenmiş PDF Buffer alındı:", editedBuffer.byteLength);
-
-      const base64 = arrayBufferToBase64(editedBuffer);
-      saveBase64ToAndroid(base64);
-    })
-    .catch((err) => {
-      console.error("Düzenleme kaydı alınamadı:", err);
-      showAlert("PDF düzenleme verisi alınamadı: " + err, "Hata");
+      return {
+        text: sentenceText,
+        startIndex: result.start,
+        endIndex: result.end,
+        page: result.page
+      };
     });
-}
 
-/* ArrayBuffer → Base64 */
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    status("Hazır (" + sentences.length + " cümle)");
   }
-  return btoa(binary);
-}
 
-/* -----------------------------------------------------
-   5) Android Dosya Sistemine Kaydet
------------------------------------------------------ */
-function saveBase64ToAndroid(base64Data) {
-  const root = cordova.file.externalRootDirectory; 
-  const fileName = "edited_" + Date.now() + ".pdf";
+  function findSentenceWordRange(sentence) {
+    const words = splitIntoWords(sentence);
+    if (words.length === 0) return { start: -1, end: -1, page: 1 };
 
-  window.resolveLocalFileSystemURL(
-    root,
-    function (rootEntry) {
-      rootEntry.getDirectory(
-        "Download",
-        { create: true },
-        function (downloadDir) {
-          downloadDir.getDirectory(
-            "PDF_Reader",
-            { create: true },
-            function (pdfDir) {
-              pdfDir.getFile(
-                fileName,
-                { create: true },
-                function (fileEntry) {
-                  fileEntry.createWriter(function (writer) {
-                    const byteChars = atob(base64Data);
-                    const byteArray = new Uint8Array(byteChars.length);
-                    for (let i = 0; i < byteChars.length; i++) {
-                      byteArray[i] = byteChars.charCodeAt(i);
-                    }
+    let start = -1;
+    let end = -1;
 
-                    const blob = new Blob([byteArray], {
-                      type: "application/pdf",
-                    });
+    for (let i = 0; i < wordMap.length; i++) {
+      if (wordMap[i].word === words[0]) {
+        let ok = true;
 
-                    writer.write(blob);
-
-                    showAlert(
-                      "PDF Kaydedildi:\nDownload/PDF_Reader/" + fileName,
-                      "Başarılı"
-                    );
-                  });
-                }
-              );
-            }
-          );
+        for (let j = 1; j < words.length; j++) {
+          const nextIndex = i + j;
+          if (!wordMap[nextIndex] || wordMap[nextIndex].word !== words[j]) {
+            ok = false;
+            break;
+          }
         }
-      );
-    },
-    function (err) {
-      showAlert("Storage erişilemedi: " + err, "Hata");
+
+        if (ok) {
+          start = i;
+          end = i + words.length - 1;
+          break;
+        }
+      }
     }
-  );
-}
 
-/* -----------------------------------------------------
-   6) Alert Fonksiyonu
------------------------------------------------------ */
-function showAlert(message, title) {
-  if (navigator.notification && navigator.notification.alert) {
-    navigator.notification.alert(message, null, title || "Bilgi", "Tamam");
-  } else {
-    alert((title ? title + ": " : "") + message);
-  }
-}
-
-/* -----------------------------------------------------
-   7) SESLİ OKUMA METİN ÇIKARMA
------------------------------------------------------ */
-
-// PDF çalışmaya başladıktan sonra PDF nesnesini yakalayacağız
-document.addEventListener("webviewerloaded", function () {
-  console.log("PDF Viewer loaded");
-
-  if (PDFViewerApplication) {
-    PDFViewerApplication.eventBus.on("documentloaded", extractAllText);
-  }
-});
-
-async function extractAllText() {
-  console.log("Metin çıkarma başlatılıyor...");
-
-  const pdf = PDFViewerApplication.pdfDocument;
-  const totalPages = pdf.numPages;
-
-  let allTextChunks = [];
-
-  for (let i = 1; i <= totalPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-
-    const strings = content.items.map(item => item.str).join(" ");
-    allTextChunks.push(strings);
+    return {
+      start,
+      end,
+      page: start !== -1 ? wordMap[start].page : 1
+    };
   }
 
-  console.log("Metin çıkarıldı:", allTextChunks);
+  function highlightCurrentSentence() {
+    document.querySelectorAll('.highlight-current-sentence')
+      .forEach(el => el.classList.remove('highlight-current-sentence'));
 
-  window.parent.postMessage({
-    type: "TEXT_EXTRACTED",
-    text: allTextChunks
-  }, "*");
-}
+    const cur = sentences[ttsIndex];
+    if (!cur || cur.startIndex === -1) return;
 
-/* -----------------------------------------------------
-   8) PDF SEÇ → Gerçek PDF.js Açma (BENİM EKLEDİĞİM)
------------------------------------------------------ */
+    const pageNum = cur.page;
+    const pageElement = document.querySelector(`.page[data-page-number="${pageNum}"]`);
+    if (!pageElement) return;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("secondaryOpenFile");
-  if (!btn) return;
+    const textLayer = pageElement.querySelector('.textLayer');
+    if (!textLayer) return;
 
-  btn.addEventListener("click", () => {
-    console.log("📄 PDF SEÇ → PDF.js openFileInput çağrılıyor");
+    const spans = Array.from(textLayer.querySelectorAll('span[role="presentation"]'));
 
-    // PDF.js gerçek input
-    const input = PDFViewerApplication?.appConfig?.openFileInput;
+    let wordCursor = 0;
+    let highlighted = [];
 
-    if (input) {
-      input.click();
+    spans.forEach(span => {
+      const spanWords = splitIntoWords(span.textContent);
+
+      spanWords.forEach(() => {
+        if (wordCursor >= cur.startIndex && wordCursor <= cur.endIndex) {
+          span.classList.add("highlight-current-sentence");
+          if (!highlighted.includes(span)) highlighted.push(span);
+        }
+        wordCursor++;
+      });
+    });
+
+    if (highlighted.length > 0) scrollToElement(highlighted[0]);
+  }
+
+  function scrollToElement(el) {
+    const viewer = document.querySelector('.pdfViewer');
+    if (!viewer) return;
+
+    const r = el.getBoundingClientRect();
+    const vr = viewer.getBoundingClientRect();
+
+    if (r.top < vr.top || r.bottom > vr.bottom) {
+      const scrollTop = viewer.scrollTop + r.top - vr.top - 100;
+      viewer.scrollTo({ top: scrollTop, behavior: "smooth" });
+    }
+  }
+
+  function speak(){
+    if (!sentences.length){
+      alert("Metin yok! PDF yükle.");
+      return;
+    }
+
+    const cur = sentences[ttsIndex];
+    const text = cur.text;
+
+    highlightCurrentSentence();
+
+    const lang = detectLang(text);
+    const rate = ttsSpeed;
+
+    console.log("Speaking:", text.substring(0, 50) + "...", "Index:", ttsIndex);
+
+    if (window.Android){
+      try {
+        setPlaying(true);
+        
+        // Android TTS bittiğinde "ttsNext" butonuna tıkla
+        window.onAndroidSpeechDone = function() {
+          console.log("ANDROID → TTS bitti, next butonuna tıklanıyor");
+          // Küçük gecikme ile next butonuna tıkla
+          setTimeout(function() {
+            if (ttsIndex < sentences.length - 1) {
+              nextBtn.click();
+            } else {
+              // Son cümlede ise dur
+              setPlaying(false);
+              status("Bitti");
+            }
+          }, 100);
+        };
+
+        if (Android.speakTextWithRate) {
+          Android.speakTextWithRate(text, lang, rate);
+        } else if (Android.speakText) {
+          Android.speakText(text, lang);
+        } else {
+          Android.speak(text, lang);
+        }
+
+      } catch(e){
+        console.error("Android TTS error:", e);
+        setPlaying(false);
+      }
     } else {
-      console.warn("openFileInput bulunamadı");
+      // Tarayıcı TTS
+      speakBrowser(text, lang, rate);
     }
-  });
-});
+  }
+
+  function detectLang(t){
+    return (/[çğıöşüÇĞİÖŞÜ]/.test(t)) ? "tr-TR" : "en-US";
+  }
+
+  function speakBrowser(text, lang, rate){
+    stopTTS();
+
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = rate;
+
+    utterance.onstart = () => {
+      console.log("Browser TTS started");
+      setPlaying(true);
+    };
+    
+    utterance.onend = () => {
+      console.log("Browser TTS ended, next butonuna tıklanıyor");
+      // Tarayıcı TTS bittiğinde de next butonuna tıkla
+      setTimeout(function() {
+        if (ttsIndex < sentences.length - 1) {
+          nextBtn.click();
+        } else {
+          // Son cümlede ise dur
+          setPlaying(false);
+          status("Bitti");
+        }
+      }, 100);
+    };
+    
+    utterance.onerror = (event) => {
+      console.error("Browser TTS error:", event);
+      setPlaying(false);
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
+  function stopTTS(){
+    console.log("stopTTS called");
+    if (utterance) {
+      speechSynthesis.cancel();
+      utterance = null;
+    }
+    if (window.Android && Android.stop) {
+      Android.stop();
+    }
+    setPlaying(false);
+  }
+
+  function setPlaying(p){
+    isPlaying = p;
+    playBtn.textContent = p ? "⏸" : "▶";
+    status(p ? "Okunuyor [" + (ttsIndex+1) + "/" + sentences.length + "]" : "Hazır");
+  }
+
+})();
+
+// Android callback'i - ttsNext butonuna tıkla
+window.onAndroidSpeechDone = function () {
+    console.log("Global onAndroidSpeechDone - next butonuna tıklanıyor");
+    const nextBtn = document.getElementById("ttsNext");
+    if (nextBtn) {
+        // Hemen değil, biraz bekle
+        setTimeout(function() {
+            nextBtn.click();
+        }, 150);
+    }
+};
+
 </script>
-                    
-
-    
 
 
 
 
-    
+
+
+<!-- ========================================================= -->
+<!-- ====================== SPEECH BAR 
+
 <!-- pdf acma- kaydetme vs -->
+<!-- pdf acm✅✅✅✅a- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+<!-- pdf acma- kaydetme vs -->
+
+
   </body>
 </html>

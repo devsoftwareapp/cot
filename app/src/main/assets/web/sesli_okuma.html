@@ -64,7 +64,34 @@
   
 <script src="tesseract.min.js"></script>
   
-  
+
+
+<script>
+function openPDFPicker() {
+    document.getElementById("pdfInput").click();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("pdfInput");
+    input.addEventListener("change", () => {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(",")[1];
+            if (window.onPDFSelected) {
+                window.onPDFSelected(base64);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+});
+</script>
+
+
+
+    
   
   </head>
 
@@ -1169,46 +1196,8 @@
     </div>
     <!-- outerContainer -->
     <div id="printContainer"></div>
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma-✅✅✅✅✅ kaydetme vs -->
+
+//<!-- pdf acma-✅✅✅✅✅ kaydetme vs -->
 
 
 
@@ -2951,10 +2940,7 @@ document.addEventListener('touchend', function(e) {
 
 
 
-
-<!-- pdf acma- ✅✅✅✅✅✅kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
-<!-- pdf acma- kaydetme vs -->
+//pdf acma- ✅✅✅✅✅✅kaydetme vs 
 
 
 // viewer.html'deki secondaryOpenFile butonunu bul ve tıkla
@@ -3302,7 +3288,7 @@ function openPDFPicker() {
 }
 
 
-  
+  <input id="pdfInput" type="file" accept="application/pdf" style="display:none">
 
 </script>
 

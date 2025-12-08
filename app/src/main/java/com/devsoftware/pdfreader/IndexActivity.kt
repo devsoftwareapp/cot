@@ -13,110 +13,160 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
 class IndexActivity : AppCompatActivity() {
 
-    lateinit var webView: WebView
+    private lateinit var webView: WebView
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         webView = WebView(this)
         setContentView(webView)
 
-        val s = webView.settings
-        s.javaScriptEnabled = true
-        s.domStorageEnabled = true
-        s.allowFileAccess = true
-        s.allowContentAccess = true
-        s.allowUniversalAccessFromFileURLs = true
-        s.cacheMode = WebSettings.LOAD_NO_CACHE
-
+        // WebView ayarları
+        val settings = webView.settings
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.allowFileAccess = true
+        settings.allowContentAccess = true
+        settings.allowUniversalAccessFromFileURLs = true
+        settings.allowFileAccessFromFileURLs = true
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
+        
+        // WebView client'ları
         webView.webChromeClient = WebChromeClient()
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // Sayfa yüklendiğinde izin kontrolü yap
+                checkAndUpdatePermission()
+            }
+        }
 
-        webView.addJavascriptInterface(AndroidBridge(this), "Android")
+        // JavaScript Interface EKLEYİN
+        webView.addJavascriptInterface(WebAppInterface(this), "Android")
 
+        // Local HTML yükle
         webView.loadUrl("file:///android_asset/web/index.html")
-    }
-
-    override fun onBackPressed() {
-        if (webView.canGoBack()) webView.goBack()
-        else super.onBackPressed()
     }
 
     override fun onResume() {
         super.onResume()
-
-        // Ayarlardan dönünce izin kontrol et ve JavaScript'i tetikle
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (Environment.isExternalStorageManager()) {
-                // İzin verildi
-                webView.evaluateJavascript("onPermissionGranted()", null)
-            } else {
-                // İzin verilmedi
-                webView.evaluateJavascript("onPermissionDenied()", null)
-            }
-        } else {
-            // Android 10 ve altı için otomatik izin verilmiş kabul et
-            webView.evaluateJavascript("onPermissionGranted()", null)
-        }
+        // Aktivite resume olduğunda izin kontrolü
+        checkAndUpdatePermission()
     }
-}
 
-class AndroidBridge(private val activity: Activity) {
-
-    @JavascriptInterface
-    fun checkPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= 30) {
+    private fun checkAndUpdatePermission() {
+        val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Environment.isExternalStorageManager()
-        } else true
+        } else {
+            true // Android 10 ve altı için true
+        }
+
+        // JavaScript'e izin durumunu bildir
+        val jsCode = if (hasPermission) {
+            "onPermissionGranted()"
+        } else {
+            "onPermissionDenied()"
+        }
+        
+        webView.evaluateJavascript(jsCode, null)
     }
 
-    @JavascriptInterface
-    fun openAllFilesSettings() {
-        if (Build.VERSION.SDK_INT >= 30) {
-            try {
-                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                intent.data = Uri.parse("package:${activity.packageName}")
-                activity.startActivity(intent)
-            } catch (e: Exception) {
-                // Bazı cihazlarda farklı intent gerekebilir
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.data = Uri.parse("package:${activity.packageName}")
-                activity.startActivity(intent)
-            }
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
         } else {
-            // Android 10 ve altı için normal depolama izni iste
-            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            activity.startActivity(intent)
+            super.onBackPressed()
         }
     }
 
-    @JavascriptInterface
-    fun listPDFs(): String {
-        return try {
-            if (Build.VERSION.SDK_INT >= 30 &&
-                !Environment.isExternalStorageManager()) {
-                return "PERMISSION_DENIED"
+    // JavaScript Interface Class
+    inner class WebAppInterface(private val activity: Activity) {
+
+        @JavascriptInterface
+        fun checkPermission(): Boolean {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
+            } else {
+                true
             }
+        }
 
-            val root = File("/storage/emulated/0/")
-            val list = ArrayList<String>()
-
-            root.walkTopDown().forEach { f ->
-                if (f.isFile && f.extension.equals("pdf", true)) {
-                    list.add(f.absolutePath)
+        @JavascriptInterface
+        fun openAllFilesSettings() {
+            activity.runOnUiThread {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                        intent.data = Uri.parse("package:${activity.packageName}")
+                        activity.startActivity(intent)
+                    } else {
+                        // Android 10 ve altı için
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = Uri.parse("package:${activity.packageName}")
+                        activity.startActivity(intent)
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(activity, "Ayarlar açılamadı: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
+        }
 
-            if (list.isEmpty()) "EMPTY" else list.joinToString("||")
+        @JavascriptInterface
+        fun listPDFs(): String {
+            return try {
+                // İzin kontrolü
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                    !Environment.isExternalStorageManager()) {
+                    return "PERMISSION_DENIED"
+                }
 
-        } catch (e: Exception) {
-            "ERROR: ${e.message}"
+                val root = Environment.getExternalStorageDirectory()
+                val list = ArrayList<String>()
+
+                // PDF'leri tarama
+                scanForPDFs(root, list)
+
+                if (list.isEmpty()) {
+                    "EMPTY"
+                } else {
+                    list.joinToString("||")
+                }
+            } catch (e: Exception) {
+                "ERROR: ${e.message}"
+            }
+        }
+
+        private fun scanForPDFs(directory: File, pdfList: ArrayList<String>) {
+            try {
+                val files = directory.listFiles() ?: return
+                
+                for (file in files) {
+                    if (file.isDirectory) {
+                        // Alt dizinleri tarama (derinlik sınırı)
+                        if (!file.name.startsWith(".")) { // Gizli dosyaları atla
+                            scanForPDFs(file, pdfList)
+                        }
+                    } else if (file.isFile && file.name.lowercase().endsWith(".pdf")) {
+                        pdfList.add(file.absolutePath)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        @JavascriptInterface
+        fun showToast(message: String) {
+            activity.runOnUiThread {
+                Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

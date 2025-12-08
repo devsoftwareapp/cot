@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF Reader | Dev Software</title>
   
   <style>
-    /* Material Symbols - Optimized for WebView */
-    .material-symbols-rounded {
-      font-family: 'Material Symbols Rounded';
+    /* Material Icons */
+    .material-icons {
+      font-family: 'Material Icons';
       font-weight: normal;
       font-style: normal;
       font-size: 24px;
@@ -19,34 +19,26 @@
       white-space: nowrap;
       word-wrap: normal;
       direction: ltr;
-      font-feature-settings: 'liga';
       -webkit-font-smoothing: antialiased;
     }
     
-    /* --- BASIC STYLES --- */
+    /* --- VARIABLES --- */
     :root {
-      --background: #e8e8e8;
-      --surface: #e8e8e8;
+      --background: #f5f5f5;
+      --surface: #ffffff;
       --primary: #E53935;
       --secondary: #B71C1C;
-      --text-primary: #0f172a;
-      --text-secondary: #64748b;
-      --border: #d4d4d4; 
-      --shadow-md: 0 2px 4px rgba(0,0,0,0.1);
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --border: #dddddd;
+      --shadow: 0 2px 4px rgba(0,0,0,0.1);
       
       --header-height: 56px;
       --tabs-height: 48px;
       --bottom-nav-height: 56px;
     }
 
-    [data-theme="dark"] {
-      --background: #0f172a;
-      --surface: #1e293b;
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --border: #334155;
-    }
-
+    /* --- BASE STYLES --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
       height: 100%; 
@@ -55,78 +47,65 @@
       color: var(--text-primary); 
       overflow: hidden; 
     }
+    body { display: flex; flex-direction: column; }
     
-    body { 
-      display: flex; 
-      flex-direction: column; 
-    }
-
-    /* --- TOP BAR --- */
-    .top-bar {
+    /* --- HEADER --- */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
       height: var(--header-height);
       background: var(--surface);
+      z-index: 100;
+      box-shadow: var(--shadow);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .header-content {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 16px;
-      border-bottom: 1px solid var(--border);
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
+      height: 100%;
     }
     
     .logo-title {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
     
     .logo {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       overflow: hidden;
-    }
-    
-    .logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
     }
     
     .app-title {
       font-size: 18px;
       font-weight: 700;
-      background: linear-gradient(to right, #B71C1C, #FF6961);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: var(--primary);
     }
     
-    .icon-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 20px;
+    .header-actions {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-    }
-    
-    .icon-btn:active {
-      background: rgba(0,0,0,0.1);
+      gap: 8px;
     }
     
     /* --- TABS --- */
-    .tabs-container {
+    .tabs {
+      display: flex;
       height: var(--tabs-height);
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      display: flex;
       position: fixed;
       top: var(--header-height);
       left: 0;
@@ -142,11 +121,14 @@
       justify-content: center;
       color: var(--text-secondary);
       font-size: 11px;
+      font-weight: 500;
       gap: 2px;
+      cursor: pointer;
     }
     
     .tab.active {
       color: var(--primary);
+      position: relative;
     }
     
     .tab.active::after {
@@ -193,6 +175,7 @@
       align-items: center;
       gap: 12px;
       border: 1px solid var(--border);
+      cursor: pointer;
     }
     
     .pdf-card:active {
@@ -204,7 +187,7 @@
       width: 40px;
       height: 40px;
       border-radius: 8px;
-      background: #E53935;
+      background: var(--primary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -221,11 +204,16 @@
       font-size: 14px;
       font-weight: 600;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .pdf-meta {
       font-size: 11px;
       color: var(--text-secondary);
+      display: flex;
+      gap: 8px;
     }
     
     .pdf-actions {
@@ -246,7 +234,6 @@
       left: 0;
       right: 0;
       z-index: 100;
-      padding-bottom: env(safe-area-inset-bottom);
     }
     
     .nav-item {
@@ -257,6 +244,8 @@
       padding: 8px;
       color: var(--text-secondary);
       font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
     }
     
     .nav-item.active {
@@ -275,13 +264,14 @@
       width: 56px;
       height: 56px;
       border-radius: 28px;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      background: var(--primary);
       border: none;
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
     }
     
     /* --- EMPTY STATE --- */
@@ -297,799 +287,538 @@
       opacity: 0.5;
     }
     
-    /* --- SELECTION MODE --- */
-    body.selection-mode .pdf-card {
-      padding-left: 40px;
-      position: relative;
+    /* --- PERMISSION BANNER --- */
+    .permission-banner {
+      padding: 20px;
+      text-align: center;
+      background: var(--surface);
+      border-radius: 12px;
+      margin: 20px;
+      border: 1px solid var(--border);
     }
     
-    .selection-checkbox {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--text-secondary);
-      border-radius: 4px;
+    .permission-banner h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
     }
     
-    .selection-checkbox.selected {
+    .permission-banner p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+    
+    .permission-banner button {
+      padding: 12px 24px;
+      border-radius: 8px;
       background: var(--primary);
-      border-color: var(--primary);
-    }
-    
-    .selection-checkbox.selected::after {
-      content: '✓';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       color: white;
-      font-size: 12px;
-      font-weight: bold;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
     }
     
-    .selection-header {
-      display: none;
-    }
-    
-    body.selection-mode .selection-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 16px;
-      flex: 1;
-    }
-    
-    body.selection-mode .normal-header {
-      display: none;
-    }
-    
-    .selection-count {
+    /* --- BUTTONS --- */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
       font-size: 14px;
       font-weight: 500;
+      cursor: pointer;
     }
     
-    .selection-actions {
-      display: flex;
-      gap: 4px;
-    }
-    
-    /* --- MENU --- */
-    .menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      display: none;
-    }
-    
-    .menu-overlay.show {
-      display: block;
-    }
-    
-    .menu-sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: 280px;
-      background: var(--surface);
-      transform: translateX(-100%);
-      transition: transform 0.3s;
-      z-index: 1001;
-      overflow-y: auto;
-    }
-    
-    .menu-sidebar.open {
-      transform: translateX(0);
-    }
-    
-    .menu-header {
-      padding: 24px 16px;
-      border-bottom: 2px solid var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .menu-content {
-      padding: 16px;
-    }
-    
-    .menu-item {
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .btn-icon {
+      width: 40px;
+      height: 40px;
       border-radius: 8px;
-      margin-bottom: 4px;
-    }
-    
-    .menu-item:active {
-      background: rgba(0,0,0,0.1);
-    }
-    
-    /* --- CONTEXT MENU --- */
-    .context-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      display: none;
-    }
-    
-    .context-overlay.show {
-      display: block;
-    }
-    
-    .context-sheet {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--surface);
-      border-radius: 16px 16px 0 0;
-      padding: 16px 0;
-      transform: translateY(100%);
-      transition: transform 0.3s;
-      z-index: 1001;
-    }
-    
-    .context-sheet.show {
-      transform: translateY(0);
-    }
-    
-    .sheet-item {
-      padding: 16px 24px;
+      border: none;
+      background: transparent;
       display: flex;
       align-items: center;
-      gap: 16px;
+      justify-content: center;
+      cursor: pointer;
     }
     
-    .sheet-item:active {
+    .btn-icon:active {
       background: rgba(0,0,0,0.1);
     }
     
-    .sheet-item.danger {
-      color: #f44336;
+    /* --- MOBILE --- */
+    @media (max-width: 768px) {
+      .header-content {
+        padding: 0 12px;
+      }
+      
+      .content-panel {
+        padding: 12px;
+      }
+      
+      .pdf-card {
+        padding: 10px;
+      }
     }
-    
   </style>
 </head>
 <body>
+  <!-- Hidden file input -->
+  <input type="file" id="fileInput" accept=".pdf" style="display:none">
 
-  <input type="file" id="fileInput" accept="application/pdf" style="display: none;">
-
-  <div class="top-bar">
-    <div class="normal-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-content">
       <div class="logo-title">
-        <div class="logo">
-          <img src="file:///android_asset/web/logo/logo.png" alt="Logo">
-        </div>
-        <h1 class="app-title">PDF Reader</h1>
+        <div class="logo">PDF</div>
+        <div class="app-title">PDF Reader</div>
       </div>
-      <div>
-        <button class="icon-btn" id="menuBtn">
-          <span class="material-symbols-rounded">menu</span>
+      
+      <div class="header-actions">
+        <button class="btn-icon" id="searchBtn">
+          <span class="material-icons">search</span>
         </button>
-      </div>
-    </div>
-    
-    <div class="selection-header">
-      <div class="selection-count" id="selectionCount">0 selected</div>
-      <div class="selection-actions">
-        <button class="icon-btn" onclick="selectAll()">
-          <span class="material-symbols-rounded">select_all</span>
-        </button>
-        <button class="icon-btn" onclick="shareSelected()">
-          <span class="material-symbols-rounded">share</span>
-        </button>
-        <button class="icon-btn" onclick="deleteSelected()">
-          <span class="material-symbols-rounded">delete</span>
-        </button>
-        <button class="icon-btn" onclick="exitSelection()">
-          <span class="material-symbols-rounded">close</span>
+        <button class="btn-icon" id="menuBtn">
+          <span class="material-icons">menu</span>
         </button>
       </div>
     </div>
   </div>
 
-  <div class="tabs-container">
+  <!-- TABS -->
+  <div class="tabs">
     <div class="tab active" data-tab="recent">
-      <span class="material-symbols-rounded">history</span>
+      <span class="material-icons">history</span>
       <span>Recent</span>
     </div>
     <div class="tab" data-tab="device">
-      <span class="material-symbols-rounded">folder</span>
+      <span class="material-icons">folder</span>
       <span>Device</span>
     </div>
     <div class="tab" data-tab="favorites">
-      <span class="material-symbols-rounded">star</span>
+      <span class="material-icons">star</span>
       <span>Favorites</span>
     </div>
   </div>
 
-  <main class="main-content">
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+    <!-- RECENT FILES -->
     <div class="content-panel active" id="recentPanel">
       <div class="pdf-grid" id="recentList">
-        </div>
+        <!-- Recent PDFs will be loaded here -->
+      </div>
     </div>
     
+    <!-- DEVICE FILES -->
     <div class="content-panel" id="devicePanel">
+      <div class="permission-banner" id="permissionContainer" style="display:none;">
+        <h3>Permission Required</h3>
+        <p>Need permission to access PDF files on your device</p>
+        <button onclick="requestPermission()">Grant Permission</button>
+      </div>
+      
       <div class="pdf-grid" id="deviceList">
-        </div>
+        <!-- Device PDFs will be loaded here -->
+      </div>
     </div>
     
+    <!-- FAVORITES -->
     <div class="content-panel" id="favoritesPanel">
       <div class="pdf-grid" id="favoritesList">
-        </div>
+        <!-- Favorite PDFs will be loaded here -->
+      </div>
     </div>
   </main>
 
+  <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <div class="nav-item active" data-nav="home">
-      <span class="material-symbols-rounded">home</span>
+      <span class="material-icons">home</span>
       <span>Home</span>
     </div>
     <div class="nav-item" data-nav="tools">
-      <span class="material-symbols-rounded">build</span>
+      <span class="material-icons">build</span>
       <span>Tools</span>
     </div>
     <div class="nav-item" data-nav="files">
-      <span class="material-symbols-rounded">folder</span>
+      <span class="material-icons">folder</span>
       <span>Files</span>
     </div>
   </nav>
 
+  <!-- FAB -->
   <div class="fab-container">
     <button class="fab" id="fabBtn">
-      <span class="material-symbols-rounded">add</span>
+      <span class="material-icons">add</span>
     </button>
   </div>
 
-  <div class="menu-overlay" id="menuOverlay"></div>
-  <div class="menu-sidebar" id="menuSidebar">
-    <div class="menu-header">
-      <div class="logo">
-        <img src="file:///android_asset/web/logo/logo.png" alt="Logo">
-      </div>
-      <h2 style="font-size: 20px; font-weight: 700; color: var(--primary);">PDF Reader</h2>
-    </div>
-    <div class="menu-content">
-      <div class="menu-item" onclick="openSettings()">
-        <span class="material-symbols-rounded">settings</span>
-        <span>Settings</span>
-      </div>
-      <div class="menu-item" onclick="openHelp()">
-        <span class="material-symbols-rounded">help</span>
-        <span>Help</span>
-      </div>
-      <div class="menu-item" onclick="openAbout()">
-        <span class="material-symbols-rounded">info</span>
-        <span>About</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="context-overlay" id="contextOverlay"></div>
-  <div class="context-sheet" id="contextSheet">
-    <div class="sheet-item" onclick="renamePdf()">
-      <span class="material-symbols-rounded">edit</span>
-      <span>Rename</span>
-    </div>
-    <div class="sheet-item" onclick="sharePdf()">
-      <span class="material-symbols-rounded">share</span>
-      <span>Share</span>
-    </div>
-    <div class="sheet-item" onclick="printPdf()">
-      <span class="material-symbols-rounded">print</span>
-      <span>Print</span>
-    </div>
-    <div class="sheet-item danger" onclick="deletePdf()">
-      <span class="material-symbols-rounded">delete</span>
-      <span>Delete</span>
-    </div>
-  </div>
-
   <script>
-    // --- VARIABLES ---
+    // ==================== VARIABLES ====================
+    let pdfs = []; // All PDFs from device
+    let importedPDFs = []; // Imported PDFs
+    let favorites = []; // Favorite PDFs
     let currentTab = 'recent';
     let currentNav = 'home';
-    let isSelectionMode = false;
-    let selectedFiles = new Set();
-    let pdfs = [];
-    let currentContextPdf = null;
-
-    // --- ANDROID BRIDGE FUNCTIONS ---
-    function androidCheckPermission() {
-        if (typeof Android !== 'undefined' && Android.checkPermission) {
-            return Android.checkPermission();
-        }
-        return false;
+    
+    // ==================== ANDROID BRIDGE FUNCTIONS ====================
+    function checkAndroidPermission() {
+      if (typeof Android !== 'undefined' && Android.checkPermission) {
+        return Android.checkPermission();
+      }
+      return false;
     }
     
-    function androidListPDFs() {
-        if (typeof Android !== 'undefined' && Android.listPDFs) {
-            return Android.listPDFs();
-        }
-        return "";
+    function requestPermission() {
+      if (typeof Android !== 'undefined' && Android.requestPermission) {
+        Android.requestPermission();
+      }
     }
     
-    function androidOpenPDF(path) {
-        if (typeof Android !== 'undefined' && Android.openPDF) {
-            Android.openPDF(path);
-        }
+    function listPDFs() {
+      if (typeof Android !== 'undefined' && Android.listPDFs) {
+        return Android.listPDFs();
+      }
+      return "";
     }
     
-    function androidSharePDF(path) {
-        if (typeof Android !== 'undefined' && Android.sharePDF) {
-            Android.sharePDF(path);
-        }
-    }
-    
-    function androidDeletePDF(path) {
-        if (typeof Android !== 'undefined' && Android.deletePDF) {
-            return Android.deletePDF(path);
-        }
-        return false;
-    }
-    
-    function androidShowToast(message) {
-        if (typeof Android !== 'undefined' && Android.showToast) {
-            Android.showToast(message);
-        } else {
-            alert(message);
-        }
-    }
-
-    // --- APP INIT ---
-    document.addEventListener('DOMContentLoaded', function() {
-        loadTheme();
-        setupEventListeners();
-        loadPDFs();
-    });
-
-    // --- THEME MANAGEMENT ---
-    function loadTheme() {
-        const savedTheme = localStorage.getItem('pdfTheme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-
-    function setTheme(theme) {
-        localStorage.setItem('pdfTheme', theme);
-        document.documentElement.setAttribute('data-theme', theme);
-    }
-
-    // --- EVENT LISTENERS ---
-    function setupEventListeners() {
-        // Tab clicks
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                switchTab(this.dataset.tab);
-            });
-        });
-        
-        // Nav clicks
-        document.querySelectorAll('.nav-item').forEach(nav => {
-            nav.addEventListener('click', function() {
-                switchNav(this.dataset.nav);
-            });
-        });
-        
-        // Menu button
-        document.getElementById('menuBtn').addEventListener('click', openMenu);
-        
-        // Menu overlay
-        document.getElementById('menuOverlay').addEventListener('click', closeMenu);
-        
-        // Context overlay
-        document.getElementById('contextOverlay').addEventListener('click', closeContext);
-        
-        // FAB button
-        document.getElementById('fabBtn').addEventListener('click', openFabMenu);
-        
-        // File input
-        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-    }
-
-    // --- TAB MANAGEMENT ---
-    function switchTab(tabId) {
-        currentTab = tabId;
-        
-        // Tab display
-        document.querySelectorAll('.tab').forEach(t => {
-            t.classList.toggle('active', t.dataset.tab === tabId);
-        });
-        
-        // Panel display
-        document.querySelectorAll('.content-panel').forEach(p => {
-            p.classList.toggle('active', p.id === tabId + 'Panel');
-        });
-        
-        // Load PDFs
-        loadPDFs();
-    }
-
-    // --- NAV MANAGEMENT ---
-    function switchNav(navId) {
-        currentNav = navId;
-        
-        // Nav display
-        document.querySelectorAll('.nav-item').forEach(n => {
-            n.classList.toggle('active', n.dataset.nav === navId);
-        });
-        
-        // Show/Hide FAB
-        document.getElementById('fabBtn').style.display = 
-            (navId === 'home') ? 'flex' : 'none';
-    }
-
-    // --- LOAD PDFs ---
-    function loadPDFs() {
-        let files = [];
-        
-        if (currentTab === 'device') {
-            // Get PDF list from Android
-            if (androidCheckPermission()) {
-                const pdfList = androidListPDFs();
-                if (pdfList) {
-                    files = pdfList.split('||').map(path => {
-                        const name = path.split('/').pop();
-                        return {
-                            id: Date.now() + Math.random(),
-                            name: name,
-                            path: path,
-                            isFavorite: false,
-                            size: '2.5 MB',
-                            date: new Date().toLocaleDateString('en-US')
-                        };
-                    });
-                }
-            }
-        } else if (currentTab === 'favorites') {
-            // Favorites
-            files = pdfs.filter(pdf => pdf.isFavorite);
-        } else {
-            // Recent
-            files = pdfs.slice(0, 10); // Last 10 PDFs
-        }
-        
-        renderPDFList(files);
-    }
-
-    // --- RENDER PDF LIST ---
-    function renderPDFList(files) {
-        const containerId = currentTab + 'List';
-        const container = document.getElementById(containerId);
-        
-        if (!files || files.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="material-symbols-rounded empty-icon">folder_open</div>
-                    <p>No PDF files yet</p>
-                </div>
-            `;
-            return;
-        }
-        
-        let html = '';
-        files.forEach(pdf => {
-            html += `
-                <div class="pdf-card" 
-                     data-id="${pdf.id}"
-                     onclick="handlePdfClick('${pdf.id}')"
-                     oncontextmenu="event.preventDefault(); openContextMenu('${pdf.id}')">
-                    ${isSelectionMode ? `
-                    <div class="selection-checkbox ${selectedFiles.has(pdf.id) ? 'selected' : ''}" 
-                         onclick="event.stopPropagation(); toggleSelection('${pdf.id}')"></div>
-                    ` : ''}
-                    <div class="pdf-icon">PDF</div>
-                    <div class="pdf-info">
-                        <div class="pdf-name">${pdf.name}</div>
-                        <div class="pdf-meta">${pdf.size} • ${pdf.date}</div>
-                    </div>
-                    <div class="pdf-actions">
-                        <button class="icon-btn" onclick="event.stopPropagation(); toggleFavorite('${pdf.id}')">
-                            <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' ${pdf.isFavorite ? 1 : 0}">
-                                star
-                            </span>
-                        </button>
-                        <button class="icon-btn" onclick="event.stopPropagation(); openContextMenu('${pdf.id}')">
-                            <span class="material-symbols-rounded">more_vert</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-    }
-
-    // --- PDF CLICK ---
-    function handlePdfClick(pdfId) {
-        if (isSelectionMode) {
-            toggleSelection(pdfId);
-            return;
-        }
-        
-        const pdf = pdfs.find(p => p.id == pdfId);
-        if (pdf && pdf.path) {
-            androidOpenPDF(pdf.path);
-        }
-    }
-
-    // --- FAVORITE ACTIONS ---
-    function toggleFavorite(pdfId) {
-        const pdf = pdfs.find(p => p.id == pdfId);
-        if (pdf) {
-            pdf.isFavorite = !pdf.isFavorite;
-            androidShowToast(pdf.isFavorite ? 'Added to favorites' : 'Removed from favorites');
-            loadPDFs();
-        }
-    }
-
-    // --- SELECTION MODE ---
-    function toggleSelection(pdfId) {
-        if (!isSelectionMode) {
-            enterSelectionMode();
-        }
-        
-        if (selectedFiles.has(pdfId)) {
-            selectedFiles.delete(pdfId);
-        } else {
-            selectedFiles.add(pdfId);
-        }
-        
-        updateSelectionUI();
-        
-        if (selectedFiles.size === 0) {
-            exitSelection();
-        }
-    }
-    
-    function enterSelectionMode() {
-        isSelectionMode = true;
-        document.body.classList.add('selection-mode');
-        updateSelectionUI();
-    }
-    
-    function exitSelection() {
-        isSelectionMode = false;
-        selectedFiles.clear();
-        document.body.classList.remove('selection-mode');
-        updateSelectionUI();
-    }
-    
-    function selectAll() {
-        const currentPdfs = getCurrentPDFs();
-        currentPdfs.forEach(pdf => selectedFiles.add(pdf.id));
-        updateSelectionUI();
-    }
-    
-    function shareSelected() {
-        if (selectedFiles.size === 0) return;
-        
-        const pdfsToShare = getCurrentPDFs().filter(pdf => selectedFiles.has(pdf.id));
-        pdfsToShare.forEach(pdf => {
-            if (pdf.path) {
-                androidSharePDF(pdf.path);
-            }
-        });
-        
-        exitSelection();
-    }
-    
-    function deleteSelected() {
-        if (selectedFiles.size === 0) return;
-        
-        if (!confirm(`${selectedFiles.size} PDF(s) will be deleted. Are you sure?`)) return;
-        
-        const pdfsToDelete = getCurrentPDFs().filter(pdf => selectedFiles.has(pdf.id));
-        let successCount = 0;
-        
-        pdfsToDelete.forEach(pdf => {
-            if (pdf.path && androidDeletePDF(pdf.path)) {
-                successCount++;
-                pdfs = pdfs.filter(p => p.id !== pdf.id);
-            }
-        });
-        
-        androidShowToast(`${successCount} PDF(s) deleted`);
-        exitSelection();
-        loadPDFs();
-    }
-    
-    function updateSelectionUI() {
-        document.getElementById('selectionCount').textContent = 
-            `${selectedFiles.size} selected`;
-        
-        // Update checkboxes
-        document.querySelectorAll('.pdf-card').forEach(card => {
-            const pdfId = card.dataset.id;
-            const checkbox = card.querySelector('.selection-checkbox');
-            if (checkbox) {
-                checkbox.classList.toggle('selected', selectedFiles.has(pdfId));
-            }
-        });
-    }
-    
-    function getCurrentPDFs() {
-        if (currentTab === 'device') {
-            // Device PDFs
-            const pdfList = androidListPDFs();
-            if (!pdfList) return [];
-            
-            return pdfList.split('||').map(path => {
-                const name = path.split('/').pop();
-                return {
-                    id: path, // use path as ID
-                    name: name,
-                    path: path,
-                    isFavorite: false
-                };
-            });
-        } else if (currentTab === 'favorites') {
-            return pdfs.filter(pdf => pdf.isFavorite);
-        } else {
-            return pdfs;
-        }
-    }
-
-    // --- CONTEXT MENU ---
-    function openContextMenu(pdfId) {
-        currentContextPdf = pdfs.find(p => p.id == pdfId);
-        if (!currentContextPdf) return;
-        
-        document.getElementById('contextOverlay').classList.add('show');
-        document.getElementById('contextSheet').classList.add('show');
-    }
-    
-    function closeContext() {
-        document.getElementById('contextOverlay').classList.remove('show');
-        document.getElementById('contextSheet').classList.remove('show');
-        currentContextPdf = null;
-    }
-    
-    function renamePdf() {
-        if (!currentContextPdf) return;
-        
-        const newName = prompt('New name:', currentContextPdf.name);
-        if (newName && newName.trim()) {
-            currentContextPdf.name = newName.trim();
-            androidShowToast('PDF renamed');
-            loadPDFs();
-        }
-        closeContext();
-    }
-    
-    function sharePdf() {
-        if (!currentContextPdf || !currentContextPdf.path) return;
-        androidSharePDF(currentContextPdf.path);
-        closeContext();
-    }
-    
-    function printPdf() {
-        if (!currentContextPdf) return;
-        androidShowToast('Preparing to print...');
-        closeContext();
-    }
-    
-    function deletePdf() {
-        if (!currentContextPdf || !currentContextPdf.path) return;
-        
-        if (confirm('Are you sure you want to delete this PDF?')) {
-            if (androidDeletePDF(currentContextPdf.path)) {
-                pdfs = pdfs.filter(p => p.id !== currentContextPdf.id);
-                androidShowToast('PDF deleted');
-                loadPDFs();
-            }
-        }
-        closeContext();
-    }
-
-    // --- MENU ACTIONS ---
-    function openMenu() {
-        document.getElementById('menuOverlay').classList.add('show');
-        document.getElementById('menuSidebar').classList.add('open');
-    }
-    
-    function closeMenu() {
-        document.getElementById('menuOverlay').classList.remove('show');
-        document.getElementById('menuSidebar').classList.remove('open');
-    }
-    
-    function openSettings() {
-        closeMenu();
-        androidShowToast('Opening settings...');
-    }
-    
-    function openHelp() {
-        closeMenu();
-        androidShowToast('Opening help...');
-    }
-    
-    function openAbout() {
-        closeMenu();
-        androidShowToast('PDF Reader v1.0 - Dev Software');
-    }
-
-    // --- FAB MENU ---
-    function openFabMenu() {
-        document.getElementById('fileInput').click();
-    }
-    
-    function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        // Read file
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const newPdf = {
-                id: Date.now(),
-                name: file.name,
-                path: '', // Local file
-                data: e.target.result, // Base64 data
-                isFavorite: false,
-                size: formatBytes(file.size),
-                date: new Date().toLocaleDateString('en-US')
-            };
-            
-            pdfs.unshift(newPdf);
-            androidShowToast('PDF uploaded');
-            loadPDFs();
-        };
-        
-        reader.readAsDataURL(file);
-        event.target.value = '';
-    }
-    
-    function formatBytes(bytes) {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / 1048576).toFixed(1) + ' MB';
-    }
-
-    // --- ANDROID BACK BUTTON ---
-    window.androidBackPressed = function() {
-        if (isSelectionMode) {
-            exitSelection();
-            return false;
-        }
-        
-        if (document.getElementById('contextOverlay').classList.contains('show')) {
-            closeContext();
-            return false;
-        }
-        
-        if (document.getElementById('menuOverlay').classList.contains('show')) {
-            closeMenu();
-            return false;
-        }
-        
-        // If not on home, go back to home
-        if (currentNav !== 'home') {
-            switchNav('home');
-            return false;
-        }
-        
-        // Return true to exit (Android will handle)
+    function openPDF(path) {
+      if (typeof Android !== 'undefined' && Android.openPDF) {
+        Android.openPDF(path);
         return true;
-    };
-
-    // --- ANDROID RESUME ---
+      }
+      return false;
+    }
+    
+    function showToast(message) {
+      if (typeof Android !== 'undefined' && Android.showToast) {
+        Android.showToast(message);
+      } else {
+        alert(message);
+      }
+    }
+    
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("PDF Reader initialized");
+      setupEventListeners();
+      loadData();
+      
+      // Check permission on startup
+      checkPermission();
+    });
+    
+    // ==================== EVENT LISTENERS ====================
+    function setupEventListeners() {
+      // Tab clicks
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          switchTab(this.dataset.tab);
+        });
+      });
+      
+      // Nav clicks
+      document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', function() {
+          switchNav(this.dataset.nav);
+        });
+      });
+      
+      // Search button
+      document.getElementById('searchBtn').addEventListener('click', function() {
+        showToast("Search feature coming soon");
+      });
+      
+      // Menu button
+      document.getElementById('menuBtn').addEventListener('click', function() {
+        showToast("Menu feature coming soon");
+      });
+      
+      // FAB button
+      document.getElementById('fabBtn').addEventListener('click', function() {
+        document.getElementById('fileInput').click();
+      });
+      
+      // File input
+      document.getElementById('fileInput').addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+          importPDF(this.files[0]);
+          this.value = '';
+        }
+      });
+    }
+    
+    // ==================== NAVIGATION ====================
+    function switchTab(tabId) {
+      currentTab = tabId;
+      
+      // Update tabs
+      document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tabId);
+      });
+      
+      // Update panels
+      document.querySelectorAll('.content-panel').forEach(p => {
+        p.classList.toggle('active', p.id === tabId + 'Panel');
+      });
+      
+      // Load data for tab
+      loadTabData();
+    }
+    
+    function switchNav(navId) {
+      currentNav = navId;
+      
+      // Update nav items
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.nav === navId);
+      });
+      
+      // Show/Hide FAB
+      document.getElementById('fabBtn').style.display = 
+        (navId === 'home') ? 'block' : 'none';
+    }
+    
+    // ==================== DATA LOADING ====================
+    function loadData() {
+      // Load from local storage
+      const savedImports = localStorage.getItem('importedPDFs');
+      if (savedImports) {
+        importedPDFs = JSON.parse(savedImports);
+      }
+      
+      const savedFavorites = localStorage.getItem('favoritePDFs');
+      if (savedFavorites) {
+        favorites = JSON.parse(savedFavorites);
+      }
+      
+      loadTabData();
+    }
+    
+    function loadTabData() {
+      switch(currentTab) {
+        case 'recent':
+          loadRecentPDFs();
+          break;
+        case 'device':
+          loadDevicePDFs();
+          break;
+        case 'favorites':
+          loadFavoritePDFs();
+          break;
+      }
+    }
+    
+    function loadRecentPDFs() {
+      const container = document.getElementById('recentList');
+      const recentPDFs = [...importedPDFs].reverse().slice(0, 10);
+      
+      if (recentPDFs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="material-icons empty-icon">history</span>
+            <div>No recent PDFs</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = recentPDFs.map(pdf => createPDFCard(pdf)).join('');
+    }
+    
+    function loadDevicePDFs() {
+      const container = document.getElementById('deviceList');
+      const permissionBanner = document.getElementById('permissionContainer');
+      
+      // Check permission
+      if (!checkAndroidPermission()) {
+        permissionBanner.style.display = 'block';
+        container.style.display = 'none';
+        return;
+      }
+      
+      permissionBanner.style.display = 'none';
+      container.style.display = 'block';
+      
+      // Load PDFs from Android
+      const pdfList = listPDFs();
+      if (!pdfList || pdfList.trim() === "") {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="material-icons empty-icon">folder_open</span>
+            <div>No PDFs found on device</div>
+          </div>
+        `;
+        return;
+      }
+      
+      const pdfPaths = pdfList.split('||').filter(p => p && p.trim().length > 0);
+      const devicePDFs = pdfPaths.map((path, index) => {
+        const name = path.split('/').pop();
+        return {
+          id: 'device_' + index,
+          name: name,
+          path: path,
+          isFavorite: false,
+          size: "~2 MB",
+          date: new Date().toLocaleDateString('en-US')
+        };
+      });
+      
+      // Combine with imported PDFs
+      const allPDFs = [...devicePDFs, ...importedPDFs];
+      
+      if (allPDFs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="material-icons empty-icon">folder_open</span>
+            <div>No PDFs found</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = allPDFs.map(pdf => createPDFCard(pdf)).join('');
+    }
+    
+    function loadFavoritePDFs() {
+      const container = document.getElementById('favoritesList');
+      
+      if (favorites.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <span class="material-icons empty-icon">star</span>
+            <div>No favorite PDFs</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = favorites.map(pdf => createPDFCard(pdf)).join('');
+    }
+    
+    // ==================== PDF CARD CREATION ====================
+    function createPDFCard(pdf) {
+      const isFavorite = favorites.some(f => f.id === pdf.id);
+      
+      return `
+        <div class="pdf-card" onclick="openPDFFile('${pdf.id}', '${pdf.path || ''}')">
+          <div class="pdf-icon">PDF</div>
+          <div class="pdf-info">
+            <div class="pdf-name">${pdf.name}</div>
+            <div class="pdf-meta">
+              <span>${pdf.size}</span>
+              <span>•</span>
+              <span>${pdf.date}</span>
+            </div>
+          </div>
+          <div class="pdf-actions">
+            <button class="btn-icon" onclick="event.stopPropagation(); toggleFavorite('${pdf.id}')">
+              <span class="material-icons" style="color: ${isFavorite ? '#ffc107' : '#ccc'}">star</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ==================== PDF OPERATIONS ====================
+    function importPDF(file) {
+      if (file.type !== 'application/pdf') {
+        showToast("Please select a PDF file");
+        return;
+      }
+      
+      const newPDF = {
+        id: 'import_' + Date.now(),
+        name: file.name,
+        size: formatBytes(file.size),
+        date: new Date().toLocaleDateString('en-US'),
+        isFavorite: false,
+        file: file
+      };
+      
+      importedPDFs.push(newPDF);
+      localStorage.setItem('importedPDFs', JSON.stringify(importedPDFs));
+      
+      showToast("PDF imported: " + file.name);
+      loadTabData();
+    }
+    
+    function openPDFFile(pdfId, path) {
+      if (path) {
+        // Device PDF
+        if (openPDF(path)) {
+          showToast("Opening PDF...");
+        } else {
+          showToast("Cannot open PDF");
+        }
+      } else {
+        // Imported PDF
+        showToast("Opening imported PDF...");
+        // Here you would open the imported PDF file
+      }
+    }
+    
+    function toggleFavorite(pdfId) {
+      // Find PDF in all sources
+      let pdf = null;
+      
+      // Check imported PDFs
+      pdf = importedPDFs.find(p => p.id === pdfId);
+      
+      if (!pdf) {
+        // Check device PDFs (would need to be stored)
+        showToast("Cannot favorite device PDFs");
+        return;
+      }
+      
+      const index = favorites.findIndex(f => f.id === pdfId);
+      
+      if (index === -1) {
+        // Add to favorites
+        favorites.push(pdf);
+        showToast("Added to favorites");
+      } else {
+        // Remove from favorites
+        favorites.splice(index, 1);
+        showToast("Removed from favorites");
+      }
+      
+      localStorage.setItem('favoritePDFs', JSON.stringify(favorites));
+      loadTabData();
+    }
+    
+    // ==================== PERMISSION CHECK ====================
+    function checkPermission() {
+      if (currentTab === 'device') {
+        loadDevicePDFs();
+      }
+    }
+    
+    // ==================== UTILITY FUNCTIONS ====================
+    function formatBytes(bytes) {
+      if (!bytes) return "0 Bytes";
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    // ==================== ANDROID CALLBACKS ====================
     window.onAndroidResume = function() {
-        loadPDFs();
+      console.log("App resumed");
+      checkPermission();
     };
-
+    
+    window.androidBackPressed = function() {
+      // Handle back button
+      if (currentNav !== 'home') {
+        switchNav('home');
+        return false;
+      }
+      return true;
+    };
+    
   </script>
 </body>
 </html>

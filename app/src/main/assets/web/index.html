@@ -44,7 +44,7 @@
     :root {
       /* KRİTİK YÜKSEKLİK AYARLARI */
       --h-header: 64px;
-      --h-banner: 100px;
+      --h-banner: 40px; /* 30px'ten 40px yapıldı (daha okunabilir) */
       --h-carousel: 60px;
       --h-tabs: 60px;
       --h-bottom: 72px;
@@ -71,6 +71,7 @@
       --z-bottom-nav: 100;
       --z-overlay: 2000;
       --z-context-menu: 2100; 
+      --z-category-menu: 2200;
       
       --card-icon-size: 36px;
       --card-padding: 10px;
@@ -206,26 +207,49 @@
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* B1. Banner Tasarımı */
+    /* B1. Banner Tasarımı (YENİ: REKLAM ALANI - AÇIK GRI) */
     .promo-banner {
         height: var(--h-banner);
-        background: linear-gradient(135deg, #E53935, #FF5252);
+        background: #f0f0f0; /* Açık gri arkaplan */
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 20px;
-        color: white;
+        padding: 0 16px; /* Daha az padding */
+        color: #666; /* Koyu gri yazı */
+        border-bottom: 1px solid #ddd;
+        font-size: 13px; /* Daha küçük font */
+    }
+    
+    .promo-text { 
+        flex: 1; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
     }
     
     .promo-text h3 { 
-        font-size: 16px; 
+        font-size: 13px; 
         font-weight: 700; 
-        margin-bottom: 4px; 
+        color: #333; 
+        margin: 0; 
     }
     
     .promo-text p { 
-        font-size: 12px; 
-        opacity: 0.9; 
+        font-size: 11px; 
+        color: #666; 
+        margin: 0; 
+    }
+    
+    .promo-icon {
+        font-size: 18px; 
+        color: #E53935;
+        opacity: 0.8;
+    }
+    
+    .promo-close {
+        font-size: 18px;
+        color: #999;
+        cursor: pointer;
     }
 
     /* B2. Yatay Carousel (Slider) */
@@ -271,7 +295,7 @@
         margin-right: 6px; 
     }
 
-    /* C. Sekmeler (Tabs) - SADECE ANA SAYFADA GÖRÜNÜR */
+    /* C. Sekmeler (Tabs) - YENİ: KATEGORİ SEKMESİ EKLENDİ */
     .tabs-container { 
         height: var(--h-tabs);
         padding: 0 16px; 
@@ -284,7 +308,7 @@
         display: flex; 
         width: 100%; 
         height: 100%; 
-        gap: 8px; 
+        gap: 4px; /* Daha az gap */
     }
     
     .tab { 
@@ -1101,6 +1125,109 @@
         font-size: 24px;
         color: inherit;
     }
+    
+    /* --- KATEGORİ MENÜSÜ --- */
+    .category-menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: var(--z-category-menu);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s;
+    }
+    
+    .category-menu-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .category-menu {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--surface);
+        z-index: var(--z-category-menu);
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 24px 0;
+        border-top: 1px solid var(--border);
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .category-menu.show {
+        transform: translateY(0);
+    }
+    
+    .category-menu-header {
+        padding: 0 24px 16px 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .category-menu-title {
+        font-size: 18px;
+        font-weight: 600;
+    }
+    
+    .category-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 24px;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+    
+    .category-item:active {
+        background: rgba(0,0,0,0.05);
+    }
+    
+    .category-item.active {
+        color: var(--primary);
+    }
+    
+    .category-item .material-symbols-rounded {
+        font-size: 24px;
+        color: inherit;
+    }
+    
+    .category-actions {
+        display: flex;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-top: 1px solid var(--border);
+        margin-top: 16px;
+        gap: 12px;
+    }
+    
+    .category-action-btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        background: var(--background);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        font-weight: 500;
+        cursor: pointer;
+        text-align: center;
+    }
+    
+    .category-action-btn.primary {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
 
     /* --- SETTINGS STYLES --- */
     .settings-tabs {
@@ -1288,6 +1415,27 @@
     .top-bar-container.hidden .tabs-container {
         transform: translateY(calc(var(--h-header) + var(--h-banner) + var(--h-carousel)));
     }
+    
+    /* KATEGORİ YÖNETİMİ STİLLERİ */
+    .category-manage-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 5;
+    }
+    
+    .category-badge {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(229, 57, 53, 0.9);
+        color: white;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        z-index: 3;
+        font-weight: 600;
+    }
 
   </style>
 </head>
@@ -1356,13 +1504,14 @@
 
     <!-- B. Banner ve Carousel -->
     <div class="collapsible-wrapper" id="collapsibleWrapper">
-        <!-- Banner -->
-        <div class="promo-banner">
+        <!-- Banner (YENİ: REKLAM ALANI) -->
+        <div class="promo-banner" id="promoBanner">
             <div class="promo-text">
-                <h3>Pro'ya Yükselt</h3>
-                <p>Reklamsız deneyim ve sınırsız araçlar</p>
+                <span class="material-symbols-rounded promo-icon">diamond</span>
+                <h3>Reklam Alanı</h3>
+                <p>Pro'ya yükseltin</p>
             </div>
-            <span class="material-symbols-rounded" style="font-size: 32px; opacity: 0.5;">diamond</span>
+            <span class="material-symbols-rounded promo-close" onclick="hidePromoBanner()">close</span>
         </div>
         
         <!-- Carousel -->
@@ -1371,7 +1520,7 @@
         </div>
     </div>
 
-    <!-- C. Sekmeler - SADECE ANA SAYFADA -->
+    <!-- C. Sekmeler - YENİ: KATEGORİ SEKMESİ EKLENDİ -->
     <div class="tabs-container" id="tabsContainer">
       <div class="tabs">
         <div class="tab active" data-tab="recent">
@@ -1385,6 +1534,10 @@
         <div class="tab" data-tab="favorites">
           <span class="material-symbols-rounded">star</span> 
           <span class="tab-label">Favoriler</span>
+        </div>
+        <div class="tab" data-tab="categories">
+          <span class="material-symbols-rounded">category</span> 
+          <span class="tab-label">Kategori</span>
         </div>
       </div>
     </div>
@@ -1430,6 +1583,12 @@
 
     <div class="content-panel" id="favoritesPanel">
       <div class="grid" id="favoritesList"></div>
+    </div>
+    
+    <div class="content-panel" id="categoriesPanel">
+      <div class="grid" id="categoriesList">
+        <!-- Kategoriye göre listelenecek -->
+      </div>
     </div>
     
     <div class="content-panel static-panel" id="filesPanel">
@@ -1633,6 +1792,9 @@
     <div class="sheet-item" onclick="handleContextAction('rename')">
         <span class="material-symbols-rounded">edit</span> Yeniden Adlandır
     </div>
+    <div class="sheet-item" onclick="handleContextAction('category')">
+        <span class="material-symbols-rounded">category</span> Kategoriye Ekle
+    </div>
     <div class="sheet-item" onclick="handleContextAction('share')">
         <span class="material-symbols-rounded">share</span> Paylaş
     </div>
@@ -1641,6 +1803,29 @@
     </div>
     <div class="sheet-item danger" onclick="handleContextAction('delete')">
         <span class="material-symbols-rounded">delete</span> Sil
+    </div>
+  </div>
+
+  <!-- KATEGORİ MENÜSÜ -->
+  <div class="category-menu-overlay" id="categoryOverlay"></div>
+  <div class="category-menu" id="categoryMenu">
+    <div class="sheet-handle"></div>
+    <div class="category-menu-header">
+        <h3 class="category-menu-title">Kategori Seçin</h3>
+        <button class="icon-button" onclick="closeCategoryMenu()">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+    </div>
+    <div id="categoryListContainer">
+        <!-- Kategoriler buraya eklenecek -->
+    </div>
+    <div class="category-actions">
+        <button class="category-action-btn" onclick="openAddCategoryDialog()">
+            <span class="material-symbols-rounded" style="font-size: 18px;">add</span> Kategori Ekle
+        </button>
+        <button class="category-action-btn" onclick="openManageCategories()">
+            <span class="material-symbols-rounded" style="font-size: 18px;">settings</span> Kategori Yönet
+        </button>
     </div>
   </div>
 
@@ -1674,6 +1859,11 @@
     const contextMeta = document.getElementById('contextMeta');
     let currentContextFile = null;
 
+    // Category Menu Variables
+    const categoryOverlay = document.getElementById('categoryOverlay');
+    const categoryMenu = document.getElementById('categoryMenu');
+    const categoryListContainer = document.getElementById('categoryListContainer');
+
     // Selection Mode Variables
     const selectionHeader = document.getElementById('selectionHeader');
     const selectionCount = document.getElementById('selectionCount');
@@ -1683,6 +1873,20 @@
     // Data Storage
     let importedFiles = []; // PDF Yükle ile gelen dosyalar
     let devicePDFs = []; // Cihazdan taranan PDF'ler
+    let recentFiles = []; // Son kullanılanlar
+    let favoriteFiles = []; // Favoriler
+    let categorizedFiles = []; // Kategoriye göre dosyalar
+    
+    // Kategori yönetimi
+    let categories = [
+        { id: 'is', name: 'İş', icon: 'work' },
+        { id: 'okul', name: 'Okul', icon: 'school' },
+        { id: 'finans', name: 'Finans', icon: 'attach_money' },
+        { id: 'saglik', name: 'Sağlık', icon: 'medical_services' },
+        { id: 'seyahat', name: 'Seyahat', icon: 'flight' }
+    ];
+    
+    let fileCategories = {}; // Dosya ID -> Kategori ID eşlemesi
 
     // Scroll & Swipe State
     let lastScrollY = 0;
@@ -1692,7 +1896,7 @@
     let isVerticalScroll = false; 
     const headerHeight = 64; 
     let currentNav = 'home';
-    const tabOrder = ['recent', 'device', 'favorites'];
+    const tabOrder = ['recent', 'device', 'favorites', 'categories'];
     
     // YENİ DEĞİŞKENLER
     const collapsibleWrapper = document.getElementById('collapsibleWrapper');
@@ -1731,6 +1935,38 @@
     function selectCategory(el) {
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
+        
+        // Kategori seçildiğinde kategori sekmesine geç
+        switchTab('categories', true);
+    }
+    
+    // --- REKLAM BANNER İŞLEMLERİ ---
+    function hidePromoBanner() {
+        const promoBanner = document.getElementById('promoBanner');
+        if (promoBanner) {
+            promoBanner.style.display = 'none';
+            localStorage.setItem('hidePromoBanner', 'true');
+            
+            // Yüksekliği güncelle
+            document.documentElement.style.setProperty('--h-banner', '0px');
+            
+            // Tüm panellerin padding'ini yeniden hesapla
+            document.querySelectorAll('.content-panel.active').forEach(panel => {
+                panel.style.paddingTop = 'calc(var(--h-header) + var(--h-carousel) + var(--h-tabs))';
+            });
+            
+            mainContent.style.paddingTop = 'calc(var(--h-header) + var(--h-carousel) + var(--h-tabs))';
+        }
+    }
+    
+    function checkPromoBanner() {
+        const shouldHide = localStorage.getItem('hidePromoBanner') === 'true';
+        const promoBanner = document.getElementById('promoBanner');
+        
+        if (shouldHide && promoBanner) {
+            promoBanner.style.display = 'none';
+            document.documentElement.style.setProperty('--h-banner', '0px');
+        }
     }
     
     // --- STICKY HEADER SCROLL MANTIĞI ---
@@ -1865,14 +2101,16 @@
                     size: getFileSizeFromPath(path),
                     date: getFileDateFromPath(path),
                     isFavorite: false,
-                    path: path
+                    path: path,
+                    category: null,
+                    lastOpened: null
                 });
             });
             
             if (loadingIndicator) loadingIndicator.style.display = 'none';
             if (deviceList) deviceList.style.display = 'grid';
             
-            renderList('deviceList', devicePDFs);
+            loadData();
             
         } catch (e) {
             console.error('Device scan error:', e);
@@ -1880,21 +2118,47 @@
             if (loadingIndicator) loadingIndicator.style.display = 'none';
             
             devicePDFs = [];
-            renderList('deviceList', devicePDFs);
+            loadData();
             alert("PDF tarama hatası: " + e.message);
         }
     }
 
     function getFileSizeFromPath(path) {
+        // Gerçek boyutu almak için Android'e sor (varsayılan uygulama)
+        try {
+            if (typeof Android !== 'undefined' && Android.getFileSize) {
+                const sizeBytes = Android.getFileSize(path);
+                if (sizeBytes && sizeBytes > 0) {
+                    return formatBytes(parseInt(sizeBytes));
+                }
+            }
+        } catch (e) {
+            console.error('File size error:', e);
+        }
+        
+        // Fallback: rastgele boyut
         const sizes = ['1.2 MB', '2.5 MB', '3.8 MB', '750 KB', '4.2 MB'];
         return sizes[Math.floor(Math.random() * sizes.length)];
     }
 
     function getFileDateFromPath(path) {
+        // Gerçek tarihi almak için Android'e sor
+        try {
+            if (typeof Android !== 'undefined' && Android.getFileDate) {
+                const dateStr = Android.getFileDate(path);
+                if (dateStr && dateStr !== 'ERROR') {
+                    return dateStr;
+                }
+            }
+        } catch (e) {
+            console.error('File date error:', e);
+        }
+        
+        // Fallback: bugünün tarihi
         const now = new Date();
-        const day = Math.floor(Math.random() * 28) + 1;
-        const month = Math.floor(Math.random() * 12) + 1;
-        return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${now.getFullYear()}`;
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${day}.${month}.${now.getFullYear()}`;
     }
     
     // Android Callbacks
@@ -1967,11 +2231,97 @@
     }
 
     function loadData() {
-      renderList('recentList', []);
-      renderList('favoritesList', []);
+      // Tüm dosyaları birleştir
+      const allFiles = [...devicePDFs, ...importedFiles];
       
-      const allDeviceFiles = [...devicePDFs, ...importedFiles.filter(f => !f.path || !f.path.startsWith('/'))];
-      renderList('deviceList', allDeviceFiles);
+      // Son kullanılanları sırala (en yeni en üstte)
+      recentFiles = allFiles
+        .filter(file => file.lastOpened)
+        .sort((a, b) => new Date(b.lastOpened) - new Date(a.lastOpened))
+        .slice(0, 20); // Son 20 dosya
+      
+      // Favorileri filtrele
+      favoriteFiles = allFiles.filter(file => file.isFavorite);
+      
+      // Cihazdaki tüm dosyaları göster
+      renderList('recentList', recentFiles);
+      renderList('deviceList', allFiles);
+      renderList('favoritesList', favoriteFiles);
+      renderCategoriesList();
+    }
+    
+    function renderCategoriesList() {
+        const categoriesList = document.getElementById('categoriesList');
+        if (!categoriesList) return;
+        
+        // Kategoriye göre gruplandır
+        const filesByCategory = {};
+        const allFiles = [...devicePDFs, ...importedFiles];
+        
+        // Her kategori için dosyaları filtrele
+        categories.forEach(category => {
+            filesByCategory[category.id] = allFiles.filter(file => 
+                fileCategories[file.id] === category.id
+            );
+        });
+        
+        // Kategori olmayanlar için
+        filesByCategory.uncategorized = allFiles.filter(file => 
+            !fileCategories[file.id] || fileCategories[file.id] === 'uncategorized'
+        );
+        
+        let html = '';
+        
+        // Her kategori için bölüm oluştur
+        categories.forEach(category => {
+            const files = filesByCategory[category.id];
+            if (files.length > 0) {
+                html += `
+                    <div class="category-section">
+                        <h3 style="font-size: 16px; margin: 16px 0 8px 0; color: var(--text-primary);">
+                            <span class="material-symbols-rounded" style="font-size: 20px; vertical-align: middle; margin-right: 8px;">${category.icon}</span>
+                            ${category.name} (${files.length})
+                        </h3>
+                `;
+                
+                files.forEach(file => {
+                    html += createCard(file.name, file.size, file.date, file.isFavorite, file.id, file.category);
+                });
+                
+                html += `</div>`;
+            }
+        });
+        
+        // Kategorize edilmemiş dosyalar
+        const uncategorizedFiles = filesByCategory.uncategorized;
+        if (uncategorizedFiles.length > 0) {
+            html += `
+                <div class="category-section">
+                    <h3 style="font-size: 16px; margin: 16px 0 8px 0; color: var(--text-primary);">
+                        <span class="material-symbols-rounded" style="font-size: 20px; vertical-align: middle; margin-right: 8px;">folder</span>
+                        Kategorize Edilmemiş (${uncategorizedFiles.length})
+                    </h3>
+            `;
+            
+            uncategorizedFiles.forEach(file => {
+                html += createCard(file.name, file.size, file.date, file.isFavorite, file.id, file.category);
+            });
+            
+            html += `</div>`;
+        }
+        
+        if (html === '') {
+            html = `
+                <div class="empty-state">
+                    <div class="empty-icon material-symbols-rounded">category</div>
+                    <p>Henüz kategorilendirilmiş dosya yok.</p>
+                    <p class="text-sm mt-2">Dosyaları kategoriye eklemek için dosyaya uzun basın veya menüyü açın.</p>
+                </div>
+            `;
+        }
+        
+        categoriesList.innerHTML = html;
+        attachLongPressEvents();
     }
 
     // Listeleri render eden yardımcı fonksiyon
@@ -1986,15 +2336,15 @@
         } else {
             let html = '';
             files.forEach(file => {
-                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id);
+                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id, file.category);
             });
             list.innerHTML = html;
             attachLongPressEvents();
         }
     }
 
-    // KART OLUŞTURMA
-    function createCard(name, size, date, isFavorite, id) {
+    // KART OLUŞTURMA (YENİ: KATEGORİ BADGE EKLENDİ)
+    function createCard(name, size, date, isFavorite, id, categoryId) {
       const MAX_LENGTH = 30;
       const truncatedName = name.length > MAX_LENGTH 
           ? name.substring(0, MAX_LENGTH) + '...' 
@@ -2004,6 +2354,10 @@
       const bgColor = theme === 'dark' ? 'var(--pdf-color-bg)' : '#E53935';
       const textColor = theme === 'dark' ? 'var(--pdf-color-text)' : '#E53935';
       const fillStar = isFavorite ? 1 : 0;
+      
+      // Kategori bilgisini al
+      const category = categories.find(c => c.id === categoryId);
+      const categoryBadge = category ? `<div class="category-badge">${category.name}</div>` : '';
 
       const pdfIconSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -2030,6 +2384,8 @@
            data-favorite="${isFavorite ? 'true' : 'false'}"
            data-id="${id}"
            onclick="handleCardClick(this, '${name}', ${id})">
+        
+        ${categoryBadge}
         
         <div class="selection-checkbox" onclick="event.stopPropagation(); toggleCardSelection(${id})"></div>
         
@@ -2083,11 +2439,13 @@
 
                 const newFile = {
                     name: file.name,
-                    size: formatBytes(file.size),
+                    size: formatBytes(file.size), // GERÇEK BOYUT
                     date: formattedDate,
                     isFavorite: false,
                     id: Date.now(),
-                    base64: base64Data
+                    base64: base64Data,
+                    category: null,
+                    lastOpened: null
                 };
 
                 importedFiles.unshift(newFile);
@@ -2207,6 +2565,7 @@
             selectedCards.forEach(cardId => {
                 importedFiles = importedFiles.filter(file => file.id !== cardId);
                 devicePDFs = devicePDFs.filter(file => file.id !== cardId);
+                delete fileCategories[cardId];
             });
             
             alert(`${selectedCards.size} öğe silindi.`);
@@ -2219,7 +2578,7 @@
         selectionCount.textContent = `${selectedCards.size} öğe seçildi`;
     }
 
-    // --- FAVORİ İŞLEVİ ---
+    // --- FAVORİ İŞLEVİ (YENİ: ALERT OLMADAN) ---
     function toggleFavorite(button, cardId) {
         if (isSelectionMode) {
             toggleCardSelection(cardId);
@@ -2236,8 +2595,7 @@
         const fillValue = isFavorite ? 1 : 0;
         span.style.fontVariationSettings = `'FILL' ${fillValue}, 'wght' 500, 'GRAD' 0, 'opsz' 24`;
 
-        const actionText = isFavorite ? 'Favorilere Eklendi' : 'Favorilerden Kaldırıldı';
-        alert(`"${card.dataset.name}" ${actionText}`);
+        // ALERT KALDIRILDI - Sessiz çalışıyor
         
         let fileIndex = importedFiles.findIndex(f => f.id === cardId);
         if(fileIndex > -1) {
@@ -2248,6 +2606,9 @@
         if(fileIndex > -1) {
             devicePDFs[fileIndex].isFavorite = isFavorite;
         }
+        
+        // Favoriler listesini güncelle
+        loadData();
     }
 
     // --- LONG PRESS VE CLICK YÖNETİMİ ---
@@ -2294,25 +2655,34 @@
                 fileData = devicePDFs.find(f => f.id === cardId);
             }
 
-            if (fileData && fileData.base64) {
-                const url = "viewer.html?base64=" + 
-                            encodeURIComponent(fileData.base64) + 
-                            "&name=" + 
-                            encodeURIComponent(name);
-                window.location.href = url;
-            } else if (fileData && fileData.path) {
-                const url = "viewer.html?file=" + 
-                            encodeURIComponent(fileData.path) + 
-                            "&name=" + 
-                            encodeURIComponent(name);
-                window.location.href = url;
-            } else {
-                alert("Dosya verisi bulunamadı!");
+            // DOSYA AÇILDIĞINDA SON KULLANILANLARA EKLE
+            if (fileData) {
+                // Son açılış tarihini güncelle
+                fileData.lastOpened = new Date().toISOString();
+                
+                // Son kullanılanlar listesini güncelle
+                loadData();
+                
+                if (fileData.base64) {
+                    const url = "viewer.html?base64=" + 
+                                encodeURIComponent(fileData.base64) + 
+                                "&name=" + 
+                                encodeURIComponent(name);
+                    window.location.href = url;
+                } else if (fileData.path) {
+                    const url = "viewer.html?file=" + 
+                                encodeURIComponent(fileData.path) + 
+                                "&name=" + 
+                                encodeURIComponent(name);
+                    window.location.href = url;
+                } else {
+                    alert("Dosya verisi bulunamadı!");
+                }
             }
         }
     }
 
-    // --- CONTEXT MENU FONKSİYONLARI ---
+    // --- CONTEXT MENU FONKSİYONLARI (YENİ: KATEGORİ SEÇENEĞİ EKLENDİ) ---
     function openContextMenu(name, size, date, cardId) {
         if (isSelectionMode) {
             toggleCardSelection(cardId);
@@ -2337,7 +2707,13 @@
         setTimeout(() => {
             switch(action) {
                 case 'rename':
-                    alert(`"${currentContextFile.name}" yeniden adlandırılıyor...`);
+                    const newName = prompt(`"${currentContextFile.name}" için yeni ad girin:`, currentContextFile.name);
+                    if (newName && newName.trim() !== '') {
+                        renameFile(currentContextFile.cardId, newName.trim());
+                    }
+                    break;
+                case 'category':
+                    openCategoryMenu(currentContextFile.cardId);
                     break;
                 case 'share':
                     alert(`"${currentContextFile.name}" paylaşılıyor...`);
@@ -2347,14 +2723,138 @@
                     break;
                 case 'delete':
                     if(confirm(`"${currentContextFile.name}" dosyasını silmek istediğinize emin misiniz?`)) {
-                        importedFiles = importedFiles.filter(f => f.id !== currentContextFile.cardId);
-                        devicePDFs = devicePDFs.filter(f => f.id !== currentContextFile.cardId);
-                        loadData();
-                        alert('Dosya silindi.');
+                        deleteFile(currentContextFile.cardId);
                     }
                     break;
             }
         }, 300);
+    }
+    
+    function renameFile(cardId, newName) {
+        // Imported files'da ara
+        let fileIndex = importedFiles.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            importedFiles[fileIndex].name = newName;
+        }
+        
+        // Device PDFs'de ara
+        fileIndex = devicePDFs.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            devicePDFs[fileIndex].name = newName;
+        }
+        
+        loadData();
+    }
+    
+    function deleteFile(cardId) {
+        importedFiles = importedFiles.filter(f => f.id !== cardId);
+        devicePDFs = devicePDFs.filter(f => f.id !== cardId);
+        delete fileCategories[cardId];
+        loadData();
+        alert('Dosya silindi.');
+    }
+
+    // --- KATEGORİ MENÜ FONKSİYONLARI ---
+    function openCategoryMenu(cardId) {
+        currentContextFile = { cardId };
+        
+        // Kategori listesini oluştur
+        let html = '';
+        categories.forEach(category => {
+            const isActive = fileCategories[cardId] === category.id;
+            html += `
+                <div class="category-item ${isActive ? 'active' : ''}" onclick="assignCategoryToFile('${category.id}')">
+                    <span class="material-symbols-rounded">${category.icon}</span>
+                    ${category.name}
+                    ${isActive ? '<span class="material-symbols-rounded" style="margin-left: auto;">check</span>' : ''}
+                </div>
+            `;
+        });
+        
+        // Kategorisiz seçeneği
+        const isUncategorized = !fileCategories[cardId] || fileCategories[cardId] === 'uncategorized';
+        html += `
+            <div class="category-item ${isUncategorized ? 'active' : ''}" onclick="removeCategoryFromFile()">
+                <span class="material-symbols-rounded">folder</span>
+                Kategorisiz
+                ${isUncategorized ? '<span class="material-symbols-rounded" style="margin-left: auto;">check</span>' : ''}
+            </div>
+        `;
+        
+        categoryListContainer.innerHTML = html;
+        categoryOverlay.classList.add('show');
+        categoryMenu.classList.add('show');
+    }
+    
+    function closeCategoryMenu() {
+        categoryOverlay.classList.remove('show');
+        categoryMenu.classList.remove('show');
+    }
+    
+    function assignCategoryToFile(categoryId) {
+        if (currentContextFile && currentContextFile.cardId) {
+            fileCategories[currentContextFile.cardId] = categoryId;
+            
+            // Dosya nesnesini de güncelle
+            let file = importedFiles.find(f => f.id === currentContextFile.cardId);
+            if (!file) {
+                file = devicePDFs.find(f => f.id === currentContextFile.cardId);
+            }
+            if (file) {
+                file.category = categoryId;
+            }
+            
+            loadData();
+            closeCategoryMenu();
+        }
+    }
+    
+    function removeCategoryFromFile() {
+        if (currentContextFile && currentContextFile.cardId) {
+            fileCategories[currentContextFile.cardId] = 'uncategorized';
+            
+            // Dosya nesnesini de güncelle
+            let file = importedFiles.find(f => f.id === currentContextFile.cardId);
+            if (!file) {
+                file = devicePDFs.find(f => f.id === currentContextFile.cardId);
+            }
+            if (file) {
+                file.category = null;
+            }
+            
+            loadData();
+            closeCategoryMenu();
+        }
+    }
+    
+    function openAddCategoryDialog() {
+        const categoryName = prompt('Yeni kategori adı girin:');
+        if (categoryName && categoryName.trim() !== '') {
+            const newId = 'cat_' + Date.now();
+            const newCategory = {
+                id: newId,
+                name: categoryName.trim(),
+                icon: 'folder'
+            };
+            categories.push(newCategory);
+            
+            // Kategori menüsünü yenile
+            openCategoryMenu(currentContextFile.cardId);
+            alert('Kategori eklendi!');
+        }
+    }
+    
+    function openManageCategories() {
+        let message = 'Mevcut Kategoriler:\n\n';
+        categories.forEach((cat, index) => {
+            message += `${index + 1}. ${cat.name}\n`;
+        });
+        
+        message += '\nYönetmek için:\n';
+        message += '1. Kategori eklemek için "Kategori Ekle" butonunu kullanın\n';
+        message += '2. Kategori silmek için kategori adını hatırlayıp elle silebilirsiniz';
+        
+        alert(message);
     }
 
     // --- SEARCH FUNCTIONS ---
@@ -2375,6 +2875,7 @@
     function attachEvents() {
         
       contextOverlay.addEventListener('click', closeContextMenu);
+      categoryOverlay.addEventListener('click', closeCategoryMenu);
 
       searchBtn.addEventListener('click', () => {
           document.body.classList.add('is-searching');
@@ -2507,15 +3008,17 @@
     function switchTab(id, isClickOrNav = false) {
       tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
       
-      document.querySelectorAll('#recentPanel, #devicePanel, #favoritesPanel').forEach(p => {
-        p.classList.toggle('active', p.id === `${id}Panel`);
-        if(p.id === `${id}Panel`) {
-            if(isClickOrNav) {
-                p.scrollTop = 0;
-                showHeader();
-                lastScrollY = 0;
-            }
-        }
+      const panelIds = ['recentPanel', 'devicePanel', 'favoritesPanel', 'categoriesPanel'];
+      panelIds.forEach(panelId => {
+          const panel = document.getElementById(panelId);
+          if (panel) {
+              panel.classList.toggle('active', panelId === `${id}Panel`);
+              if(panelId === `${id}Panel` && isClickOrNav) {
+                  panel.scrollTop = 0;
+                  showHeader();
+                  lastScrollY = 0;
+              }
+          }
       });
       
       if (id === 'device') {
@@ -2608,6 +3111,7 @@
       loadData();
       loadTools();
       attachEvents();
+      checkPromoBanner();
       
       document.querySelector('.setting-tab').classList.add('active');
       document.querySelector('.setting-panel').classList.add('active');
@@ -2658,6 +3162,13 @@
     window.scanDeviceForPDFs = scanDeviceForPDFs;
     window.checkPermissionOnResume = checkPermissionOnResume;
     window.selectCategory = selectCategory;
+    window.hidePromoBanner = hidePromoBanner;
+    window.openCategoryMenu = openCategoryMenu;
+    window.closeCategoryMenu = closeCategoryMenu;
+    window.assignCategoryToFile = assignCategoryToFile;
+    window.removeCategoryFromFile = removeCategoryFromFile;
+    window.openAddCategoryDialog = openAddCategoryDialog;
+    window.openManageCategories = openManageCategories;
 
     // --- ARAÇLAR VERİLERİ ---
     const toolsData = [

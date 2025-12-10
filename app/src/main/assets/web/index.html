@@ -595,6 +595,15 @@
         color: var(--text-secondary);
         margin-top: 2px;
     }
+    
+    .card-shared-badge {
+        background: var(--primary);
+        color: white;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 4px;
+    }
 
     .card-actions {
         display: flex;
@@ -1866,6 +1875,7 @@
     let devicePDFs = []; // Cihazdan taranan PDF'ler
     let recentFiles = []; // Son kullanılanlar
     let favoriteFiles = []; // Favoriler
+    let sharedPDFs = []; // Paylaşılan PDF'ler
     
     // PDF Reader klasör yolu
     const PDF_READER_FOLDER = '/storage/emulated/0/Download/PDF Reader';
@@ -1885,12 +1895,22 @@
     const HIDE_THRESHOLD = 50; // 50px kaydırınca gizle
     const SHOW_THRESHOLD = 10; // 10px yukarı kaydırınca göster
     
+    // --- PAYLAŞILAN PDF'LERİ GÜNCELLE ---
+    function updateSharedPDFsList(sharedFiles) {
+        sharedPDFs = sharedFiles || [];
+        renderList('sharedList', sharedPDFs, true);
+    }
+    
+    // Global'e ekle
+    window.updateSharedPDFsList = updateSharedPDFsList;
+
     // --- VERİ YÖNETİMİ (CACHE) ---
     function saveToCache() {
         try {
             const data = {
                 importedFiles: importedFiles,
                 devicePDFs: devicePDFs,
+                sharedPDFs: sharedPDFs,
                 theme: localStorage.getItem('pdfTheme') || 'light',
                 timestamp: Date.now()
             };
@@ -1918,6 +1938,7 @@
                 
                 importedFiles = data.importedFiles || [];
                 devicePDFs = data.devicePDFs || [];
+                sharedPDFs = data.sharedPDFs || [];
                 
                 // Temayı yükle
                 if (data.theme) {
@@ -2213,7 +2234,7 @@
 
     function loadData() {
       // Tüm dosyaları birleştir
-      const allFiles = [...devicePDFs, ...importedFiles];
+      const allFiles = [...devicePDFs, ...importedFiles, ...sharedPDFs];
       
       // Son kullanılanları sırala (en yeni en üstte)
       recentFiles = allFiles
@@ -2228,13 +2249,14 @@
       renderList('recentList', recentFiles);
       renderList('deviceList', allFiles);
       renderList('favoritesList', favoriteFiles);
+      renderList('sharedList', sharedPDFs, true);
       
       // Cache'e kaydet
       saveToCache();
     }
     
     // Listeleri render eden yardımcı fonksiyon
-    function renderList(listId, files) {
+    function renderList(listId, files, isShared = false) {
         const list = document.getElementById(listId);
         if (files.length === 0) {
             let emptyText = 'Henüz dosya yok.';
@@ -2244,13 +2266,14 @@
             
             list.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon material-symbols-rounded">folder_open</div>
+                <div class="empty-icon material-symbols-rounded">${isShared ? 'share' : 'folder_open'}</div>
                 <p>${emptyText}</p>
+                ${isShared ? '<p class="text-sm mt-2">Dosyalarınızı paylaştığınızda burada görünecektir.</p>' : ''}
             </div>`;
         } else {
             let html = '';
             files.forEach(file => {
-                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id);
+                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id, isShared, file.sharedDate);
             });
             list.innerHTML = html;
             attachLongPressEvents();
@@ -2258,16 +2281,18 @@
     }
 
     // KART OLUŞTURMA
-    function createCard(name, size, date, isFavorite, id) {
+    function createCard(name, size, date, isFavorite, id, isShared = false, sharedDate = '') {
       const MAX_LENGTH = 30;
       const truncatedName = name.length > MAX_LENGTH 
           ? name.substring(0, MAX_LENGTH) + '...' 
           : name;
 
       const theme = document.documentElement.getAttribute('data-theme');
-      const bgColor = theme === 'dark' ? 'var(--pdf-color-bg)' : '#E53935';
-      const textColor = theme === 'dark' ? 'var(--pdf-color-text)' : '#E53935';
+      const bgColor = isShared ? '#4CAF50' : (theme === 'dark' ? 'var(--pdf-color-bg)' : '#E53935');
+      const textColor = isShared ? '#FFFFFF' : (theme === 'dark' ? 'var(--pdf-color-text)' : '#E53935');
       const fillStar = isFavorite ? 1 : 0;
+      
+      const dateText = isShared && sharedDate ? sharedDate : date;
 
       const pdfIconSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -2290,9 +2315,10 @@
       <div class="card" 
            data-name="${name}" 
            data-size="${size}" 
-           data-date="${date}"
+           data-date="${dateText}"
            data-favorite="${isFavorite ? 'true' : 'false'}"
            data-id="${id}"
+           data-shared="${isShared}"
            onclick="handleCardClick(this, '${name}', ${id})">
         
         <div class="selection-checkbox" onclick="event.stopPropagation(); toggleCardSelection(${id})"></div>
@@ -2305,7 +2331,8 @@
             <div class="card-meta">
                 <span class="font-semibold">${size}</span> 
                 <span>•</span> 
-                <span>${date}</span>
+                <span>${dateText}</span>
+                ${isShared ? '<span class="card-shared-badge">Paylaşıldı</span>' : ''}
             </div>
         </div>
         <div class="card-actions">
@@ -2315,7 +2342,7 @@
                 <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' ${fillStar}, 'wght' 500, 'GRAD' 0, 'opsz' 24;">star</span>
             </button>
             <button class="icon-button more-btn" 
-                    onclick="event.stopPropagation(); openContextMenu('${name}', '${size}', '${date}', ${id})">
+                    onclick="event.stopPropagation(); openContextMenu('${name}', '${size}', '${dateText}', ${id})">
                 <span class="material-symbols-rounded">more_vert</span>
             </button>
         </div>
@@ -2461,6 +2488,9 @@
             if (!file) {
                 file = devicePDFs.find(f => f.id === cardId);
             }
+            if (!file) {
+                file = sharedPDFs.find(f => f.id === cardId);
+            }
             if (file) selectedFiles.push(file);
         });
         
@@ -2477,12 +2507,9 @@
                     return fetch(file.base64)
                         .then(res => res.blob())
                         .then(blob => new File([blob], file.name, { type: 'application/pdf' }));
-                } else if (typeof Android !== 'undefined' && Android.getFileForSharing) {
+                } else if (typeof Android !== 'undefined' && Android.shareFiles) {
                     // Android için özel yöntem
-                    return new Promise((resolve) => {
-                        const fileObj = { name: file.name, path: file.path };
-                        resolve(fileObj);
-                    });
+                    return Promise.resolve({ path: file.path, name: file.name });
                 }
                 return Promise.resolve(null);
             });
@@ -2490,13 +2517,20 @@
             Promise.all(sharePromises).then(files => {
                 const validFiles = files.filter(f => f);
                 if (validFiles.length > 0) {
-                    navigator.share({
-                        title: validFiles.length === 1 ? validFiles[0].name : `${validFiles.length} PDF Dosyası`,
-                        files: validFiles
-                    }).catch(err => {
-                        console.error('Paylaşım hatası:', err);
-                        alert(`${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`);
-                    });
+                    // Android paylaşımı
+                    if (typeof Android !== 'undefined' && Android.shareFiles) {
+                        const filePaths = validFiles.map(f => f.path || f.name).join('||');
+                        Android.shareFiles(filePaths);
+                    } else {
+                        // Web Share API
+                        navigator.share({
+                            title: validFiles.length === 1 ? validFiles[0].name : `${validFiles.length} PDF Dosyası`,
+                            files: validFiles.filter(f => f instanceof File)
+                        }).catch(err => {
+                            console.error('Paylaşım hatası:', err);
+                            alert(`${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`);
+                        });
+                    }
                 }
             });
         } else {
@@ -2528,6 +2562,9 @@
             if (!file) {
                 file = devicePDFs.find(f => f.id === cardId);
             }
+            if (!file) {
+                file = sharedPDFs.find(f => f.id === cardId);
+            }
             if (file) selectedFiles.push(file);
         });
         
@@ -2550,6 +2587,9 @@
         let file = importedFiles.find(f => f.id === cardId);
         if (!file) {
             file = devicePDFs.find(f => f.id === cardId);
+        }
+        if (!file) {
+            file = sharedPDFs.find(f => f.id === cardId);
         }
         
         if (!file) {
@@ -2578,6 +2618,7 @@
         if (current === total) {
             setTimeout(() => {
                 printStatus.classList.remove('show');
+                printProgressBar.style.width = '0%';
             }, 1000);
         }
     }
@@ -2590,7 +2631,7 @@
         updatePrintProgress(currentIndex, totalCount);
         
         try {
-            // 1. Android Print API
+            // Android Print API
             if (typeof Android !== 'undefined' && Android.printPDF) {
                 if (file.path) {
                     Android.printPDF(file.path);
@@ -2599,15 +2640,15 @@
                 }
             }
             
-            // 2. Web Print API
+            // Base64'ten yazdırma
             if (file.base64) {
                 printBase64PDF(file.base64, fileName);
-            } else if (file.path) {
-                // 3. IFrame ile yazdırma
-                printFileViaIframe(file.path, fileName);
             } else {
-                // 4. Fallback
-                alert(`"${fileName}" için yazdırma işlemi başlatılamadı. Lütfen dosyayı açıp manuel yazdırın.`);
+                // Direkt yazdırma seçeneği
+                alert(`"${fileName}" yazdırma işlemi başlatılıyor...`);
+                if (typeof Android !== 'undefined' && Android.printPDF && file.path) {
+                    Android.printPDF(file.path);
+                }
             }
             
         } catch (e) {
@@ -2654,27 +2695,6 @@
             alert('Yazdırma işlemi başlatılamadı.');
         }
     }
-    
-    function printFileViaIframe(filePath, fileName) {
-        const printIframe = document.createElement('iframe');
-        printIframe.style.display = 'none';
-        printIframe.src = filePath;
-        document.body.appendChild(printIframe);
-        
-        printIframe.onload = function() {
-            setTimeout(() => {
-                try {
-                    printIframe.contentWindow.print();
-                    setTimeout(() => {
-                        document.body.removeChild(printIframe);
-                    }, 1000);
-                } catch (e) {
-                    console.error('Yazdırma hatası:', e);
-                    document.body.removeChild(printIframe);
-                }
-            }, 500);
-        };
-    }
 
     // GERÇEK SİLME
     function deleteSelectedCards() {
@@ -2701,6 +2721,21 @@
                         console.error('Delete error:', e);
                     }
                     devicePDFs.splice(fileIndex, 1);
+                }
+                
+                // Shared PDFs'den sil
+                const sharedIndex = sharedPDFs.findIndex(f => f.id === cardId);
+                if (sharedIndex > -1) {
+                    const file = sharedPDFs[sharedIndex];
+                    // Android'den sil
+                    try {
+                        if (typeof Android !== 'undefined' && Android.deleteFile && file.path) {
+                            Android.deleteFile(file.path);
+                        }
+                    } catch (e) {
+                        console.error('Delete error:', e);
+                    }
+                    sharedPDFs.splice(sharedIndex, 1);
                 }
             });
             
@@ -2742,6 +2777,11 @@
         fileIndex = devicePDFs.findIndex(f => f.id === cardId);
         if(fileIndex > -1) {
             devicePDFs[fileIndex].isFavorite = isFavorite;
+        }
+        
+        fileIndex = sharedPDFs.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            sharedPDFs[fileIndex].isFavorite = isFavorite;
         }
         
         // Favoriler listesini güncelle
@@ -2792,6 +2832,9 @@
             let fileData = importedFiles.find(f => f.id === cardId);
             if (!fileData) {
                 fileData = devicePDFs.find(f => f.id === cardId);
+            }
+            if (!fileData) {
+                fileData = sharedPDFs.find(f => f.id === cardId);
             }
 
             // DOSYA AÇILDIĞINDA SON KULLANILANLARA EKLE
@@ -2941,6 +2984,29 @@
             }
         }
         
+        // Shared PDFs'de ara
+        fileIndex = sharedPDFs.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            const file = sharedPDFs[fileIndex];
+            // Android'de yeniden adlandır
+            try {
+                if (typeof Android !== 'undefined' && Android.renameFile && file.path) {
+                    const newPath = Android.renameFile(file.path, newNameWithExt);
+                    if (newPath && newPath !== 'ERROR') {
+                        sharedPDFs[fileIndex].path = newPath;
+                        sharedPDFs[fileIndex].name = newNameWithExt;
+                    } else {
+                        sharedPDFs[fileIndex].name = newNameWithExt;
+                    }
+                } else {
+                    sharedPDFs[fileIndex].name = newNameWithExt;
+                }
+            } catch (e) {
+                console.error('Rename error:', e);
+                sharedPDFs[fileIndex].name = newNameWithExt;
+            }
+        }
+        
         loadData();
         saveToCache();
         alert('Dosya adı güncellendi.');
@@ -2951,6 +3017,9 @@
         let file = importedFiles.find(f => f.id === cardId);
         if (!file) {
             file = devicePDFs.find(f => f.id === cardId);
+        }
+        if (!file) {
+            file = sharedPDFs.find(f => f.id === cardId);
         }
         
         if (!file) {
@@ -3015,6 +3084,21 @@
                 devicePDFs.splice(fileIndex, 1);
             }
             
+            // Shared PDFs'den sil
+            const sharedIndex = sharedPDFs.findIndex(f => f.id === cardId);
+            if(sharedIndex > -1) {
+                const file = sharedPDFs[sharedIndex];
+                // Android'den sil
+                try {
+                    if (typeof Android !== 'undefined' && Android.deleteFile && file.path) {
+                        Android.deleteFile(file.path);
+                    }
+                } catch (e) {
+                    console.error('Delete error:', e);
+                }
+                sharedPDFs.splice(sharedIndex, 1);
+            }
+            
             loadData();
             saveToCache();
             alert('Dosya silindi.');
@@ -3041,7 +3125,7 @@
     
     function performSearch() {
         const query = searchInput.value.toLowerCase().trim();
-        const allFiles = [...devicePDFs, ...importedFiles];
+        const allFiles = [...devicePDFs, ...importedFiles, ...sharedPDFs];
         
         if (query === '') {
             searchResultCount.textContent = 'Arama yapmak için bir şeyler yazın...';
@@ -3083,20 +3167,21 @@
         } else {
             let html = '';
             results.forEach(file => {
+                const isShared = sharedPDFs.some(f => f.id === file.id);
                 html += `
                 <div class="card" onclick="openPDF(${JSON.stringify(file).replace(/"/g, '&quot;')}, '${file.name.replace(/'/g, "\\'")}')">
                     <div class="card-icon-svg-wrapper">
                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
-                            <rect x="0" y="0" width="64" height="64" rx="10" fill="#E53935"/>
+                            <rect x="0" y="0" width="64" height="64" rx="10" fill="${isShared ? '#4CAF50' : '#E53935'}"/>
                             <path d="M18 12h22l10 10v30a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z"
                                   fill="#FFFFFF"/>
                             <polygon points="40,12 50,22 40,22" fill="#F0F0F0"/>
-                            <rect x="22" y="24" width="18" height="3" rx="1.5" fill="#E53935"/>
-                            <rect x="22" y="30" width="20" height="3" rx="1.5" fill="#E53935"/>
-                            <rect x="22" y="36" width="20" height="3" rx="1.5" fill="#E53935"/>
+                            <rect x="22" y="24" width="18" height="3" rx="1.5" fill="${isShared ? '#FFFFFF' : '#E53935'}"/>
+                            <rect x="22" y="30" width="20" height="3" rx="1.5" fill="${isShared ? '#FFFFFF' : '#E53935'}"/>
+                            <rect x="22" y="36" width="20" height="3" rx="1.5" fill="${isShared ? '#FFFFFF' : '#E53935'}"/>
                             <text x="50%" y="52" text-anchor="middle"
                                   font-family="Segoe UI, Roboto, Arial, sans-serif"
-                                  font-weight="700" font-size="14" fill="#E53935">
+                                  font-weight="700" font-size="14" fill="${isShared ? '#FFFFFF' : '#E53935'}">
                                 PDF
                             </text>
                         </svg>
@@ -3107,6 +3192,7 @@
                             <span class="font-semibold">${file.size}</span> 
                             <span>•</span> 
                             <span>${file.date}</span>
+                            ${isShared ? '<span class="card-shared-badge">Paylaşıldı</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -3418,6 +3504,22 @@
       
       // Cache otomatik kaydetme
       setInterval(saveToCache, 30000); // 30 saniyede bir
+      
+      // Paylaşılan PDF'leri yükle
+      if (typeof Android !== 'undefined') {
+          setTimeout(() => {
+              // Android'den paylaşılan PDF'leri al
+              try {
+                  const sharedJson = Android.getSharedPDFs ? Android.getSharedPDFs() : '[]';
+                  if (sharedJson && sharedJson !== '[]') {
+                      const sharedFiles = JSON.parse(sharedJson);
+                      updateSharedPDFsList(sharedFiles);
+                  }
+              } catch (e) {
+                  console.error('Paylaşılan PDF yükleme hatası:', e);
+              }
+          }, 2000);
+      }
     });
 
     // Global fonksiyonlar
@@ -3453,6 +3555,7 @@
     window.openRenameDialog = openRenameDialog;
     window.closeRenameDialog = closeRenameDialog;
     window.confirmRenameFile = confirmRenameFile;
+    window.updateSharedPDFsList = updateSharedPDFsList;
 
     // --- ARAÇLAR VERİLERİ ---
     const toolsData = [

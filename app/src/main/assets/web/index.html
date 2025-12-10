@@ -73,6 +73,7 @@
       --z-context-menu: 2100; 
       --z-category-menu: 2200;
       --z-search-overlay: 2300;
+      --z-dialog: 2400;
       
       --card-icon-size: 36px;
       --card-padding: 10px;
@@ -1412,6 +1413,258 @@
         font-weight: 600;
     }
 
+    /* --- YENİ MODERN DİALOG STİLLERİ --- */
+    .dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: var(--z-dialog);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .dialog-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .dialog {
+        background: var(--surface);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        transform: translateY(20px);
+        transition: transform 0.3s;
+    }
+    
+    .dialog-overlay.show .dialog {
+        transform: translateY(0);
+    }
+    
+    .dialog-header {
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+    }
+    
+    .dialog-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .dialog-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .dialog-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .dialog-content {
+        padding: 24px;
+    }
+    
+    .dialog-input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        font-size: 16px;
+        font-family: 'Roboto', sans-serif;
+        background: var(--surface);
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        transition: border-color 0.2s;
+    }
+    
+    .dialog-input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+    
+    .dialog-footer {
+        display: flex;
+        gap: 12px;
+        padding: 0 24px 24px;
+    }
+    
+    .dialog-button {
+        flex: 1;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .dialog-button.cancel {
+        background: var(--background);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+    }
+    
+    .dialog-button.cancel:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .dialog-button.primary {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+    }
+    
+    .dialog-button.primary:hover {
+        background: var(--secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(229, 57, 53, 0.4);
+    }
+    
+    .dialog-button.primary:active {
+        transform: translateY(0);
+    }
+    
+    /* KATEGORİ SİLME DİALOG */
+    .category-delete-list {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+    
+    .category-delete-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        transition: background-color 0.2s;
+    }
+    
+    .category-delete-item:last-child {
+        border-bottom: none;
+    }
+    
+    .category-delete-item:hover {
+        background: rgba(0, 0, 0, 0.03);
+    }
+    
+    .category-delete-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(229, 57, 53, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        color: var(--primary);
+    }
+    
+    .category-delete-info {
+        flex: 1;
+    }
+    
+    .category-delete-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .category-delete-count {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    /* YAZDIRMA DURUMU GÖSTERGESİ */
+    .print-status {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 24px;
+        z-index: var(--z-dialog);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        min-width: 280px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+    
+    .print-status.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .print-status-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        color: white;
+        font-size: 32px;
+    }
+    
+    .print-status-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    .print-status-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+    
+    .print-progress {
+        width: 100%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 16px 0;
+    }
+    
+    .print-progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+
   </style>
 </head>
 <body>
@@ -1794,7 +2047,7 @@
         <span class="material-symbols-rounded text-secondary">chevron_right</span>
     </div>
     
-    <div class="category-manage-item" onclick="openDeleteCategoryMenu()">
+    <div class="category-manage-item" onclick="openDeleteCategoryDialog()">
         <span class="material-symbols-rounded">delete</span>
         <div class="item-text">Kategori Sil</div>
         <span class="material-symbols-rounded text-secondary">chevron_right</span>
@@ -1812,40 +2065,83 @@
     </div>
   </div>
 
-  <!-- KATEGORİ EKLEME DİALOG -->
-  <div class="category-menu" id="addCategoryMenu" style="display: none;">
-    <div class="sheet-handle"></div>
-    <div class="category-menu-header">
-        <h3 class="category-menu-title">Kategori Ekle</h3>
-        <button class="icon-button" onclick="closeAddCategoryMenu()">
-            <span class="material-symbols-rounded">close</span>
+  <!-- MODERN DİALOGLAR -->
+  <div class="dialog-overlay" id="addCategoryDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Yeni Kategori Ekle</h3>
+        <button class="dialog-close" onclick="closeAddCategoryDialog()">
+          <span class="material-symbols-rounded">close</span>
         </button>
-    </div>
-    <div style="padding: 24px;">
-        <input type="text" id="newCategoryName" placeholder="Kategori adı girin" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; background: var(--surface); color: var(--text-primary);">
-        <div style="display: flex; gap: 12px;">
-            <button class="category-action-btn" onclick="closeAddCategoryMenu()" style="flex: 1;">İptal</button>
-            <button class="category-action-btn primary" onclick="addNewCategory()" style="flex: 1;">Ekle</button>
-        </div>
+      </div>
+      <div class="dialog-content">
+        <input type="text" 
+               class="dialog-input" 
+               id="newCategoryNameInput" 
+               placeholder="Kategori adı girin"
+               maxlength="30">
+        <p class="text-sm text-secondary">Maksimum 30 karakter</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeAddCategoryDialog()">İptal</button>
+        <button class="dialog-button primary" onclick="addNewCategory()">Ekle</button>
+      </div>
     </div>
   </div>
 
-  <!-- KATEGORİ SİLME MENÜSÜ -->
-  <div class="category-menu" id="deleteCategoryMenu" style="display: none;">
-    <div class="sheet-handle"></div>
-    <div class="category-menu-header">
-        <h3 class="category-menu-title">Kategori Sil</h3>
-        <button class="icon-button" onclick="closeDeleteCategoryMenu()">
-            <span class="material-symbols-rounded">close</span>
+  <div class="dialog-overlay" id="renameDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Dosyayı Yeniden Adlandır</h3>
+        <button class="dialog-close" onclick="closeRenameDialog()">
+          <span class="material-symbols-rounded">close</span>
         </button>
+      </div>
+      <div class="dialog-content">
+        <p class="text-sm text-secondary mb-3" id="renameOldName">Eski ad: </p>
+        <input type="text" 
+               class="dialog-input" 
+               id="newFileNameInput" 
+               placeholder="Yeni dosya adı girin"
+               maxlength="100">
+        <p class="text-sm text-secondary">.pdf uzantısı otomatik eklenecektir</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeRenameDialog()">İptal</button>
+        <button class="dialog-button primary" onclick="confirmRenameFile()">Kaydet</button>
+      </div>
     </div>
-    <div id="deleteCategoryList">
-        <!-- Silinecek kategoriler buraya eklenecek -->
-    </div>
-    <div class="category-actions">
-        <button class="category-action-btn" onclick="closeDeleteCategoryMenu()">
-            <span class="material-symbols-rounded" style="font-size: 18px;">close</span> İptal
+  </div>
+
+  <div class="dialog-overlay" id="deleteCategoryDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Kategori Sil</h3>
+        <button class="dialog-close" onclick="closeDeleteCategoryDialog()">
+          <span class="material-symbols-rounded">close</span>
         </button>
+      </div>
+      <div class="dialog-content">
+        <p class="text-sm text-secondary mb-4">Silinecek kategoriyi seçin. Bu kategorideki dosyalar kategorisiz olarak işaretlenecektir.</p>
+        <div class="category-delete-list" id="categoryDeleteList">
+          <!-- Kategoriler buraya eklenecek -->
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeDeleteCategoryDialog()">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- YAZDIRMA DURUMU GÖSTERGESİ -->
+  <div class="print-status" id="printStatus">
+    <div class="print-status-icon">
+      <span class="material-symbols-rounded">print</span>
+    </div>
+    <h3 class="print-status-title" id="printStatusTitle">Yazdırılıyor...</h3>
+    <p class="print-status-text" id="printStatusText">Dosya hazırlanıyor</p>
+    <div class="print-progress">
+      <div class="print-progress-bar" id="printProgressBar" style="width: 0%"></div>
     </div>
   </div>
 
@@ -1883,13 +2179,24 @@
     // Category Menu Variables
     const categoryOverlay = document.getElementById('categoryOverlay');
     const categoryMenu = document.getElementById('categoryMenu');
-    const addCategoryMenu = document.getElementById('addCategoryMenu');
-    const deleteCategoryMenu = document.getElementById('deleteCategoryMenu');
-    const deleteCategoryList = document.getElementById('deleteCategoryList');
+    const addCategoryDialog = document.getElementById('addCategoryDialog');
+    const deleteCategoryDialog = document.getElementById('deleteCategoryDialog');
+    const newCategoryNameInput = document.getElementById('newCategoryNameInput');
+    const categoryDeleteList = document.getElementById('categoryDeleteList');
     const toggleCarouselIcon = document.getElementById('toggleCarouselIcon');
     const toggleCarouselText = document.getElementById('toggleCarouselText');
     const carouselToggle = document.getElementById('carouselToggle');
-    const newCategoryName = document.getElementById('newCategoryName');
+
+    // Rename Dialog Variables
+    const renameDialog = document.getElementById('renameDialog');
+    const newFileNameInput = document.getElementById('newFileNameInput');
+    const renameOldName = document.getElementById('renameOldName');
+
+    // Print Status Variables
+    const printStatus = document.getElementById('printStatus');
+    const printStatusTitle = document.getElementById('printStatusTitle');
+    const printStatusText = document.getElementById('printStatusText');
+    const printProgressBar = document.getElementById('printProgressBar');
 
     // Selection Mode Variables
     const selectionHeader = document.getElementById('selectionHeader');
@@ -2851,7 +3158,7 @@
         }
     }
 
-    // --- GÜNCELLENMİŞ YAZDIRMA SİSTEMİ ---
+    // --- MODERN YAZDIRMA SİSTEMİ ---
     function printSelectedCards() {
         if (selectedCards.size === 0) {
             alert('Lütfen yazdırmak için öğe seçin.');
@@ -2872,16 +3179,14 @@
             return;
         }
         
-        if (confirm(`${selectedFiles.length} adet PDF yazdırılacak. Devam edilsin mi?`)) {
-            alert(`${selectedFiles.length} adet dosya yazıcıya gönderiliyor...`);
-            
-            // Her dosyayı sırayla yazdır
-            selectedFiles.forEach((file, index) => {
-                setTimeout(() => {
-                    printSingleFileDirectly(file, index + 1, selectedFiles.length);
-                }, index * 500); // 500ms aralıklarla
-            });
-        }
+        showPrintStatus(selectedFiles.length);
+        
+        // Dosyaları sırayla yazdır
+        selectedFiles.forEach((file, index) => {
+            setTimeout(() => {
+                printSingleFileDirectly(file, index + 1, selectedFiles.length);
+            }, index * 1000); // 1 saniye aralıklarla
+        });
     }
     
     function printSingleFile(cardId, fileName) {
@@ -2895,8 +3200,28 @@
             return;
         }
         
-        if (confirm(`"${fileName}" yazdırılacak. Devam edilsin mi?`)) {
+        showPrintStatus(1);
+        setTimeout(() => {
             printSingleFileDirectly(file, 1, 1);
+        }, 500);
+    }
+    
+    function showPrintStatus(totalFiles) {
+        printStatusTitle.textContent = totalFiles > 1 ? `${totalFiles} Dosya Yazdırılıyor` : 'Dosya Yazdırılıyor';
+        printStatusText.textContent = totalFiles > 1 ? 'Dosyalar hazırlanıyor...' : 'Dosya hazırlanıyor...';
+        printProgressBar.style.width = '0%';
+        printStatus.classList.add('show');
+    }
+    
+    function updatePrintProgress(current, total) {
+        const percent = (current / total) * 100;
+        printProgressBar.style.width = `${percent}%`;
+        printStatusText.textContent = `${current}/${total} dosya yazdırılıyor...`;
+        
+        if (current === total) {
+            setTimeout(() => {
+                printStatus.classList.remove('show');
+            }, 1000);
         }
     }
     
@@ -2904,6 +3229,8 @@
     function printSingleFileDirectly(file, currentIndex, totalCount) {
         const fileName = file.name;
         console.log(`Yazdırılıyor: ${fileName} (${currentIndex}/${totalCount})`);
+        
+        updatePrintProgress(currentIndex, totalCount);
         
         try {
             // 1. Android Print API
@@ -2915,73 +3242,81 @@
                 }
             }
             
-            // 2. Web Print API (doğrudan JavaScript)
+            // 2. Web Print API
             if (file.base64) {
-                // Base64'ten blob oluştur
-                const base64Data = file.base64.split(',')[1];
-                const binaryData = atob(base64Data);
-                const bytes = new Uint8Array(binaryData.length);
-                
-                for (let i = 0; i < binaryData.length; i++) {
-                    bytes[i] = binaryData.charCodeAt(i);
-                }
-                
-                const blob = new Blob([bytes], { type: 'application/pdf' });
-                const blobUrl = URL.createObjectURL(blob);
-                
-                // Yazdırma işlemi
-                const printWindow = window.open(blobUrl, '_blank');
-                if (printWindow) {
-                    printWindow.onload = function() {
-                        setTimeout(() => {
-                            try {
-                                printWindow.print();
-                                setTimeout(() => {
-                                    printWindow.close();
-                                    URL.revokeObjectURL(blobUrl);
-                                }, 1000);
-                            } catch (e) {
-                                console.error('Yazdırma hatası:', e);
-                                alert(`"${fileName}" için yazdırma işlemi başlatılamadı. Lütfen dosyayı açıp manuel yazdırın.`);
-                                printWindow.close();
-                                URL.revokeObjectURL(blobUrl);
-                            }
-                        }, 500);
-                    };
-                }
-                console.log(`Web Print API ile yazdırma başlatıldı: ${fileName}`);
+                printBase64PDF(file.base64, fileName);
             } else if (file.path) {
-                // 3. IFrame ile yazdırma (dosya yolu varsa)
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = file.path;
-                document.body.appendChild(iframe);
-                
-                iframe.onload = function() {
-                    setTimeout(() => {
-                        try {
-                            iframe.contentWindow.print();
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                            }, 1000);
-                        } catch (e) {
-                            console.error('Yazdırma hatası:', e);
-                            alert(`"${fileName}" için yazdırma işlemi başlatılamadı.`);
-                            document.body.removeChild(iframe);
-                        }
-                    }, 500);
-                };
-                console.log(`IFrame ile yazdırma başlatıldı: ${fileName}`);
+                // 3. IFrame ile yazdırma
+                printFileViaIframe(file.path, fileName);
             } else {
-                // 4. Fallback: Kullanıcıyı bilgilendir
-                alert(`"${fileName}" için yazdırma işlemi başlatılamadı. Lütfen dosyayı açıp manuel olarak yazdırın.`);
-                console.log(`Yazdırma başlatılamadı: ${fileName}`);
+                // 4. Fallback
+                alert(`"${fileName}" için yazdırma işlemi başlatılamadı. Lütfen dosyayı açıp manuel yazdırın.`);
             }
             
         } catch (e) {
             console.error('Yazdırma hatası:', e);
             alert(`"${fileName}" yazdırılırken hata oluştu: ${e.message}`);
         }
+    }
+    
+    function printBase64PDF(base64Data, fileName) {
+        try {
+            const base64WithoutPrefix = base64Data.split(',')[1];
+            const binaryData = atob(base64WithoutPrefix);
+            const bytes = new Uint8Array(binaryData.length);
+            
+            for (let i = 0; i < binaryData.length; i++) {
+                bytes[i] = binaryData.charCodeAt(i);
+            }
+            
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const printIframe = document.createElement('iframe');
+            printIframe.style.display = 'none';
+            printIframe.src = blobUrl;
+            document.body.appendChild(printIframe);
+            
+            printIframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        printIframe.contentWindow.print();
+                        setTimeout(() => {
+                            document.body.removeChild(printIframe);
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                    } catch (e) {
+                        console.error('Yazdırma hatası:', e);
+                        document.body.removeChild(printIframe);
+                        URL.revokeObjectURL(blobUrl);
+                    }
+                }, 500);
+            };
+        } catch (e) {
+            console.error('Base64 yazdırma hatası:', e);
+            alert('Yazdırma işlemi başlatılamadı.');
+        }
+    }
+    
+    function printFileViaIframe(filePath, fileName) {
+        const printIframe = document.createElement('iframe');
+        printIframe.style.display = 'none';
+        printIframe.src = filePath;
+        document.body.appendChild(printIframe);
+        
+        printIframe.onload = function() {
+            setTimeout(() => {
+                try {
+                    printIframe.contentWindow.print();
+                    setTimeout(() => {
+                        document.body.removeChild(printIframe);
+                    }, 1000);
+                } catch (e) {
+                    console.error('Yazdırma hatası:', e);
+                    document.body.removeChild(printIframe);
+                }
+            }, 500);
+        };
     }
 
     // GERÇEK SİLME
@@ -3167,7 +3502,7 @@
         setTimeout(() => {
             switch(action) {
                 case 'rename':
-                    renameFile(currentContextFile.cardId, currentContextFile.name);
+                    openRenameDialog(currentContextFile.cardId, currentContextFile.name);
                     break;
                 case 'category':
                     openCategoryManagement();
@@ -3185,49 +3520,225 @@
         }, 300);
     }
     
-    // GERÇEK YENİDEN ADLANDIRMA
-    function renameFile(cardId, oldName) {
-        const newName = prompt(`"${oldName}" için yeni ad girin:`, oldName);
-        if (newName && newName.trim() !== '' && newName !== oldName) {
-            const newNameTrimmed = newName.trim();
-            
-            // Imported files'da ara
-            let fileIndex = importedFiles.findIndex(f => f.id === cardId);
-            if(fileIndex > -1) {
-                importedFiles[fileIndex].name = newNameTrimmed;
-            }
-            
-            // Device PDFs'de ara
-            fileIndex = devicePDFs.findIndex(f => f.id === cardId);
-            if(fileIndex > -1) {
-                const file = devicePDFs[fileIndex];
-                // Android'de yeniden adlandır
-                try {
-                    if (typeof Android !== 'undefined' && Android.renameFile && file.path) {
-                        const newPath = Android.renameFile(file.path, newNameTrimmed);
-                        if (newPath && newPath !== 'ERROR') {
-                            devicePDFs[fileIndex].path = newPath;
-                            devicePDFs[fileIndex].name = newNameTrimmed;
-                        }
-                    } else {
-                        devicePDFs[fileIndex].name = newNameTrimmed;
-                    }
-                } catch (e) {
-                    console.error('Rename error:', e);
-                    devicePDFs[fileIndex].name = newNameTrimmed;
-                }
-            }
-            
-            loadData();
-            saveToCache();
-            alert('Dosya adı güncellendi.');
+    // --- MODERN YENİDEN ADLANDIRMA DİALOG ---
+    function openRenameDialog(cardId, oldName) {
+        currentRenameFile = { cardId, oldName };
+        renameOldName.textContent = `Eski ad: ${oldName}`;
+        
+        // .pdf uzantısını çıkar
+        const nameWithoutExt = oldName.replace(/\.pdf$/i, '');
+        newFileNameInput.value = nameWithoutExt;
+        newFileNameInput.focus();
+        
+        renameDialog.classList.add('show');
+    }
+    
+    function closeRenameDialog() {
+        renameDialog.classList.remove('show');
+        currentRenameFile = null;
+    }
+    
+    function confirmRenameFile() {
+        if (!currentRenameFile) return;
+        
+        const newName = newFileNameInput.value.trim();
+        if (!newName) {
+            alert('Lütfen bir dosya adı girin.');
+            return;
         }
+        
+        // .pdf uzantısını ekle
+        const newNameWithExt = newName.endsWith('.pdf') ? newName : newName + '.pdf';
+        
+        if (newNameWithExt === currentRenameFile.oldName) {
+            alert('Yeni ad eski adla aynı.');
+            return;
+        }
+        
+        renameFile(currentRenameFile.cardId, currentRenameFile.oldName, newNameWithExt);
+        closeRenameDialog();
+    }
+    
+    // GERÇEK YENİDEN ADLANDIRMA
+    function renameFile(cardId, oldName, newNameWithExt) {
+        // Imported files'da ara
+        let fileIndex = importedFiles.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            importedFiles[fileIndex].name = newNameWithExt;
+        }
+        
+        // Device PDFs'de ara
+        fileIndex = devicePDFs.findIndex(f => f.id === cardId);
+        if(fileIndex > -1) {
+            const file = devicePDFs[fileIndex];
+            // Android'de yeniden adlandır
+            try {
+                if (typeof Android !== 'undefined' && Android.renameFile && file.path) {
+                    const newPath = Android.renameFile(file.path, newNameWithExt);
+                    if (newPath && newPath !== 'ERROR') {
+                        devicePDFs[fileIndex].path = newPath;
+                        devicePDFs[fileIndex].name = newNameWithExt;
+                    } else {
+                        devicePDFs[fileIndex].name = newNameWithExt;
+                    }
+                } else {
+                    devicePDFs[fileIndex].name = newNameWithExt;
+                }
+            } catch (e) {
+                console.error('Rename error:', e);
+                devicePDFs[fileIndex].name = newNameWithExt;
+            }
+        }
+        
+        loadData();
+        saveToCache();
+        alert('Dosya adı güncellendi.');
     }
     
     // KATEGORİ YÖNETİMİ AÇ
     function openCategoryManagement() {
         categoryOverlay.classList.add('show');
         categoryMenu.classList.add('show');
+    }
+    
+    function closeCategoryMenu() {
+        categoryOverlay.classList.remove('show');
+        categoryMenu.classList.remove('show');
+    }
+    
+    // --- MODERN KATEGORİ EKLEME DİALOG ---
+    function openAddCategoryDialog() {
+        closeCategoryMenu();
+        newCategoryNameInput.value = '';
+        newCategoryNameInput.focus();
+        addCategoryDialog.classList.add('show');
+    }
+    
+    function closeAddCategoryDialog() {
+        addCategoryDialog.classList.remove('show');
+    }
+    
+    function addNewCategory() {
+        const categoryName = newCategoryNameInput.value.trim();
+        if (!categoryName) {
+            alert('Lütfen bir kategori adı girin.');
+            return;
+        }
+        
+        // Aynı isimde kategori var mı kontrol et
+        const existingCategory = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+        if (existingCategory) {
+            alert('Bu isimde bir kategori zaten var.');
+            return;
+        }
+        
+        const newId = 'cat_' + Date.now();
+        const newCategory = {
+            id: newId,
+            name: categoryName,
+            icon: 'folder'
+        };
+        
+        categories.push(newCategory);
+        
+        // Carousel'a ekle (eğer yoksa)
+        const existsInCarousel = carouselCategories.some(c => c.name.toLowerCase() === categoryName.toLowerCase());
+        if (!existsInCarousel) {
+            carouselCategories.push({
+                id: newId,
+                name: categoryName,
+                icon: 'folder'
+            });
+            initCarousel();
+        }
+        
+        closeAddCategoryDialog();
+        loadData();
+        saveToCache();
+        
+        // Başarılı mesajı
+        setTimeout(() => {
+            alert(`"${categoryName}" kategorisi başarıyla eklendi!`);
+        }, 300);
+    }
+    
+    // --- MODERN KATEGORİ SİLME DİALOG ---
+    function openDeleteCategoryDialog() {
+        closeCategoryMenu();
+        
+        let html = '';
+        if (categories.length === 0) {
+            html = `
+                <div class="empty-state" style="padding: 20px;">
+                    <div class="empty-icon material-symbols-rounded">category</div>
+                    <p>Silinecek kategori yok.</p>
+                </div>
+            `;
+        } else {
+            categories.forEach(category => {
+                // Bu kategorideki dosya sayısını bul
+                const fileCount = Object.values(fileCategories).filter(id => id === category.id).length;
+                
+                html += `
+                    <div class="category-delete-item" onclick="confirmDeleteCategory('${category.id}', '${category.name}', ${fileCount})">
+                        <div class="category-delete-icon">
+                            <span class="material-symbols-rounded">${category.icon}</span>
+                        </div>
+                        <div class="category-delete-info">
+                            <div class="category-delete-name">${category.name}</div>
+                            <div class="category-delete-count">${fileCount} dosya</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        categoryDeleteList.innerHTML = html;
+        deleteCategoryDialog.classList.add('show');
+    }
+    
+    function closeDeleteCategoryDialog() {
+        deleteCategoryDialog.classList.remove('show');
+    }
+    
+    function confirmDeleteCategory(categoryId, categoryName, fileCount) {
+        if (confirm(`"${categoryName}" kategorisini silmek istediğinize emin misiniz?\n\nBu kategorideki ${fileCount} dosya kategorisiz olarak işaretlenecektir.`)) {
+            deleteCategory(categoryId, categoryName);
+            closeDeleteCategoryDialog();
+        }
+    }
+    
+    function deleteCategory(categoryId, categoryName) {
+        // Kategoriyi sil
+        categories = categories.filter(c => c.id !== categoryId);
+        
+        // Carousel'dan da sil
+        carouselCategories = carouselCategories.filter(c => c.id !== categoryId);
+        initCarousel();
+        
+        // Bu kategorideki dosyaları kategorisiz yap
+        Object.keys(fileCategories).forEach(fileId => {
+            if (fileCategories[fileId] === categoryId) {
+                fileCategories[fileId] = 'uncategorized';
+                
+                // Dosya nesnelerini de güncelle
+                let file = importedFiles.find(f => f.id === parseInt(fileId));
+                if (!file) {
+                    file = devicePDFs.find(f => f.id === parseInt(fileId));
+                }
+                if (file) {
+                    file.category = null;
+                }
+            }
+        });
+        
+        loadData();
+        saveToCache();
+        
+        // Başarılı mesajı
+        setTimeout(() => {
+            alert(`"${categoryName}" kategorisi başarıyla silindi!`);
+        }, 300);
     }
     
     // GERÇEK DOSYA PAYLAŞMA - Web Share API
@@ -3305,140 +3816,6 @@
             loadData();
             saveToCache();
             alert('Dosya silindi.');
-        }
-    }
-
-    // --- KATEGORİ YÖNETİM FONKSİYONLARI ---
-    function closeCategoryMenu() {
-        categoryOverlay.classList.remove('show');
-        categoryMenu.classList.remove('show');
-        addCategoryMenu.style.display = 'none';
-        deleteCategoryMenu.style.display = 'none';
-    }
-    
-    function openAddCategoryDialog() {
-        categoryMenu.style.display = 'none';
-        addCategoryMenu.style.display = 'block';
-        newCategoryName.value = '';
-        newCategoryName.focus();
-    }
-    
-    function closeAddCategoryMenu() {
-        addCategoryMenu.style.display = 'none';
-        categoryMenu.style.display = 'block';
-    }
-    
-    function addNewCategory() {
-        const categoryName = newCategoryName.value.trim();
-        if (!categoryName) {
-            alert('Lütfen bir kategori adı girin.');
-            return;
-        }
-        
-        // Aynı isimde kategori var mı kontrol et
-        const existingCategory = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-        if (existingCategory) {
-            alert('Bu isimde bir kategori zaten var.');
-            return;
-        }
-        
-        const newId = 'cat_' + Date.now();
-        const newCategory = {
-            id: newId,
-            name: categoryName,
-            icon: 'folder'
-        };
-        
-        categories.push(newCategory);
-        
-        // Carousel'a ekle (eğer yoksa)
-        const existsInCarousel = carouselCategories.some(c => c.name.toLowerCase() === categoryName.toLowerCase());
-        if (!existsInCarousel) {
-            carouselCategories.push({
-                id: newId,
-                name: categoryName,
-                icon: 'folder'
-            });
-            initCarousel();
-        }
-        
-        closeAddCategoryMenu();
-        closeCategoryMenu();
-        loadData();
-        saveToCache();
-        alert('Kategori eklendi!');
-    }
-    
-    function openDeleteCategoryMenu() {
-        categoryMenu.style.display = 'none';
-        deleteCategoryMenu.style.display = 'block';
-        
-        let html = '';
-        if (categories.length === 0) {
-            html = `
-                <div style="padding: 24px; text-align: center; color: var(--text-secondary);">
-                    <span class="material-symbols-rounded" style="font-size: 48px; opacity: 0.5;">category</span>
-                    <p style="margin-top: 12px;">Silinecek kategori yok.</p>
-                </div>
-            `;
-        } else {
-            categories.forEach(category => {
-                // Bu kategorideki dosya sayısını bul
-                const fileCount = Object.values(fileCategories).filter(id => id === category.id).length;
-                
-                html += `
-                    <div class="category-manage-item" onclick="deleteCategory('${category.id}', '${category.name}')">
-                        <span class="material-symbols-rounded">${category.icon}</span>
-                        <div class="item-text">
-                            <div>${category.name}</div>
-                            <div class="text-sm text-secondary">${fileCount} dosya</div>
-                        </div>
-                        <span class="material-symbols-rounded text-secondary">delete</span>
-                    </div>
-                `;
-            });
-        }
-        
-        deleteCategoryList.innerHTML = html;
-    }
-    
-    function closeDeleteCategoryMenu() {
-        deleteCategoryMenu.style.display = 'none';
-        categoryMenu.style.display = 'block';
-    }
-    
-    function deleteCategory(categoryId, categoryName) {
-        if (confirm(`"${categoryName}" kategorisini silmek istediğinize emin misiniz?\n\nBu kategorideki tüm dosyalar kategorisiz olarak işaretlenecektir.`)) {
-            // Kategoriyi sil
-            categories = categories.filter(c => c.id !== categoryId);
-            
-            // Carousel'dan da sil
-            carouselCategories = carouselCategories.filter(c => c.id !== categoryId);
-            initCarousel();
-            
-            // Bu kategorideki dosyaları kategorisiz yap
-            Object.keys(fileCategories).forEach(fileId => {
-                if (fileCategories[fileId] === categoryId) {
-                    fileCategories[fileId] = 'uncategorized';
-                    
-                    // Dosya nesnelerini de güncelle
-                    let file = importedFiles.find(f => f.id === parseInt(fileId));
-                    if (!file) {
-                        file = devicePDFs.find(f => f.id === parseInt(fileId));
-                    }
-                    if (file) {
-                        file.category = null;
-                    }
-                }
-            });
-            
-            loadData();
-            saveToCache();
-            
-            // Menüyü kapat
-            closeDeleteCategoryMenu();
-            closeCategoryMenu();
-            alert('Kategori silindi.');
         }
     }
 
@@ -3847,12 +4224,16 @@
     window.openCategoryManagement = openCategoryManagement;
     window.closeCategoryMenu = closeCategoryMenu;
     window.openAddCategoryDialog = openAddCategoryDialog;
-    window.closeAddCategoryMenu = closeAddCategoryMenu;
+    window.closeAddCategoryDialog = closeAddCategoryDialog;
     window.addNewCategory = addNewCategory;
-    window.openDeleteCategoryMenu = openDeleteCategoryMenu;
-    window.closeDeleteCategoryMenu = closeDeleteCategoryMenu;
+    window.openDeleteCategoryDialog = openDeleteCategoryDialog;
+    window.closeDeleteCategoryDialog = closeDeleteCategoryDialog;
+    window.confirmDeleteCategory = confirmDeleteCategory;
     window.deleteCategory = deleteCategory;
     window.toggleCarouselVisibility = toggleCarouselVisibility;
+    window.openRenameDialog = openRenameDialog;
+    window.closeRenameDialog = closeRenameDialog;
+    window.confirmRenameFile = confirmRenameFile;
 
     // --- ARAÇLAR VERİLERİ ---
     const toolsData = [

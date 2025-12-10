@@ -35,10 +35,19 @@ let isCarouselHidden = true; // Varsayılan olarak gizli
 const HIDE_THRESHOLD = 50;
 const SHOW_THRESHOLD = 10;
 
-// Rename Dialog Variables
+// Dialog Variables
 const renameDialog = document.getElementById('renameDialog');
 const newFileNameInput = document.getElementById('newFileNameInput');
 const renameOldName = document.getElementById('renameOldName');
+
+const addCategoryDialog = document.getElementById('addCategoryDialog');
+const categorySelectList = document.getElementById('categorySelectList');
+
+const createCategoryDialog = document.getElementById('createCategoryDialog');
+const createCategoryNameInput = document.getElementById('createCategoryNameInput');
+
+const categoryDeleteDialog = document.getElementById('categoryDeleteDialog');
+const categoryDeleteList = document.getElementById('categoryDeleteList');
 
 // Print Status Variables
 const printStatus = document.getElementById('printStatus');
@@ -52,11 +61,7 @@ const selectionCount = document.getElementById('selectionCount');
 let isSelectionMode = false;
 let selectedCards = new Set();
 
-// Category Dialog Variables
-const addCategoryDialog = document.getElementById('addCategoryDialog');
-const deleteCategoryDialog = document.getElementById('deleteCategoryDialog');
-const newCategoryNameInput = document.getElementById('newCategoryNameInput');
-const categorySelectList = document.getElementById('categorySelectList');
+// Category Toggle Variables
 const toggleCarouselIcon = document.getElementById('toggleCarouselIcon');
 const toggleCarouselText = document.getElementById('toggleCarouselText');
 const carouselToggle = document.getElementById('carouselToggle');
@@ -69,41 +74,96 @@ let favoriteFiles = [];
 
 // Kategori yönetimi
 let categories = [];
-let fileCategories = {};
+let fileCategories = {}; // Dosya ID -> Kategori ID eşlemesi
 
-// Carousel kategorileri
-let carouselCategories = [
-    { id: 'all', name: 'Tümü', icon: 'all_inclusive' },
-    { id: 'work', name: 'İş', icon: 'work' },
-    { id: 'school', name: 'Okul', icon: 'school' },
-    { id: 'personal', name: 'Kişisel', icon: 'person' },
-    { id: 'bills', name: 'Faturalar', icon: 'receipt' },
-    { id: 'contracts', name: 'Sözleşmeler', icon: 'gavel' },
-    { id: 'books', name: 'Kitaplar', icon: 'menu_book' },
-    { id: 'magazines', name: 'Dergiler', icon: 'article' },
-    { id: 'notes', name: 'Notlar', icon: 'edit_note' },
-    { id: 'projects', name: 'Projeler', icon: 'folder_shared' },
-    { id: 'finance', name: 'Finans', icon: 'attach_money' },
-    { id: 'health', name: 'Sağlık', icon: 'medical_services' },
-    { id: 'travel', name: 'Seyahat', icon: 'flight' },
-    { id: 'archive', name: 'Arşiv', icon: 'archive' }
-];
-
-// Scroll & Swipe State
-let lastScrollY = 0;
-let startX = 0;
-let startY = 0;
-let isSwiping = false;
-let isVerticalScroll = false;
-let currentNav = 'home';
-const tabOrder = ['recent', 'device', 'favorites', 'categories'];
+// Carousel kategorileri - Alfabetik sıralı
+let carouselCategories = [];
 
 // PDF Reader klasör yolu
 const PDF_READER_FOLDER = '/storage/emulated/0/Download/PDF Reader';
 
+// Bildirim ID sayacı
+let notificationId = 0;
+
+// --- MODERN BİLDİRİM SİSTEMİ ---
+function showNotification(title, message, type = 'info', duration = 4000) {
+    const notificationId = 'notification-' + Date.now();
+    const notification = document.createElement('div');
+    notification.id = notificationId;
+    notification.className = `notification ${type}`;
+    
+    // Tip'e göre simge belirle
+    let icon = 'info';
+    let iconColor = '#2196F3';
+    
+    switch(type) {
+        case 'success':
+            icon = 'check_circle';
+            iconColor = '#4CAF50';
+            break;
+        case 'error':
+            icon = 'error';
+            iconColor = '#f44336';
+            break;
+        case 'warning':
+            icon = 'warning';
+            iconColor = '#FF9800';
+            break;
+        case 'info':
+        default:
+            icon = 'info';
+            iconColor = '#2196F3';
+            break;
+    }
+    
+    notification.innerHTML = `
+        <div class="notification-icon" style="color: ${iconColor};">
+            <span class="material-symbols-rounded">${icon}</span>
+        </div>
+        <div class="notification-content">
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close" onclick="closeNotification('${notificationId}')">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+    `;
+    
+    document.getElementById('notificationContainer').appendChild(notification);
+    
+    // Animasyon için timeout
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    // Otomatik kapanma
+    if (duration > 0) {
+        setTimeout(() => {
+            closeNotification(notificationId);
+        }, duration);
+    }
+    
+    return notificationId;
+}
+
+function closeNotification(id) {
+    const notification = document.getElementById(id);
+    if (notification) {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 400);
+    }
+}
+
 // --- VERİ YÖNETİMİ (CACHE) ---
 function saveToCache() {
     try {
+        // Kategorileri alfabetik sırala
+        categories.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+        
         const data = {
             importedFiles: importedFiles,
             devicePDFs: devicePDFs,
@@ -146,6 +206,9 @@ function loadFromCache() {
                 localStorage.setItem('pdfTheme', data.theme);
             }
             
+            // Kategorileri alfabetik sırala
+            categories.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+            
             console.log('Veriler cache\'den yüklendi:', data);
             return true;
         }
@@ -158,12 +221,26 @@ function loadFromCache() {
 
 // --- KARUSEL OLUŞTURMA ---
 function initCarousel() {
+    // Carousel kategorilerini oluştur: "Tümü" + alfabetik sıralı kategoriler
+    carouselCategories = [
+        { id: 'all', name: 'Tümü', icon: 'all_inclusive' }
+    ];
+    
+    // Alfabetik sıralı kategoriler
+    categories.sort((a, b) => a.name.localeCompare(b.name, 'tr')).forEach(cat => {
+        carouselCategories.push({
+            id: cat.id,
+            name: cat.name,
+            icon: cat.icon || 'folder'
+        });
+    });
+    
     let html = '';
     carouselCategories.forEach((cat, i) => {
         const activeClass = i === 0 ? 'active' : '';
         html += `
             <div class="chip ${activeClass}" data-category="${cat.id}" onclick="selectCarouselCategory('${cat.id}')">
-                <span class="material-symbols-rounded">${cat.icon || 'folder'}</span>
+                <span class="material-symbols-rounded">${cat.icon}</span>
                 ${cat.name}
             </div>
         `;
@@ -176,7 +253,10 @@ function initCarousel() {
 
 function selectCarouselCategory(categoryId) {
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    document.querySelector(`.chip[data-category="${categoryId}"]`).classList.add('active');
+    const chip = document.querySelector(`.chip[data-category="${categoryId}"]`);
+    if (chip) {
+        chip.classList.add('active');
+    }
     
     // Kategori seçildiğinde kategori sekmesine geç ve filtrele
     switchTab('categories', true);
@@ -192,25 +272,7 @@ function filterByCategory(categoryId) {
     const allFiles = [...devicePDFs, ...importedFiles];
     const filteredFiles = allFiles.filter(file => {
         const fileCatId = fileCategories[file.id];
-        if (!fileCatId) return false;
-        
-        // Kategori ID'sini bul
-        const category = categories.find(c => c.id === fileCatId);
-        if (!category) return false;
-        
-        // Carousel kategorisi ile eşleştir
-        if (categoryId === 'work' && category.name.toLowerCase().includes('iş')) return true;
-        if (categoryId === 'school' && category.name.toLowerCase().includes('okul')) return true;
-        if (categoryId === 'personal' && category.name.toLowerCase().includes('kişisel')) return true;
-        if (categoryId === 'bills' && category.name.toLowerCase().includes('fatura')) return true;
-        if (categoryId === 'contracts' && category.name.toLowerCase().includes('sözleşme')) return true;
-        if (categoryId === 'books' && category.name.toLowerCase().includes('kitap')) return true;
-        if (categoryId === 'finance' && category.name.toLowerCase().includes('finans')) return true;
-        if (categoryId === 'health' && category.name.toLowerCase().includes('sağlık')) return true;
-        if (categoryId === 'travel' && category.name.toLowerCase().includes('seyahat')) return true;
-        if (categoryId === 'archive' && category.name.toLowerCase().includes('arşiv')) return true;
-        
-        return false;
+        return fileCatId === categoryId;
     });
     
     renderFilteredCategoriesList(filteredFiles, categoryId);
@@ -220,8 +282,8 @@ function renderFilteredCategoriesList(files, categoryId) {
     const categoriesList = document.getElementById('categoriesList');
     if (!categoriesList) return;
     
-    const carouselCat = carouselCategories.find(c => c.id === categoryId);
-    const categoryName = carouselCat ? carouselCat.name : categoryId;
+    const category = categories.find(c => c.id === categoryId);
+    const categoryName = category ? category.name : categoryId;
     
     if (files.length === 0) {
         categoriesList.innerHTML = `
@@ -234,8 +296,8 @@ function renderFilteredCategoriesList(files, categoryId) {
         let html = `
             <div class="category-section">
                 <h3 style="font-size: 16px; margin: 16px 0 8px 0; color: var(--text-primary);">
-                    <span class="material-symbols-rounded" style="font-size: 20px; vertical-align: middle; margin-right: 8px;">${carouselCat?.icon || 'folder'}</span>
-                    ${categoryName} (${files.length})
+                    <span class="material-symbols-rounded" style="font-size: 20px; vertical-align: middle; margin-right: 8px;">${category?.icon || 'folder'}</span>
+                    ${categoryName} (${files.length} dosya)
                 </h3>
         `;
         
@@ -254,6 +316,13 @@ function toggleCarouselVisibility() {
     isCarouselHidden = !isCarouselHidden;
     updateCarouselVisibility();
     saveToCache();
+    
+    // Bildirim göster
+    if (isCarouselHidden) {
+        showNotification('Kategoriler Gizlendi', 'Kategori carousel artık görünmüyor.', 'info');
+    } else {
+        showNotification('Kategoriler Gösteriliyor', 'Kategori carousel şimdi görünür durumda.', 'success');
+    }
 }
 
 function updateCarouselVisibility() {
@@ -305,11 +374,11 @@ function openAndroidPermissionSettings() {
         if (typeof Android !== 'undefined' && Android.openAllFilesSettings) {
             Android.openAllFilesSettings();
         } else {
-            alert("Android bağlantısı kurulamadı. Lütfen uygulama ayarlarından izin verin.");
+            showNotification('Bağlantı Hatası', 'Android bağlantısı kurulamadı. Lütfen uygulama ayarlarından izin verin.', 'error');
         }
     } catch (e) {
         console.error('Open settings error:', e);
-        alert("Ayarlar açılamadı: " + e.message);
+        showNotification('Hata', 'Ayarlar açılamadı: ' + e.message, 'error');
     }
 }
 
@@ -333,6 +402,7 @@ function updatePermissionUI(hasPermission) {
     }
 }
 
+// --- GERÇEK DOSYA TARAMA VE BOYUT ALMA ---
 function scanDeviceForPDFs() {
     try {
         const loadingIndicator = document.getElementById('loadingIndicator');
@@ -368,7 +438,7 @@ function scanDeviceForPDFs() {
             // Cache'de var mı kontrol et
             const existingFile = cachedDevicePDFs.find(f => f.path === path);
             if (existingFile) {
-                // Gerçek boyutu güncelle
+                // Gerçek boyutu ve tarihi güncelle
                 existingFile.size = getRealFileSize(path);
                 existingFile.date = getRealFileDate(path);
                 newDevicePDFs.push(existingFile);
@@ -377,8 +447,8 @@ function scanDeviceForPDFs() {
                 newDevicePDFs.push({
                     id: nextId++,
                     name: name,
-                    size: getRealFileSize(path),
-                    date: getRealFileDate(path),
+                    size: getRealFileSize(path), // GERÇEK BOYUT
+                    date: getRealFileDate(path), // GERÇEK TARİH
                     isFavorite: false,
                     path: path,
                     category: null,
@@ -401,40 +471,28 @@ function scanDeviceForPDFs() {
         
         devicePDFs = devicePDFs || [];
         loadData();
-        alert("PDF tarama hatası: " + e.message);
+        showNotification('Tarama Hatası', 'PDF tarama işlemi sırasında hata oluştu: ' + e.message, 'error');
     }
 }
 
+// GERÇEK DOSYA BOYUTU ALMA - Android API ile
 function getRealFileSize(path) {
     try {
         if (typeof Android !== 'undefined' && Android.getFileSize) {
             const sizeBytes = parseInt(Android.getFileSize(path));
             if (!isNaN(sizeBytes) && sizeBytes > 0) {
-                return formatBytes(sizeBytes);
-            } else {
-                return getFallbackFileSize(path);
+                return formatBytes(sizeBytes, 2); // 2 ondalık basamak
             }
-        } else {
-            return getFallbackFileSize(path);
         }
+        // API'den alınamazsa varsayılan
+        return "1.0 MB";
     } catch (e) {
         console.error('File size error:', e);
-        return getFallbackFileSize(path);
+        return "1.0 MB";
     }
 }
 
-function getFallbackFileSize(path) {
-    const name = path.toLowerCase();
-    if (name.includes('large') || name.includes('big')) return '4.2 MB';
-    if (name.includes('small') || name.includes('tiny')) return '450 KB';
-    if (name.includes('report') || name.includes('document')) return '2.1 MB';
-    if (name.includes('book') || name.includes('manual')) return '3.8 MB';
-    if (name.includes('invoice') || name.includes('bill')) return '1.5 MB';
-    
-    const sizes = ['850 KB', '1.2 MB', '2.5 MB', '3.8 MB', '4.2 MB'];
-    return sizes[Math.floor(Math.random() * sizes.length)];
-}
-
+// GERÇEK DOSYA TARİHİ ALMA - Android API ile
 function getRealFileDate(path) {
     try {
         if (typeof Android !== 'undefined' && Android.getFileDate) {
@@ -445,48 +503,47 @@ function getRealFileDate(path) {
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const year = date.getFullYear();
                 return `${day}.${month}.${year}`;
-            } else {
-                return getFallbackFileDate();
             }
-        } else {
-            return getFallbackFileDate();
         }
+        // API'den alınamazsa bugünün tarihi
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        return `${day}.${month}.${year}`;
     } catch (e) {
         console.error('File date error:', e);
-        return getFallbackFileDate();
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        return `${day}.${month}.${year}`;
     }
 }
 
-function getFallbackFileDate() {
-    const now = new Date();
-    const daysAgo = Math.floor(Math.random() * 30);
-    const date = new Date(now);
-    date.setDate(now.getDate() - daysAgo);
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
     
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}.${month}.${year}`;
-}
-
-function formatBytes(bytes, decimals = 1) {
-    if (!+bytes) return '0 Bytes';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 // Android Callbacks
 function onPermissionGranted() {
     console.log("İzin verildi - onPermissionGranted çağrıldı");
     updatePermissionUI(true);
+    showNotification('İzin Verildi', 'Dosya erişim izni başarıyla verildi.', 'success');
 }
 
 function onPermissionDenied() {
     console.log("İzin verilmedi - onPermissionDenied çağrıldı");
     updatePermissionUI(false);
+    showNotification('İzin Verilmedi', 'Dosya erişim izni verilmedi. Ayarlardan izin verebilirsiniz.', 'warning');
 }
 
 function checkPermissionOnResume() {
@@ -546,6 +603,15 @@ function setThemePreference(preference) {
     initTheme();
     saveToCache();
     loadData();
+    
+    // Bildirim göster
+    let message = '';
+    switch(preference) {
+        case 'light': message = 'Açık tema uygulandı.'; break;
+        case 'dark': message = 'Koyu tema uygulandı.'; break;
+        case 'device': message = 'Cihaz teması uygulandı.'; break;
+    }
+    showNotification('Tema Değiştirildi', message, 'success');
 }
 
 function loadData() {
@@ -579,8 +645,11 @@ function renderCategoriesList() {
     const filesByCategory = {};
     const allFiles = [...devicePDFs, ...importedFiles];
     
+    // Alfabetik sıralı kategoriler
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    
     // Her kategori için dosyaları filtrele
-    categories.forEach(category => {
+    sortedCategories.forEach(category => {
         filesByCategory[category.id] = allFiles.filter(file => 
             fileCategories[file.id] === category.id
         );
@@ -595,7 +664,7 @@ function renderCategoriesList() {
     let hasCategories = false;
     
     // Her kategori için bölüm oluştur
-    categories.forEach(category => {
+    sortedCategories.forEach(category => {
         const files = filesByCategory[category.id];
         if (files.length > 0) {
             hasCategories = true;
@@ -603,7 +672,7 @@ function renderCategoriesList() {
                 <div class="category-section">
                     <h3 style="font-size: 16px; margin: 16px 0 8px 0; color: var(--text-primary);">
                         <span class="material-symbols-rounded" style="font-size: 20px; vertical-align: middle; margin-right: 8px;">${category.icon}</span>
-                        ${category.name} (${files.length})
+                        ${category.name} <span class="sort-badge">A-Z</span> (${files.length} dosya)
                     </h3>
             `;
             
@@ -623,7 +692,7 @@ function renderCategoriesList() {
             <div class="category-section">
                 <h3 style="font-size: 16px; margin: 16px 0 8px 0; color: var(--text-primary);">
                     <span class="material-symbols-rounded" style="font-size: 20px; vertical-align: middle; margin-right: 8px;">folder</span>
-                    Kategorize Edilmemiş (${uncategorizedFiles.length})
+                    Kategorize Edilmemiş (${uncategorizedFiles.length} dosya)
                 </h3>
         `;
         
@@ -743,7 +812,7 @@ function createCard(name, size, date, isFavorite, id, categoryId) {
 // --- DOSYA YÜKLEME İŞLEMLERİ ---
 function handleFabAction(action) {
   if (action === 'scan') {
-      alert('Kamera açılıyor: Belge Tarama Modu...');
+      showNotification('Tarama Başlatılıyor', 'Belge tarama modu açılıyor...', 'info');
   } else if (action === 'import') {
       pdfFileInput.click();
   }
@@ -765,7 +834,7 @@ function handleFileSelect(event) {
 
             const newFile = {
                 name: file.name,
-                size: formatBytes(file.size),
+                size: formatBytes(file.size, 2), // GERÇEK BOYUT
                 date: formattedDate,
                 isFavorite: false,
                 id: Date.now(),
@@ -776,7 +845,7 @@ function handleFileSelect(event) {
 
             importedFiles.unshift(newFile);
 
-            alert(`${newFile.name} başarıyla içe aktarıldı.`);
+            showNotification('Dosya Yüklendi', `${newFile.name} başarıyla içe aktarıldı.`, 'success');
             
             if (currentNav !== 'home') {
                 switchNav('home');
@@ -840,25 +909,15 @@ function handleContextAction(action) {
     }, 300);
 }
 
+// --- KATEGORİ EKLEME DİALOG ---
 function openAddCategoryDialog() {
-    // Kategori seçim listesini oluştur
+    // Kategori seçim listesini oluştur - Alfabetik sıralı
     let html = '';
     
-    // "Yeni Kategori Ekle" seçeneği
-    html += `
-        <div class="category-select-item" onclick="createNewCategory()">
-            <div class="category-select-icon">
-                <span class="material-symbols-rounded">add</span>
-            </div>
-            <div class="category-select-info">
-                <div class="category-select-name">Yeni Kategori Ekle</div>
-                <div class="category-select-count">Tıklayarak yeni kategori oluştur</div>
-            </div>
-        </div>
-    `;
+    // Alfabetik sıralı kategoriler
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
     
-    // Mevcut kategoriler
-    categories.forEach(category => {
+    sortedCategories.forEach(category => {
         // Bu kategorideki dosya sayısını bul
         const fileCount = Object.values(fileCategories).filter(id => id === category.id).length;
         // Bu dosya bu kategoride mi kontrol et
@@ -874,6 +933,7 @@ function openAddCategoryDialog() {
                     <div class="category-select-name">${category.name}</div>
                     <div class="category-select-count">${fileCount} dosya</div>
                 </div>
+                ${isSelected ? '<span class="selected-badge">SEÇİLİ</span>' : ''}
             </div>
         `;
     });
@@ -889,8 +949,55 @@ function closeAddCategoryDialog() {
 function createNewCategory() {
     closeAddCategoryDialog();
     setTimeout(() => {
-        openDeleteCategoryDialog(); // Bu aslında yeni kategori oluşturma dialogu
+        createCategoryNameInput.value = '';
+        createCategoryNameInput.focus();
+        createCategoryDialog.classList.add('show');
     }, 300);
+}
+
+function closeCreateCategoryDialog() {
+    createCategoryDialog.classList.remove('show');
+}
+
+function createCategory() {
+    const categoryName = createCategoryNameInput.value.trim();
+    if (!categoryName) {
+        showNotification('Hata', 'Lütfen bir kategori adı girin.', 'error');
+        return;
+    }
+    
+    // Aynı isimde kategori var mı kontrol et
+    const existingCategory = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+    if (existingCategory) {
+        showNotification('Hata', 'Bu isimde bir kategori zaten var.', 'warning');
+        return;
+    }
+    
+    const newId = 'cat_' + Date.now();
+    const newCategory = {
+        id: newId,
+        name: categoryName,
+        icon: 'folder'
+    };
+    
+    categories.push(newCategory);
+    
+    // Kategorileri alfabetik sırala
+    categories.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    
+    // Carousel'ı yenile
+    initCarousel();
+    
+    closeCreateCategoryDialog();
+    loadData();
+    saveToCache();
+    
+    showNotification('Kategori Eklendi', `"${categoryName}" kategorisi başarıyla oluşturuldu!`, 'success');
+    
+    // Otomatik olarak bu kategoriyi seç
+    setTimeout(() => {
+        addFileToCategory(newId, categoryName);
+    }, 500);
 }
 
 function addFileToCategory(categoryId, categoryName) {
@@ -907,82 +1014,130 @@ function addFileToCategory(categoryId, categoryName) {
     
     loadData();
     saveToCache();
-    alert(`"${currentContextFile.name}" dosyası "${categoryName}" kategorisine eklendi.`);
+    showNotification('Kategoriye Eklendi', `"${currentContextFile.name}" dosyası "${categoryName}" kategorisine eklendi.`, 'success');
     closeAddCategoryDialog();
 }
 
 function removeFromCategory(cardId, fileName) {
-    if (confirm(`"${fileName}" dosyasını kategorisinden çıkarmak istediğinize emin misiniz?`)) {
-        delete fileCategories[cardId];
-        
-        // Dosya nesnesini de güncelle
-        let file = importedFiles.find(f => f.id === cardId);
-        if (!file) {
-            file = devicePDFs.find(f => f.id === cardId);
-        }
-        if (file) {
-            file.category = null;
-        }
-        
-        loadData();
-        saveToCache();
-        alert('Dosya kategorisinden çıkarıldı.');
-    }
-}
-
-// --- YENİ KATEGORİ OLUŞTURMA DİALOG ---
-function openDeleteCategoryDialog() {
-    closeAddCategoryDialog();
-    newCategoryNameInput.value = '';
-    newCategoryNameInput.focus();
-    deleteCategoryDialog.classList.add('show');
-}
-
-function closeDeleteCategoryDialog() {
-    deleteCategoryDialog.classList.remove('show');
-}
-
-function addNewCategory() {
-    const categoryName = newCategoryNameInput.value.trim();
-    if (!categoryName) {
-        alert('Lütfen bir kategori adı girin.');
+    if (!fileCategories[cardId]) {
+        showNotification('Bilgi', 'Bu dosya zaten bir kategoride değil.', 'info');
         return;
     }
     
-    // Aynı isimde kategori var mı kontrol et
-    const existingCategory = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-    if (existingCategory) {
-        alert('Bu isimde bir kategori zaten var.');
-        return;
+    const categoryId = fileCategories[cardId];
+    const category = categories.find(c => c.id === categoryId);
+    const categoryName = category ? category.name : 'Kategori';
+    
+    fileCategories[cardId] = null;
+    
+    // Dosya nesnesini de güncelle
+    let file = importedFiles.find(f => f.id === cardId);
+    if (!file) {
+        file = devicePDFs.find(f => f.id === cardId);
+    }
+    if (file) {
+        file.category = null;
     }
     
-    const newId = 'cat_' + Date.now();
-    const newCategory = {
-        id: newId,
-        name: categoryName,
-        icon: 'folder'
-    };
+    loadData();
+    saveToCache();
+    showNotification('Kategoriden Çıkarıldı', `"${fileName}" dosyası "${categoryName}" kategorisinden çıkarıldı.`, 'info');
+}
+
+// --- KATEGORİ SİLME DİALOG ---
+function openCategoryDeleteDialog() {
+    closeContextMenu();
     
-    categories.push(newCategory);
+    // Alfabetik sıralı kategoriler
+    const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
     
-    // Carousel'a ekle (eğer yoksa)
-    const existsInCarousel = carouselCategories.some(c => c.name.toLowerCase() === categoryName.toLowerCase());
-    if (!existsInCarousel) {
-        carouselCategories.push({
-            id: newId,
-            name: categoryName,
-            icon: 'folder'
+    let html = '';
+    if (sortedCategories.length === 0) {
+        html = `
+            <div class="empty-state" style="padding: 20px;">
+                <div class="empty-icon material-symbols-rounded">category</div>
+                <p>Silinecek kategori yok.</p>
+            </div>
+        `;
+    } else {
+        sortedCategories.forEach(category => {
+            // Bu kategorideki dosya sayısını bul
+            const fileCount = Object.values(fileCategories).filter(id => id === category.id).length;
+            
+            html += `
+                <div class="category-delete-item">
+                    <div class="category-delete-info">
+                        <div class="category-delete-icon">
+                            <span class="material-symbols-rounded">${category.icon}</span>
+                        </div>
+                        <div class="category-delete-text">
+                            <div class="category-delete-name">${category.name}</div>
+                            <div class="category-delete-count">${fileCount} dosya</div>
+                        </div>
+                    </div>
+                    <button class="delete-button" onclick="deleteCategory('${category.id}', '${category.name}')" ${fileCount > 0 ? '' : ''}>
+                        Sil
+                    </button>
+                </div>
+            `;
         });
-        initCarousel();
     }
     
-    closeDeleteCategoryDialog();
+    categoryDeleteList.innerHTML = html;
+    categoryDeleteDialog.classList.add('show');
+}
+
+function closeCategoryDeleteDialog() {
+    categoryDeleteDialog.classList.remove('show');
+}
+
+function deleteCategory(categoryId, categoryName) {
+    // Bu kategorideki dosya sayısını bul
+    const fileCount = Object.values(fileCategories).filter(id => id === categoryId).length;
+    
+    if (fileCount > 0) {
+        if (!confirm(`"${categoryName}" kategorisinde ${fileCount} dosya bulunuyor. Yine de silmek istiyor musunuz?\n\nBu dosyalar kategorisiz olarak işaretlenecektir.`)) {
+            return;
+        }
+    } else {
+        if (!confirm(`"${categoryName}" kategorisini silmek istediğinize emin misiniz?`)) {
+            return;
+        }
+    }
+    
+    // Kategoriyi sil
+    categories = categories.filter(c => c.id !== categoryId);
+    
+    // Carousel'dan da sil
+    carouselCategories = carouselCategories.filter(c => c.id !== categoryId);
+    
+    // Carousel'ı yenile
+    initCarousel();
+    
+    // Bu kategorideki dosyaları kategorisiz yap
+    Object.keys(fileCategories).forEach(fileId => {
+        if (fileCategories[fileId] === categoryId) {
+            fileCategories[fileId] = null;
+            
+            // Dosya nesnelerini de güncelle
+            let file = importedFiles.find(f => f.id === parseInt(fileId));
+            if (!file) {
+                file = devicePDFs.find(f => f.id === parseInt(fileId));
+            }
+            if (file) {
+                file.category = null;
+            }
+        }
+    });
+    
     loadData();
     saveToCache();
     
-    // Başarılı mesajı
+    showNotification('Kategori Silindi', `"${categoryName}" kategorisi başarıyla silindi!`, 'success');
+    
+    // Dialog'u kapat
     setTimeout(() => {
-        alert(`"${categoryName}" kategorisi başarıyla eklendi!`);
+        closeCategoryDeleteDialog();
     }, 300);
 }
 
@@ -1007,14 +1162,14 @@ function confirmRenameFile() {
     
     const newName = newFileNameInput.value.trim();
     if (!newName) {
-        alert('Lütfen bir dosya adı girin.');
+        showNotification('Hata', 'Lütfen bir dosya adı girin.', 'error');
         return;
     }
     
     const newNameWithExt = newName.endsWith('.pdf') ? newName : newName + '.pdf';
     
     if (newNameWithExt === currentContextFile.oldName) {
-        alert('Yeni ad eski adla aynı.');
+        showNotification('Bilgi', 'Yeni ad eski adla aynı.', 'info');
         return;
     }
     
@@ -1051,7 +1206,7 @@ function renameFile(cardId, oldName, newNameWithExt) {
     
     loadData();
     saveToCache();
-    alert('Dosya adı güncellendi.');
+    showNotification('Dosya Adı Güncellendi', `"${oldName}" dosyasının adı "${newNameWithExt}" olarak değiştirildi.`, 'success');
 }
 
 // --- SELECTION MODE FUNCTIONS ---
@@ -1122,7 +1277,10 @@ function deselectAllCards() {
 }
 
 function shareSelectedCards() {
-    if (selectedCards.size === 0) return;
+    if (selectedCards.size === 0) {
+        showNotification('Uyarı', 'Lütfen paylaşmak için öğe seçin.', 'warning');
+        return;
+    }
     
     const selectedFiles = [];
     selectedCards.forEach(cardId => {
@@ -1134,7 +1292,7 @@ function shareSelectedCards() {
     });
     
     if (selectedFiles.length === 0) {
-        alert('Paylaşılacak dosya bulunamadı.');
+        showNotification('Hata', 'Paylaşılacak dosya bulunamadı.', 'error');
         return;
     }
     
@@ -1161,12 +1319,12 @@ function shareSelectedCards() {
                     files: validFiles
                 }).catch(err => {
                     console.error('Paylaşım hatası:', err);
-                    alert(`${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`);
+                    showNotification('Bilgi', `${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`, 'info');
                 });
             }
         });
     } else {
-        alert(`${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`);
+        showNotification('Bilgi', `${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`, 'info');
         
         try {
             if (typeof Android !== 'undefined' && Android.shareFiles) {
@@ -1181,7 +1339,7 @@ function shareSelectedCards() {
 
 function printSelectedCards() {
     if (selectedCards.size === 0) {
-        alert('Lütfen yazdırmak için öğe seçin.');
+        showNotification('Uyarı', 'Lütfen yazdırmak için öğe seçin.', 'warning');
         return;
     }
     
@@ -1195,7 +1353,7 @@ function printSelectedCards() {
     });
     
     if (selectedFiles.length === 0) {
-        alert('Yazdırılacak dosya bulunamadı.');
+        showNotification('Hata', 'Yazdırılacak dosya bulunamadı.', 'error');
         return;
     }
     
@@ -1215,7 +1373,7 @@ function printSingleFile(cardId, fileName) {
     }
     
     if (!file) {
-        alert('Dosya bulunamadı.');
+        showNotification('Hata', 'Dosya bulunamadı.', 'error');
         return;
     }
     
@@ -1240,6 +1398,7 @@ function updatePrintProgress(current, total) {
     if (current === total) {
         setTimeout(() => {
             printStatus.classList.remove('show');
+            showNotification('Yazdırma Tamamlandı', `${total} dosya yazdırma işlemi tamamlandı.`, 'success');
         }, 1000);
     }
 }
@@ -1264,12 +1423,12 @@ function printSingleFileDirectly(file, currentIndex, totalCount) {
         } else if (file.path) {
             printFileViaIframe(file.path, fileName);
         } else {
-            alert(`"${fileName}" için yazdırma işlemi başlatılamadı. Lütfen dosyayı açıp manuel yazdırın.`);
+            showNotification('Uyarı', `"${fileName}" için yazdırma işlemi başlatılamadı. Lütfen dosyayı açıp manuel yazdırın.`, 'warning');
         }
         
     } catch (e) {
         console.error('Yazdırma hatası:', e);
-        alert(`"${fileName}" yazdırılırken hata oluştu: ${e.message}`);
+        showNotification('Hata', `"${fileName}" yazdırılırken hata oluştu: ${e.message}`, 'error');
     }
 }
 
@@ -1308,7 +1467,7 @@ function printBase64PDF(base64Data, fileName) {
         };
     } catch (e) {
         console.error('Base64 yazdırma hatası:', e);
-        alert('Yazdırma işlemi başlatılamadı.');
+        showNotification('Hata', 'Yazdırma işlemi başlatılamadı.', 'error');
     }
 }
 
@@ -1335,7 +1494,7 @@ function printFileViaIframe(filePath, fileName) {
 
 function deleteSelectedCards() {
     if (selectedCards.size === 0) {
-        alert('Lütfen silmek için öğe seçin.');
+        showNotification('Uyarı', 'Lütfen silmek için öğe seçin.', 'warning');
         return;
     }
     
@@ -1359,7 +1518,7 @@ function deleteSelectedCards() {
             delete fileCategories[cardId];
         });
         
-        alert(`${selectedCards.size} öğe silindi.`);
+        showNotification('Silme Tamamlandı', `${selectedCards.size} öğe silindi.`, 'success');
         exitSelectionMode();
         loadData();
         saveToCache();
@@ -1399,6 +1558,13 @@ function toggleFavorite(button, cardId) {
     
     loadData();
     saveToCache();
+    
+    // Bildirim göster
+    if (isFavorite) {
+        showNotification('Favorilere Eklendi', 'Dosya favorilere eklendi.', 'success');
+    } else {
+        showNotification('Favorilerden Çıkarıldı', 'Dosya favorilerden çıkarıldı.', 'info');
+    }
 }
 
 // --- LONG PRESS VE CLICK YÖNETİMİ ---
@@ -1474,7 +1640,7 @@ function openPDF(fileData, name) {
                     fileData.id;
         window.location.href = url;
     } else {
-        alert("Dosya verisi bulunamadı!");
+        showNotification('Hata', 'Dosya verisi bulunamadı!', 'error');
     }
 }
 
@@ -1485,7 +1651,7 @@ function shareSingleFile(cardId, fileName) {
     }
     
     if (!file) {
-        alert('Dosya bulunamadı.');
+        showNotification('Hata', 'Dosya bulunamadı.', 'error');
         return;
     }
     
@@ -1500,16 +1666,16 @@ function shareSingleFile(cardId, fileName) {
                         files: [fileToShare]
                     }).catch(err => {
                         console.error('Paylaşım hatası:', err);
-                        alert(`"${fileName}" paylaşılıyor...`);
+                        showNotification('Bilgi', `"${fileName}" paylaşılıyor...`, 'info');
                     });
                 });
         } else if (typeof Android !== 'undefined' && Android.shareFile) {
             Android.shareFile(file.path || fileName);
         } else {
-            alert(`"${fileName}" paylaşılıyor...`);
+            showNotification('Bilgi', `"${fileName}" paylaşılıyor...`, 'info');
         }
     } else {
-        alert(`"${fileName}" paylaşılıyor...`);
+        showNotification('Bilgi', `"${fileName}" paylaşılıyor...`, 'info');
         
         try {
             if (typeof Android !== 'undefined' && Android.shareFile) {
@@ -1542,7 +1708,7 @@ function deleteSingleFile(cardId, fileName) {
         
         loadData();
         saveToCache();
-        alert('Dosya silindi.');
+        showNotification('Silme Tamamlandı', 'Dosya silindi.', 'success');
     }
 }
 
@@ -1846,9 +2012,9 @@ function handleFileSource(source) {
         switchNav('home');
         switchTab('device', true);
     } else if (source === 'browse_more') {
-        alert('Cihazınızın dosya yöneticisi açılıyor...');
+        showNotification('Dosya Yöneticisi', 'Cihazınızın dosya yöneticisi açılıyor...', 'info');
     } else {
-        alert(`${source.toUpperCase()} kaynağına bağlanılıyor...`);
+        showNotification('Bağlantı', `${source.toUpperCase()} kaynağına bağlanılıyor...`, 'info');
     }
 }
 
@@ -1860,7 +2026,7 @@ function sendHelpEmail(e) {
     const recipient = "devsoftawaremail@gmail.com";
     const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent("Gönderen: " + email + "\n\nSorun:\n" + issue)}`;
     window.location.href = mailtoLink;
-    alert("Destek talebiniz için varsayılan e-posta uygulamanız açılıyor. Lütfen Gönder butonuna basarak e-postayı tamamlayın.");
+    showNotification('Destek Talebi', 'E-posta uygulamanız açılıyor. Lütfen Gönder butonuna basın.', 'info');
     document.querySelector('.help-form').reset();
 }
 
@@ -1869,7 +2035,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const cacheLoaded = loadFromCache();
   
   initTheme();
-  initCarousel();
   
   if (!cacheLoaded || categories.length === 0) {
     categories = [
@@ -1879,8 +2044,12 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'saglik', name: 'Sağlık', icon: 'medical_services' },
         { id: 'seyahat', name: 'Seyahat', icon: 'flight' }
     ];
+    
+    // Alfabetik sırala
+    categories.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   }
   
+  initCarousel();
   updateCarouselVisibility();
   
   loadData();
@@ -1948,9 +2117,13 @@ window.closeRenameDialog = closeRenameDialog;
 window.confirmRenameFile = confirmRenameFile;
 window.openAddCategoryDialog = openAddCategoryDialog;
 window.closeAddCategoryDialog = closeAddCategoryDialog;
-window.addNewCategory = addNewCategory;
-window.openDeleteCategoryDialog = openDeleteCategoryDialog;
-window.closeDeleteCategoryDialog = closeDeleteCategoryDialog;
+window.closeCreateCategoryDialog = closeCreateCategoryDialog;
+window.createCategory = createCategory;
+window.openCategoryDeleteDialog = openCategoryDeleteDialog;
+window.closeCategoryDeleteDialog = closeCategoryDeleteDialog;
+window.deleteCategory = deleteCategory;
+window.showNotification = showNotification;
+window.closeNotification = closeNotification;
 
 // --- ARAÇLAR VERİLERİ ---
 const toolsData = [

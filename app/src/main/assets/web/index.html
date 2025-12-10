@@ -6,8 +6,90 @@
   <title>PDF Reader | Dev Software</title>
   
   <link rel="stylesheet" href="index.css">
+  <style>
+    /* Modern bildirim stilleri */
+    .notification {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 320px;
+      transform: translateX(400px);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border-left: 4px solid var(--primary);
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    .notification.success {
+      border-left-color: #4CAF50;
+    }
+    
+    .notification.error {
+      border-left-color: #f44336;
+    }
+    
+    .notification.info {
+      border-left-color: #2196F3;
+    }
+    
+    .notification.warning {
+      border-left-color: #FF9800;
+    }
+    
+    .notification-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 20px;
+    }
+    
+    .notification-content {
+      flex: 1;
+    }
+    
+    .notification-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+    
+    .notification-message {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .notification-close {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    
+    .notification-close:hover {
+      background: rgba(0,0,0,0.05);
+    }
+  </style>
 </head>
 <body>
+
+  <!-- Modern Bildirim -->
+  <div id="notificationContainer"></div>
 
   <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handleFileSelect(event)">
 
@@ -283,7 +365,7 @@
         
         <div class="setting-panel active" data-panel="app-lang">
             <p class="text-sm font-semibold">Uygulama arayüzünün dilini seçin.</p>
-            <select class="select-placeholder" onchange="alert('Uygulama dili ayarlanıyor: ' + this.value)">
+            <select class="select-placeholder" onchange="showNotification('Bilgi', 'Uygulama dili değiştirilecek: ' + this.value, 'info')">
                 <option value="" disabled selected>Uygulama Dili Seçiniz</option>
                 <option value="tr">Türkçe (Turkish)</option>
                 <option value="en">İngilizce (English)</option>
@@ -292,7 +374,7 @@
 
         <div class="setting-panel" data-panel="pdf-lang">
             <p class="text-sm font-semibold">PDF'leri görüntüleme ve metin kopyalama/arama için OCR dilini seçin.</p>
-            <select class="select-placeholder" onchange="alert('PDF Görüntüleyici dili ayarlanıyor: ' + this.value)">
+            <select class="select-placeholder" onchange="showNotification('Bilgi', 'PDF görüntüleyici dili değiştirilecek: ' + this.value, 'info')">
                 <option value="" disabled selected>Görüntüleyici Dili Seçiniz (50+ Dil)</option>
                 <option value="tr">Türkçe</option>
                 <option value="en">İngilizce</option>
@@ -319,17 +401,7 @@
         </div>
 
         <div class="setting-panel" data-panel="categories">
-            <p class="text-sm font-semibold mb-3">Kategori yönetimi ayarları</p>
-            
-            <div class="category-setting-item" onclick="openAddCategoryDialog()">
-                <span class="material-symbols-rounded">add</span>
-                <span>Kategori Ekle</span>
-            </div>
-            
-            <div class="category-setting-item" onclick="openDeleteCategoryDialog()">
-                <span class="material-symbols-rounded">delete</span>
-                <span>Kategori Sil</span>
-            </div>
+            <p class="text-sm font-semibold mb-3">Kategori görünürlük ayarları</p>
             
             <div class="category-setting-item" onclick="toggleCarouselVisibility()">
                 <span class="material-symbols-rounded" id="toggleCarouselIcon">visibility_off</span>
@@ -351,7 +423,7 @@
         <p>Kişisel verilerinizin ve belge gizliliğinizin bizim için en önemli öncelik olduğunu garanti ederiz. Uygulama, dosyalarınızı sunucularımıza yüklemeden cihazınızda yerel olarak işleyecek şekilde tasarlanmıştır.</p>
         <p><strong>Dev Software</strong> olarak, kullanıcılarımızın hiçbir kişisel verisini üçüncü taraflarla paylaşmayız.</p>
         <p class="mt-3 font-semibold">Daha fazla bilgi için:</p>
-        <a href="#" onclick="alert('Gizlilik Politikası sayfasına yönlendiriliyor...')" class="text-sm text-primary">Gizlilik Politikası için Tıklayınız</a>
+        <a href="#" onclick="showNotification('Yönlendirme', 'Gizlilik Politikası sayfasına yönlendiriliyor...', 'info')" class="text-sm text-primary">Gizlilik Politikası için Tıklayınız</a>
       </div>
 
       <div class="drawer-item" data-accordion="help">
@@ -394,12 +466,15 @@
     <div class="sheet-item" onclick="handleContextAction('category_remove')">
         <span class="material-symbols-rounded">remove</span> Kategoriden Çıkar
     </div>
+    <div class="sheet-item" onclick="openCategoryDeleteDialog()">
+        <span class="material-symbols-rounded">delete</span> Kategori Sil
+    </div>
     <div class="sheet-item danger" onclick="handleContextAction('delete')">
-        <span class="material-symbols-rounded">delete</span> Sil
+        <span class="material-symbols-rounded">delete_forever</span> Dosyayı Sil
     </div>
   </div>
 
-  <!-- KATEGORİ EKLEME MENÜSÜ -->
+  <!-- KATEGORİ EKLEME DİALOG -->
   <div class="dialog-overlay" id="addCategoryDialog">
     <div class="dialog">
       <div class="dialog-header">
@@ -409,9 +484,18 @@
         </button>
       </div>
       <div class="dialog-content">
-        <p class="text-sm text-secondary mb-3">Bir kategori seçin:</p>
+        <p class="text-sm text-secondary mb-3">Bir kategori seçin veya yeni kategori oluşturun:</p>
         <div class="category-select-list" id="categorySelectList">
           <!-- Kategoriler buraya eklenecek -->
+        </div>
+        <div class="category-select-item" onclick="createNewCategory()" style="border-top: 2px dashed var(--border); margin-top: 10px;">
+            <div class="category-select-icon" style="background: rgba(33, 150, 243, 0.1); color: #2196F3;">
+                <span class="material-symbols-rounded">add_circle</span>
+            </div>
+            <div class="category-select-info">
+                <div class="category-select-name" style="color: #2196F3; font-weight: 600;">Yeni Kategori Ekle</div>
+                <div class="category-select-count">Yeni kategori oluşturmak için tıklayın</div>
+            </div>
         </div>
       </div>
       <div class="dialog-footer">
@@ -420,6 +504,54 @@
     </div>
   </div>
 
+  <!-- YENİ KATEGORİ OLUŞTURMA DİALOG -->
+  <div class="dialog-overlay" id="createCategoryDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Yeni Kategori Oluştur</h3>
+        <button class="dialog-close" onclick="closeCreateCategoryDialog()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="dialog-content">
+        <input type="text" 
+               class="dialog-input" 
+               id="createCategoryNameInput" 
+               placeholder="Kategori adı girin"
+               maxlength="30"
+               onkeypress="if(event.key === 'Enter') createCategory()">
+        <p class="text-sm text-secondary">Maksimum 30 karakter. Alfabetik sıraya göre listelenecektir.</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeCreateCategoryDialog()">İptal</button>
+        <button class="dialog-button primary" onclick="createCategory()">Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KATEGORİ SİLME DİALOG -->
+  <div class="dialog-overlay" id="categoryDeleteDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Kategori Sil</h3>
+        <button class="dialog-close" onclick="closeCategoryDeleteDialog()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="dialog-content">
+        <p class="text-sm text-secondary mb-4">Silinecek kategoriyi seçin. Bu kategorideki dosyalar kategorisiz olacaktır.</p>
+        <div class="category-delete-list" id="categoryDeleteList">
+          <!-- Kategoriler buraya eklenecek -->
+        </div>
+        <p class="text-sm text-secondary mt-3">Not: Kategori silindiğinde carousel'dan da kaldırılacaktır.</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeCategoryDeleteDialog()">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- YENİDEN ADLANDIRMA DİALOG -->
   <div class="dialog-overlay" id="renameDialog">
     <div class="dialog">
       <div class="dialog-header">
@@ -434,35 +566,13 @@
                class="dialog-input" 
                id="newFileNameInput" 
                placeholder="Yeni dosya adı girin"
-               maxlength="100">
+               maxlength="100"
+               onkeypress="if(event.key === 'Enter') confirmRenameFile()">
         <p class="text-sm text-secondary">.pdf uzantısı otomatik eklenecektir</p>
       </div>
       <div class="dialog-footer">
         <button class="dialog-button cancel" onclick="closeRenameDialog()">İptal</button>
         <button class="dialog-button primary" onclick="confirmRenameFile()">Kaydet</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="dialog-overlay" id="deleteCategoryDialog">
-    <div class="dialog">
-      <div class="dialog-header">
-        <h3 class="dialog-title">Yeni Kategori Oluştur</h3>
-        <button class="dialog-close" onclick="closeDeleteCategoryDialog()">
-          <span class="material-symbols-rounded">close</span>
-        </button>
-      </div>
-      <div class="dialog-content">
-        <input type="text" 
-               class="dialog-input" 
-               id="newCategoryNameInput" 
-               placeholder="Kategori adı girin"
-               maxlength="30">
-        <p class="text-sm text-secondary">Maksimum 30 karakter</p>
-      </div>
-      <div class="dialog-footer">
-        <button class="dialog-button cancel" onclick="closeDeleteCategoryDialog()">İptal</button>
-        <button class="dialog-button primary" onclick="addNewCategory()">Oluştur</button>
       </div>
     </div>
   </div>

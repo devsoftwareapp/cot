@@ -33,7 +33,6 @@ class IndexActivity : AppCompatActivity() {
     private val sharedPDFsFolder by lazy { File(pdfReaderFolder, "Paylaşılanlar") }
     private val sharedPDFs = mutableListOf<SharedPDF>()
 
-    // DEĞİŞTİR: Provider authority uygulama ID'sine göre olmalı
     companion object {
         const val FILE_PROVIDER_AUTHORITY = "com.devsoftware.pdfreader.fileprovider"
     }
@@ -65,13 +64,34 @@ class IndexActivity : AppCompatActivity() {
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         
-        // 4. WebView client'ları
-        webView.webChromeClient = WebChromeClient()
+        // 4. WebView client'ları - ALERT'LERİ ENGELLE
+        webView.webChromeClient = object : WebChromeClient() {
+            // ALERT'leri sustur - BU KRİTİK!
+            override fun onJsAlert(view: WebView, url: String, message: String, result: android.webkit.JsResult): Boolean {
+                // Alert'leri sessizce kapat, gösterme
+                result.confirm()
+                return true // Alert'i WebView'in göstermesini engelle
+            }
+            
+            override fun onJsConfirm(view: WebView, url: String, message: String, result: android.webkit.JsResult): Boolean {
+                result.confirm()
+                return true
+            }
+            
+            override fun onJsPrompt(view: WebView, url: String, message: String, defaultValue: String, result: android.webkit.JsPromptResult): Boolean {
+                result.confirm()
+                return true
+            }
+        }
+        
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 checkAndUpdatePermission()
                 loadSharedPDFs()
+                
+                // JavaScript alert fonksiyonunu override et
+                injectAlertOverride()
             }
             
             // file:// URL'lerini engelle
@@ -84,7 +104,6 @@ class IndexActivity : AppCompatActivity() {
                         val filePath = url.substringAfter("file://")
                         val file = File(filePath)
                         if (file.exists()) {
-                            // Android PDF viewer ile aç
                             openPDFWithAndroidViewer(file)
                             return true
                         }
@@ -105,11 +124,43 @@ class IndexActivity : AppCompatActivity() {
         // 7. Paylaşılan PDF'leri yükle
         loadSharedPDFs()
         
-        // 8. İntent'i işle (eğer paylaşımdan geldiyse)
+        // 8. İntent'i işle
         handleShareIntent(intent)
     }
+    
+    // ALERT fonksiyonlarını override eden JavaScript enjekte et
+    private fun injectAlertOverride() {
+        val jsCode = """
+            // Tüm alert fonksiyonlarını sustur
+            window.alert = function(message) {
+                console.log("Alert engellendi: " + message);
+                return;
+            };
+            
+            window.confirm = function(message) {
+                console.log("Confirm engellendi: " + message);
+                return true;
+            };
+            
+            window.prompt = function(message, defaultValue) {
+                console.log("Prompt engellendi: " + message);
+                return defaultValue || "";
+            };
+            
+            // Toast benzeri basit bildirim (isteğe bağlı)
+            window.showToast = function(message) {
+                if (Android && Android.showToast) {
+                    Android.showToast(message);
+                }
+            };
+        """
+        
+        webView.postDelayed({
+            webView.evaluateJavascript(jsCode, null)
+        }, 1000)
+    }
 
-    // YENİ: Android PDF viewer ile aç
+    // Android PDF viewer ile aç
     private fun openPDFWithAndroidViewer(file: File) {
         try {
             val uri = FileProvider.getUriForFile(
@@ -126,7 +177,8 @@ class IndexActivity : AppCompatActivity() {
             
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "PDF görüntüleyici bulunamadı", Toast.LENGTH_SHORT).show()
+            // Sessiz hata - alert gösterme
+            Log.e("PDFReader", "PDF görüntüleyici bulunamadı", e)
         } catch (e: Exception) {
             Log.e("PDFReader", "PDF açma hatası", e)
         }
@@ -181,12 +233,12 @@ class IndexActivity : AppCompatActivity() {
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     updateSharedPDFsList()
-                    Toast.makeText(this, "✓ PDF Paylaşılanlar'a eklendi", Toast.LENGTH_SHORT).show()
+                    // Toast yerine sessiz çalış
+                    Log.i("PDFReader", "PDF Paylaşılanlar'a eklendi: $name")
                 }, 300)
             }
         } catch (e: Exception) {
             Log.e("PDFReader", "PDF Kaydetme Hatası", e)
-            Toast.makeText(this, "✗ PDF kaydedilemedi", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -265,7 +317,6 @@ class IndexActivity : AppCompatActivity() {
         val sharedDate: String
     )
 
-    // DEĞİŞTİR: Sınıf adını değiştir
     inner class PdfAndroidInterface(private val act: Activity) {
 
         @JavascriptInterface
@@ -283,7 +334,8 @@ class IndexActivity : AppCompatActivity() {
                     intent.data = uri
                     act.startActivity(intent)
                 } catch (e: Exception) {
-                    Toast.makeText(act, "Ayarlar açılamadı", Toast.LENGTH_SHORT).show()
+                    // Sessiz hata
+                    Log.e("PDFReader", "Ayarlar açılamadı", e)
                 }
             }
         }
@@ -391,25 +443,28 @@ class IndexActivity : AppCompatActivity() {
                             file
                         )
                         
-                        // KRİTİK: ACTION_SEND yerine ACTION_SEND için doğru intent
+                        // DİREKT YAZDIRMA İNTENT'İ - alert YOK
                         val printIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "application/pdf"
                             putExtra(Intent.EXTRA_STREAM, uri)
-                            putExtra(Intent.EXTRA_SUBJECT, "Yazdır: ${file.name}")
-                            putExtra(Intent.EXTRA_TITLE, "PDF Yazdır")
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         
-                        // Sistem paylaşım menüsünü aç - BU ÇALIŞACAK
-                        act.startActivity(Intent.createChooser(printIntent, "Yazdır: ${file.name}"))
+                        // Chooser'sız direkt intent - sistem yazdırma seçeneğini açar
+                        try {
+                            act.startActivity(printIntent)
+                        } catch (e: ActivityNotFoundException) {
+                            // Chooser ile fallback
+                            act.startActivity(Intent.createChooser(printIntent, "Yazdır: ${file.name}"))
+                        }
                         
                     } else {
-                        Toast.makeText(act, "PDF dosyası bulunamadı", Toast.LENGTH_SHORT).show()
+                        // Sessiz hata
+                        Log.e("PDFReader", "PDF bulunamadı: $path")
                     }
                 } catch (e: Exception) {
                     Log.e("PDFReader", "Yazdırma hatası", e)
-                    Toast.makeText(act, "Yazdırma başlatılamadı", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -427,25 +482,27 @@ class IndexActivity : AppCompatActivity() {
                             file
                         )
                         
-                        // Android paylaşım menüsü - BU KESİN ÇALIŞIR
+                        // Android paylaşım menüsü - alert YOK
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "application/pdf"
                             putExtra(Intent.EXTRA_STREAM, uri)
-                            putExtra(Intent.EXTRA_SUBJECT, "PDF: ${file.name}")
-                            putExtra(Intent.EXTRA_TEXT, "${file.name} dosyasını paylaşıyorum")
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         
-                        // WhatsApp, Bluetooth, Quick Share vs. görünecek
-                        act.startActivity(Intent.createChooser(shareIntent, "Paylaş: ${file.name}"))
+                        // Direkt paylaşım menüsünü aç
+                        try {
+                            act.startActivity(shareIntent)
+                        } catch (e: ActivityNotFoundException) {
+                            // Chooser ile fallback
+                            act.startActivity(Intent.createChooser(shareIntent, "Paylaş: ${file.name}"))
+                        }
                         
                     } else {
-                        Toast.makeText(act, "Dosya bulunamadı", Toast.LENGTH_SHORT).show()
+                        Log.e("PDFReader", "Dosya bulunamadı: $path")
                     }
                 } catch (e: Exception) {
                     Log.e("PDFReader", "Paylaşım hatası", e)
-                    Toast.makeText(act, "Paylaşım başlatılamadı", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -473,19 +530,22 @@ class IndexActivity : AppCompatActivity() {
                         val shareIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
                             type = "application/pdf"
                             putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                            putExtra(Intent.EXTRA_SUBJECT, "${uris.size} PDF Dosyası")
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
 
-                        act.startActivity(Intent.createChooser(shareIntent, 
-                            if (uris.size == 1) "PDF Paylaş" else "${uris.size} PDF Dosyası Paylaş"))
+                        // Direkt aç
+                        try {
+                            act.startActivity(shareIntent)
+                        } catch (e: ActivityNotFoundException) {
+                            act.startActivity(Intent.createChooser(shareIntent, 
+                                if (uris.size == 1) "PDF Paylaş" else "${uris.size} PDF Dosyası Paylaş"))
+                        }
                     } else {
-                        Toast.makeText(act, "Paylaşılacak dosya bulunamadı", Toast.LENGTH_SHORT).show()
+                        Log.e("PDFReader", "Paylaşılacak dosya bulunamadı")
                     }
                 } catch (e: Exception) {
                     Log.e("PDFReader", "Çoklu paylaşım hatası", e)
-                    Toast.makeText(act, "Paylaşım başlatılamadı", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -511,7 +571,9 @@ class IndexActivity : AppCompatActivity() {
         @JavascriptInterface
         fun showToast(msg: String) {
             act.runOnUiThread {
-                Toast.makeText(act, msg, Toast.LENGTH_SHORT).show()
+                // İsteğe bağlı: Toast göstermek isterseniz
+                // Toast.makeText(act, msg, Toast.LENGTH_SHORT).show()
+                Log.i("PDFReader", "Toast mesajı: $msg")
             }
         }
     }

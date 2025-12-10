@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PDF Reader | Dev Software</title>
+  
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handleFileSelect(event)">
+
+  <!-- STICKY HEADER YAPISI -->
+  <div class="top-bar-container" id="topBar">
+    <!-- A. Logo ve Arama -->
+    <header class="app-header">
+      
+      <div class="header-content" id="headerNormal">
+        <div class="logo-area">
+          <div class="logo">
+              <img src="logo/logo.png" alt="PDF Reader Logo">
+          </div>
+          <h1 class="app-title">PDF Reader</h1>
+        </div>
+        <div class="flex items-center gap-sm">
+          <button class="icon-button" id="searchBtn"><span class="material-symbols-rounded">search</span></button>
+          <button class="icon-button" id="menuBtn"><span class="material-symbols-rounded">menu</span></button>
+        </div>
+      </div>
+      
+      <!-- Selection Mode Header -->
+      <div class="selection-header" id="selectionHeader">
+          <div class="selection-count" id="selectionCount">0 öğe seçildi</div>
+          <div class="selection-actions">
+              <button class="icon-button selection" title="Tümünü Seç" onclick="selectAllCards()">
+                  <span class="material-symbols-rounded">select_all</span>
+              </button>
+              <button class="icon-button selection" title="Seçimi Kaldır" onclick="deselectAllCards()">
+                  <span class="material-symbols-rounded">deselect</span>
+              </button>
+              <button class="icon-button selection" title="Paylaş" onclick="shareSelectedCards()">
+                  <span class="material-symbols-rounded">share</span>
+              </button>
+              <button class="icon-button selection" title="Yazdır" onclick="printSelectedCards()">
+                  <span class="material-symbols-rounded">print</span>
+              </button>
+              <button class="icon-button selection" title="Sil" onclick="deleteSelectedCards()">
+                  <span class="material-symbols-rounded">delete</span>
+              </button>
+              <button class="icon-button selection" title="Kapat" onclick="exitSelectionMode()">
+                  <span class="material-symbols-rounded">close</span>
+              </button>
+          </div>
+      </div>
+
+    </header>
+
+    <!-- B. Carousel -->
+    <div class="collapsible-wrapper" id="collapsibleWrapper">
+        <!-- Carousel -->
+        <div class="carousel-container" id="categoryCarousel">
+            <!-- Chip'ler JavaScript ile eklenecek -->
+        </div>
+    </div>
+
+    <!-- C. Sekmeler -->
+    <div class="tabs-container" id="tabsContainer">
+      <div class="tabs">
+        <div class="tab active" data-tab="recent">
+          <span class="material-symbols-rounded">history</span> 
+          <span class="tab-label">Son Kullanılanlar</span>
+        </div>
+        <div class="tab" data-tab="device">
+          <span class="material-symbols-rounded">phone_iphone</span> 
+          <span class="tab-label">Cihazda</span>
+        </div>
+        <div class="tab" data-tab="favorites">
+          <span class="material-symbols-rounded">star</span> 
+          <span class="tab-label">Favoriler</span>
+        </div>
+        <div class="tab" data-tab="categories">
+          <span class="material-symbols-rounded">category</span> 
+          <span class="tab-label">Kategori</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH OVERLAY -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-header">
+        <button class="icon-button" id="closeSearchBtn">
+            <span class="material-symbols-rounded">arrow_back</span>
+        </button>
+        <div class="search-input-wrapper">
+            <span class="material-symbols-rounded text-secondary" style="font-size: 20px;">search</span>
+            <input type="text" class="search-input" id="searchInput" placeholder="PDF dosyalarında ara...">
+        </div>
+        <button class="icon-button" onclick="clearSearch()">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+    </div>
+    <div class="search-result-count" id="searchResultCount"></div>
+    <div class="search-results" id="searchResults">
+        <!-- Arama sonuçları buraya eklenecek -->
+    </div>
+  </div>
+
+  <!-- ANA İÇERİK -->
+  <main class="main-content" id="mainContent">
+    
+    <div class="content-panel active" id="recentPanel">
+      <div class="grid" id="recentList"></div>
+    </div>
+
+    <div class="content-panel" id="devicePanel">
+        
+        <!-- İZİN BANNER -->
+        <div class="permission-banner" id="permissionContainer">
+            <div class="perm-icon">
+                <span class="material-symbols-rounded">folder_off</span>
+            </div>
+            <h3>Cihazınızdaki PDF'lere erişebilmem için izin gerekli</h3>
+            <p>"Tüm Dosyalara Erişim" iznini vermeniz gerekiyor. Butona tıklayarak ayarlara yönlendirileceksiniz.</p>
+            
+            <div class="perm-note">
+                <span class="material-symbols-rounded" style="font-size: 18px; color: var(--primary);">info</span>
+                <span>Lütfen açılan ayarlar ekranında <strong>"Tüm dosyalara erişim izni ver"</strong> seçeneğini aktif ediniz.</span>
+            </div>
+
+            <button onclick="openAndroidPermissionSettings()">
+                <span class="material-symbols-rounded">settings</span>
+                Ayarlardan Erişim Ver
+            </button>
+        </div>
+        
+        <!-- PDF LİSTESİ -->
+        <div class="grid" id="deviceList"></div>
+        
+        <!-- YÜKLENİYOR GÖSTERGESİ -->
+        <div id="loadingIndicator">
+            <div class="empty-icon material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</div>
+            <p>PDF'ler taranıyor...</p>
+        </div>
+    </div>
+
+    <div class="content-panel" id="favoritesPanel">
+      <div class="grid" id="favoritesList"></div>
+    </div>
+    
+    <div class="content-panel" id="categoriesPanel">
+      <div class="grid" id="categoriesList">
+        <!-- Kategoriye göre listelenecek -->
+      </div>
+    </div>
+    
+    <div class="content-panel static-panel" id="filesPanel">
+      <div class="grid">
+        <div class="menu-list">
+        
+          <div class="menu-item" onclick="handleFileSource('device')">
+            <div class="menu-item-info">
+              <span class="material-symbols-rounded menu-icon-wrapper icon-device">phone_android</span>
+              <span class="menu-label">Bu aygıtta</span>
+            </div>
+            <span class="material-symbols-rounded text-secondary">chevron_right</span>
+          </div>
+
+          <div class="menu-item" onclick="handleFileSource('gdrive')">
+            <div class="menu-item-info">
+              <span class="material-symbols-rounded menu-icon-wrapper icon-gdrive">drive_file_move</span>
+              <span class="menu-label">Google Drive</span>
+            </div>
+            <span class="material-symbols-rounded text-secondary">add</span>
+          </div>
+
+          <div class="menu-item" onclick="handleFileSource('onedrive')">
+            <div class="menu-item-info">
+              <span class="material-symbols-rounded menu-icon-wrapper icon-onedrive">cloud</span>
+              <span class="menu-label">OneDrive</span>
+            </div>
+            <span class="material-symbols-rounded text-secondary">add</span>
+          </div>
+
+          <div class="menu-item" onclick="handleFileSource('dropbox')">
+            <div class="menu-item-info">
+              <span class="material-symbols-rounded menu-icon-wrapper icon-dropbox">interests</span>
+              <span class="menu-label">Dropbox</span>
+            </div>
+            <span class="material-symbols-rounded text-secondary">add</span>
+          </div>
+
+          <div class="menu-item" onclick="handleFileSource('gmail')">
+            <div class="menu-item-info">
+              <span class="material-symbols-rounded menu-icon-wrapper icon-gmail">mail</span>
+              <div class="menu-label-wrapper">
+                <span class="menu-label">E-postalardaki PDF'ler</span>
+                <span class="menu-sublabel">Gmail</span>
+              </div>
+            </div>
+            <span class="material-symbols-rounded text-secondary">add</span>
+          </div>
+
+          <div class="menu-item" onclick="handleFileSource('browse_more')">
+            <div class="menu-item-info">
+              <span class="material-symbols-rounded menu-icon-wrapper icon-folder_open">folder_open</span>
+              <span class="menu-label">Daha fazla dosyaya göz atın</span>
+            </div>
+            <span class="material-symbols-rounded text-secondary">chevron_right</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    
+    <div class="content-panel static-panel" id="toolsPanel">
+        <div class="tools-grid" id="toolsGrid">
+            <!-- Araçlar kartları JavaScript ile eklenecek -->
+        </div>
+    </div>
+
+  </main>
+
+  <div class="fab-container">
+    <div class="fab-menu" id="fabMenu">
+      <div class="fab-item" onclick="handleFabAction('scan')">
+        <span class="material-symbols-rounded">document_scanner</span> Belge Tara
+      </div>
+      <div class="fab-item" onclick="handleFabAction('import')">
+        <span class="material-symbols-rounded">upload_file</span> PDF Yükle
+      </div>
+    </div>
+    <button class="fab" id="fabButton"><span class="material-symbols-rounded">add</span></button>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-nav="home">
+      <span class="material-symbols-rounded">home</span>
+      <span class="nav-label">Ana Sayfa</span>
+    </div>
+    <div class="nav-item" data-nav="tools">
+      <span class="material-symbols-rounded">tune</span>
+      <span class="nav-label">Araçlar</span>
+    </div>
+    <div class="nav-item" data-nav="files">
+      <span class="material-symbols-rounded">folder</span>
+      <span class="nav-label">Dosyalar</span>
+    </div>
+  </nav>
+
+  <!-- DRAWER (SOL MENÜ) -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="drawer-logo">
+          <img src="logo/logo.png" alt="PDF Reader Logo">
+      </div>
+      <h3>PDF Reader</h3>
+      </div>
+    <div class="drawer-content">
+      
+      <div class="drawer-item" data-accordion="about">
+        <span class="material-symbols-rounded">info</span> Hakkında
+      </div>
+      <div class="drawer-accordion-content" id="accordion-about">
+        <p><strong>PDF Reader by Dev Software</strong></p>
+        <p>Bu uygulama, PDF dosyalarını hızlı, güvenli ve verimli bir şekilde görüntülemek, yönetmek ve temel düzeyde düzenlemek için tasarlanmıştır.</p>
+        <p>Amacımız, en iyi mobil PDF deneyimini sunmaktır. Devam eden güncellemeler ve iyileştirmeler için bizi takipte kalın!</p>
+        <p class="text-sm mt-3">Tüm Hakları Saklıdır &copy; 2025 Dev Software.</p>
+      </div>
+
+      <div class="drawer-item" data-accordion="settings">
+        <span class="material-symbols-rounded">settings</span> Ayarlar & Tercihler
+      </div>
+      <div class="drawer-accordion-content" id="accordion-settings">
+        <div class="settings-tabs">
+            <div class="setting-tab active" data-tab="app-lang">Uygulama Dili</div>
+            <div class="setting-tab" data-tab="pdf-lang">PDF Dili</div>
+            <div class="setting-tab" data-tab="theme">Tema</div>
+            <div class="setting-tab" data-tab="categories">Kategorileri Yönet</div>
+        </div>
+        
+        <div class="setting-panel active" data-panel="app-lang">
+            <p class="text-sm font-semibold">Uygulama arayüzünün dilini seçin.</p>
+            <select class="select-placeholder" onchange="alert('Uygulama dili ayarlanıyor: ' + this.value)">
+                <option value="" disabled selected>Uygulama Dili Seçiniz</option>
+                <option value="tr">Türkçe (Turkish)</option>
+                <option value="en">İngilizce (English)</option>
+                </select>
+        </div>
+
+        <div class="setting-panel" data-panel="pdf-lang">
+            <p class="text-sm font-semibold">PDF'leri görüntüleme ve metin kopyalama/arama için OCR dilini seçin.</p>
+            <select class="select-placeholder" onchange="alert('PDF Görüntüleyici dili ayarlanıyor: ' + this.value)">
+                <option value="" disabled selected>Görüntüleyici Dili Seçiniz (50+ Dil)</option>
+                <option value="tr">Türkçe</option>
+                <option value="en">İngilizce</option>
+            </select>
+        </div>
+
+        <div class="setting-panel" data-panel="theme">
+            <p class="text-sm font-semibold mb-2">Uygulamanın görünümünü seçin.</p>
+            <div class="theme-options">
+                <div class="theme-option active" data-theme-val="device" onclick="setThemePreference('device')">
+                    <span class="material-symbols-rounded">phone_android</span>
+                    <p>Cihaz</p>
+                </div>
+                <div class="theme-option" data-theme-val="light" onclick="setThemePreference('light')">
+                    <span class="material-symbols-rounded">light_mode</span>
+                    <p>Light</p>
+                </div>
+                <div class="theme-option" data-theme-val="dark" onclick="setThemePreference('dark')">
+                    <span class="material-symbols-rounded">dark_mode</span>
+                    <p>Dark</p>
+                </div>
+            </div>
+            <p class="text-sm text-secondary mt-3">Varsayılan olarak cihaz ayarları kullanılır. Seçiminiz tarayıcınızda saklanacaktır.</p>
+        </div>
+
+        <div class="setting-panel" data-panel="categories">
+            <p class="text-sm font-semibold mb-3">Kategori yönetimi ayarları</p>
+            
+            <div class="category-setting-item" onclick="openAddCategoryDialog()">
+                <span class="material-symbols-rounded">add</span>
+                <span>Kategori Ekle</span>
+            </div>
+            
+            <div class="category-setting-item" onclick="openDeleteCategoryDialog()">
+                <span class="material-symbols-rounded">delete</span>
+                <span>Kategori Sil</span>
+            </div>
+            
+            <div class="category-setting-item" onclick="toggleCarouselVisibility()">
+                <span class="material-symbols-rounded" id="toggleCarouselIcon">visibility_off</span>
+                <div class="setting-item-text">
+                    <div>Kategorileri Gizle/Göster</div>
+                    <div class="text-sm text-secondary" id="toggleCarouselText">Varsayılan: Kategori Gizle (kapalı göz)</div>
+                </div>
+                <div class="toggle-switch" id="carouselToggle">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="drawer-item" data-accordion="privacy">
+        <span class="material-symbols-rounded">lock</span> Gizlilik
+      </div>
+      <div class="drawer-accordion-content" id="accordion-privacy">
+        <p>Kişisel verilerinizin ve belge gizliliğinizin bizim için en önemli öncelik olduğunu garanti ederiz. Uygulama, dosyalarınızı sunucularımıza yüklemeden cihazınızda yerel olarak işleyecek şekilde tasarlanmıştır.</p>
+        <p><strong>Dev Software</strong> olarak, kullanıcılarımızın hiçbir kişisel verisini üçüncü taraflarla paylaşmayız.</p>
+        <p class="mt-3 font-semibold">Daha fazla bilgi için:</p>
+        <a href="#" onclick="alert('Gizlilik Politikası sayfasına yönlendiriliyor...')" class="text-sm text-primary">Gizlilik Politikası için Tıklayınız</a>
+      </div>
+
+      <div class="drawer-item" data-accordion="help">
+        <span class="material-symbols-rounded">help</span> Yardım
+      </div>
+      <div class="drawer-accordion-content" id="accordion-help">
+        <form class="help-form" onsubmit="sendHelpEmail(event)">
+            <p class="text-sm mb-2">Sorununuzu bize iletin. Ekibimiz en kısa sürede dönüş yapacaktır.</p>
+            <input type="email" id="helpEmail" placeholder="E-posta Adresiniz" required>
+            <input type="text" id="helpSubject" placeholder="Konu Başlığı" required>
+            <textarea id="helpIssue" placeholder="Sorununuzu detaylıca açıklayınız..." required></textarea>
+            <button type="submit">Gönder</button>
+            <p class="text-sm text-secondary text-center mt-2">Bu e-posta devsoftawaremail@gmail.com adresine yönlendirilecektir.</p>
+        </form>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- CONTEXT MENU -->
+  <div class="context-sheet-overlay" id="contextOverlay"></div>
+  <div class="context-sheet" id="contextSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+        <h3 class="sheet-title" id="contextTitle">Belge Adı.pdf</h3>
+        <span class="sheet-meta" id="contextMeta">2.5 MB • 12.05.2025</span>
+    </div>
+    <div class="sheet-item" onclick="handleContextAction('rename')">
+        <span class="material-symbols-rounded">edit</span> Yeniden Adlandır
+    </div>
+    <div class="sheet-item" onclick="handleContextAction('share')">
+        <span class="material-symbols-rounded">share</span> Paylaş
+    </div>
+    <div class="sheet-item" onclick="handleContextAction('print')">
+        <span class="material-symbols-rounded">print</span> Yazdır
+    </div>
+    <div class="sheet-item" onclick="handleContextAction('category_add')">
+        <span class="material-symbols-rounded">add</span> Kategoriye Ekle
+    </div>
+    <div class="sheet-item" onclick="handleContextAction('category_remove')">
+        <span class="material-symbols-rounded">remove</span> Kategoriden Çıkar
+    </div>
+    <div class="sheet-item danger" onclick="handleContextAction('delete')">
+        <span class="material-symbols-rounded">delete</span> Sil
+    </div>
+  </div>
+
+  <!-- KATEGORİ EKLEME MENÜSÜ -->
+  <div class="dialog-overlay" id="addCategoryDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Dosyayı Kategoriye Ekle</h3>
+        <button class="dialog-close" onclick="closeAddCategoryDialog()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="dialog-content">
+        <p class="text-sm text-secondary mb-3">Bir kategori seçin:</p>
+        <div class="category-select-list" id="categorySelectList">
+          <!-- Kategoriler buraya eklenecek -->
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeAddCategoryDialog()">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="renameDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Dosyayı Yeniden Adlandır</h3>
+        <button class="dialog-close" onclick="closeRenameDialog()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="dialog-content">
+        <p class="text-sm text-secondary mb-3" id="renameOldName">Eski ad: </p>
+        <input type="text" 
+               class="dialog-input" 
+               id="newFileNameInput" 
+               placeholder="Yeni dosya adı girin"
+               maxlength="100">
+        <p class="text-sm text-secondary">.pdf uzantısı otomatik eklenecektir</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeRenameDialog()">İptal</button>
+        <button class="dialog-button primary" onclick="confirmRenameFile()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="deleteCategoryDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Yeni Kategori Oluştur</h3>
+        <button class="dialog-close" onclick="closeDeleteCategoryDialog()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <div class="dialog-content">
+        <input type="text" 
+               class="dialog-input" 
+               id="newCategoryNameInput" 
+               placeholder="Kategori adı girin"
+               maxlength="30">
+        <p class="text-sm text-secondary">Maksimum 30 karakter</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-button cancel" onclick="closeDeleteCategoryDialog()">İptal</button>
+        <button class="dialog-button primary" onclick="addNewCategory()">Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- YAZDIRMA DURUMU GÖSTERGESİ -->
+  <div class="print-status" id="printStatus">
+    <div class="print-status-icon">
+      <span class="material-symbols-rounded">print</span>
+    </div>
+    <h3 class="print-status-title" id="printStatusTitle">Yazdırılıyor...</h3>
+    <p class="print-status-text" id="printStatusText">Dosya hazırlanıyor</p>
+    <div class="print-progress">
+      <div class="print-progress-bar" id="printProgressBar" style="width: 0%"></div>
+    </div>
+  </div>
+
+<script src="index.js"></script>
+
+</body>
+</html>

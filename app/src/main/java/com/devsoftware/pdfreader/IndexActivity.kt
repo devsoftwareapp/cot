@@ -2,7 +2,6 @@ package com.devsoftware.pdfreader
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -13,7 +12,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.webkit.JavascriptInterface
-import android.webkit.MimeTypeMap
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -42,11 +40,14 @@ class IndexActivity : AppCompatActivity() {
         setContentView(webView)
 
         // PDF Reader klasörünü oluştur
-        pdfReaderFolder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "PDF Reader")
+        pdfReaderFolder = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            "PDF Reader"
+        )
         if (!pdfReaderFolder.exists()) {
             pdfReaderFolder.mkdirs()
         }
-        
+
         // Paylaşılanlar klasörünü oluştur
         if (!sharedPDFsFolder.exists()) {
             sharedPDFsFolder.mkdirs()
@@ -62,7 +63,7 @@ class IndexActivity : AppCompatActivity() {
         settings.allowFileAccessFromFileURLs = true
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
@@ -83,10 +84,10 @@ class IndexActivity : AppCompatActivity() {
 
         // Local HTML yükle
         webView.loadUrl("file:///android_asset/web/index.html")
-        
+
         // Paylaşılan PDF'leri yükle
         loadSharedPDFs()
-        
+
         // onCreate'de intent'i işle
         handleShareIntent(intent)
     }
@@ -106,17 +107,22 @@ class IndexActivity : AppCompatActivity() {
 
     private fun handleShareIntent(intent: Intent?) {
         intent ?: return
-        
-        if (intent.action == Intent.ACTION_SEND && intent.type == "application/pdf") {
-            val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-            if (uri != null) {
-                saveSharedPDF(uri)
+
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                if (intent.type == "application/pdf") {
+                    val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                    if (uri != null) {
+                        saveSharedPDF(uri)
+                    }
+                }
             }
-        } else if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
-            val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-            uris?.forEach { uri ->
-                if (uri.toString().endsWith(".pdf", true)) {
-                    saveSharedPDF(uri)
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                uris?.forEach { uri ->
+                    if (uri.toString().endsWith(".pdf", true)) {
+                        saveSharedPDF(uri)
+                    }
                 }
             }
         }
@@ -128,11 +134,11 @@ class IndexActivity : AppCompatActivity() {
                 val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                 val fileName = "Paylaşılan_${timestamp}.pdf"
                 val outputFile = File(sharedPDFsFolder, fileName)
-                
+
                 FileOutputStream(outputFile).use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }
-                
+
                 // Listeye ekle
                 val sharedPDF = SharedPDF(
                     name = fileName,
@@ -141,14 +147,14 @@ class IndexActivity : AppCompatActivity() {
                     date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date()),
                     sharedDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date())
                 )
-                
+
                 sharedPDFs.add(0, sharedPDF) // En üste ekle
-                
+
                 // WebView'e bildir
                 Handler(Looper.getMainLooper()).postDelayed({
                     updateSharedPDFsList()
                 }, 500)
-                
+
                 Toast.makeText(this, "PDF Paylaşılanlar'a kaydedildi", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
@@ -189,7 +195,7 @@ class IndexActivity : AppCompatActivity() {
             }
             """.trimIndent()
         }
-        
+
         val jsCode = "updateSharedPDFsList($jsonArray)"
         webView.post {
             webView.evaluateJavascript(jsCode, null)
@@ -224,7 +230,7 @@ class IndexActivity : AppCompatActivity() {
         } else {
             "onPermissionDenied()"
         }
-        
+
         webView.post {
             webView.evaluateJavascript(jsCode, null)
         }
@@ -265,7 +271,7 @@ class IndexActivity : AppCompatActivity() {
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         val uri = Uri.parse("package:${activity.packageName}")
-                        
+
                         try {
                             val intent1 = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                             intent1.data = uri
@@ -312,7 +318,7 @@ class IndexActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun listPDFs(): String {
-            try {
+            return try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     if (!Environment.isExternalStorageManager()) {
                         return "PERMISSION_DENIED"
@@ -320,28 +326,28 @@ class IndexActivity : AppCompatActivity() {
                 }
 
                 val list = mutableListOf<String>()
-                
+
                 // Download klasörünü tarayın
                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                scanForPDFs(downloadsDir, list, 0, 5)
-                
-                // PDF Reader klasörünü tarayın
-                scanForPDFs(pdfReaderFolder, list, 0, 5)
+                scanForPDFs(downloadsDir, list, 0, 3)
 
-                return if (list.isEmpty()) {
+                // PDF Reader klasörünü tarayın
+                scanForPDFs(pdfReaderFolder, list, 0, 3)
+
+                if (list.isEmpty()) {
                     "EMPTY"
                 } else {
                     list.distinct().joinToString("||")
                 }
             } catch (e: Exception) {
                 Log.e("PDFReader", "PDF listeleme hatası", e)
-                return "ERROR: ${e.message}"
+                "ERROR: ${e.message}"
             }
         }
 
         private fun scanForPDFs(dir: File, list: MutableList<String>, depth: Int, maxDepth: Int) {
-            if (depth > maxDepth) return
-            
+            if (depth > maxDepth || !dir.exists() || !dir.isDirectory) return
+
             try {
                 dir.listFiles()?.forEach { file ->
                     if (file.isDirectory) {
@@ -350,6 +356,8 @@ class IndexActivity : AppCompatActivity() {
                         list.add(file.absolutePath)
                     }
                 }
+            } catch (e: SecurityException) {
+                Log.e("PDFReader", "Güvenlik hatası: ${dir.absolutePath}", e)
             } catch (e: Exception) {
                 Log.e("PDFReader", "Klasör tarama hatası: ${dir.absolutePath}", e)
             }
@@ -388,7 +396,7 @@ class IndexActivity : AppCompatActivity() {
             activity.runOnUiThread {
                 try {
                     val file = File(path)
-                    if (file.exists()) {
+                    if (file.exists() && file.isFile) {
                         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             FileProvider.getUriForFile(
                                 activity,
@@ -398,21 +406,22 @@ class IndexActivity : AppCompatActivity() {
                         } else {
                             Uri.fromFile(file)
                         }
-                        
-                        val printIntent = Intent(Intent.ACTION_SEND)
-                        printIntent.type = "application/pdf"
-                        printIntent.putExtra(Intent.EXTRA_STREAM, uri)
-                        printIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        
+
+                        val printIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/pdf"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
                         // "Yazdır" seçeneği için özel intent
+                        val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/pdf")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
                         val chooserIntent = Intent.createChooser(printIntent, "PDF Yazdır")
-                        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(
-                            Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(uri, "application/pdf")
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                        ))
-                        
+                        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(viewIntent))
+
                         activity.startActivity(chooserIntent)
                     } else {
                         Toast.makeText(activity, "PDF dosyası bulunamadı", Toast.LENGTH_SHORT).show()
@@ -429,7 +438,7 @@ class IndexActivity : AppCompatActivity() {
             activity.runOnUiThread {
                 try {
                     val file = File(path)
-                    if (file.exists()) {
+                    if (file.exists() && file.isFile) {
                         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             FileProvider.getUriForFile(
                                 activity,
@@ -439,12 +448,13 @@ class IndexActivity : AppCompatActivity() {
                         } else {
                             Uri.fromFile(file)
                         }
-                        
-                        val shareIntent = Intent(Intent.ACTION_SEND)
-                        shareIntent.type = "application/pdf"
-                        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
-                        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        
+
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/pdf"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
                         val chooserTitle = "PDF Paylaş: ${file.name}"
                         activity.startActivity(Intent.createChooser(shareIntent, chooserTitle))
                     } else {
@@ -463,10 +473,10 @@ class IndexActivity : AppCompatActivity() {
                 try {
                     val pathList = paths.split("||")
                     val uris = ArrayList<Uri>()
-                    
+
                     pathList.forEach { path ->
                         val file = File(path)
-                        if (file.exists()) {
+                        if (file.exists() && file.isFile) {
                             val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                 FileProvider.getUriForFile(
                                     activity,
@@ -479,19 +489,20 @@ class IndexActivity : AppCompatActivity() {
                             uris.add(uri)
                         }
                     }
-                    
+
                     if (uris.isNotEmpty()) {
-                        val shareIntent = Intent(Intent.ACTION_SEND_MULTIPLE)
-                        shareIntent.type = "application/pdf"
-                        shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        
+                        val shareIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                            type = "application/pdf"
+                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
                         val chooserTitle = if (uris.size == 1) {
                             "PDF Paylaş"
                         } else {
                             "${uris.size} PDF Dosyası Paylaş"
                         }
-                        
+
                         activity.startActivity(Intent.createChooser(shareIntent, chooserTitle))
                     } else {
                         Toast.makeText(activity, "Paylaşılacak dosya bulunamadı", Toast.LENGTH_SHORT).show()
@@ -507,7 +518,7 @@ class IndexActivity : AppCompatActivity() {
         fun deleteFile(path: String): Boolean {
             return try {
                 val file = File(path)
-                if (file.exists()) {
+                if (file.exists() && file.isFile) {
                     file.delete()
                 } else {
                     false
@@ -522,10 +533,10 @@ class IndexActivity : AppCompatActivity() {
         fun renameFile(oldPath: String, newName: String): String {
             return try {
                 val oldFile = File(oldPath)
-                if (oldFile.exists()) {
-                    val parent = oldFile.parentFile
+                if (oldFile.exists() && oldFile.isFile) {
+                    val parent = oldFile.parentFile ?: return "ERROR"
                     val newFile = File(parent, newName)
-                    
+
                     if (oldFile.renameTo(newFile)) {
                         newFile.absolutePath
                     } else {
@@ -544,8 +555,7 @@ class IndexActivity : AppCompatActivity() {
         fun getFileForSharing(path: String): String {
             return try {
                 val file = File(path)
-                if (file.exists()) {
-                    // Base64'e çevir veya file URI döndür
+                if (file.exists() && file.isFile) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         FileProvider.getUriForFile(
                             activity,

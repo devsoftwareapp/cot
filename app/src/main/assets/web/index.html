@@ -2607,95 +2607,103 @@
         printStatusTitle.textContent = totalFiles > 1 ? `${totalFiles} Dosya Yazdırılıyor` : 'Dosya Yazdırılıyor';
         printStatusText.textContent = totalFiles > 1 ? 'Dosyalar hazırlanıyor...' : 'Dosya hazırlanıyor...';
         printProgressBar.style.width = '0%';
-        printStatus.classList.add('show');
-    }
+
+
+
+
+
+
+printStatus.classList.add('show');
+}
+
+function updatePrintProgress(current, total) {
+    const percent = (current / total) * 100;
+    printProgressBar.style.width = `${percent}%`;
+    printStatusText.textContent = `${current}/${total} dosya yazdırılıyor...`;
     
-    function updatePrintProgress(current, total) {
-        const percent = (current / total) * 100;
-        printProgressBar.style.width = `${percent}%`;
-        printStatusText.textContent = `${current}/${total} dosya yazdırılıyor...`;
+    if (current === total) {
+        setTimeout(() => {
+            printStatus.classList.remove('show');
+            printProgressBar.style.width = '0%';
+        }, 1000);
+    }
+}
+
+// DOĞRUDAN YAZDIRMA FONKSİYONU
+function printSingleFileDirectly(file, currentIndex, totalCount) {
+    const fileName = file.name;
+    console.log(`Yazdırılıyor: ${fileName} (${currentIndex}/${totalCount})`);
+    
+    updatePrintProgress(currentIndex, totalCount);
+    
+    try {
+        // Android Print API
+        if (typeof Android !== 'undefined' && Android.printPDF) {
+            if (file.path) {
+                Android.printPDF(file.path);
+                console.log(`Android Print API ile yazdırma başlatıldı: ${fileName}`);
+                return;
+            }
+        }
         
-        if (current === total) {
+        // Base64'ten yazdırma
+        if (file.base64) {
+            printBase64PDF(file.base64, fileName);
+        } else {
+            // Direkt yazdırma seçeneği
+            if (typeof Android !== 'undefined' && Android.printPDF && file.path) {
+                Android.printPDF(file.path);
+            }
+        }
+        
+    } catch (e) {
+        console.error('Yazdırma hatası:', e);
+    }
+}
+
+function printBase64PDF(base64Data, fileName) {
+    try {
+        const base64WithoutPrefix = base64Data.split(',')[1];
+        const binaryData = atob(base64WithoutPrefix);
+        const bytes = new Uint8Array(binaryData.length);
+        
+        for (let i = 0; i < binaryData.length; i++) {
+            bytes[i] = binaryData.charCodeAt(i);
+        }
+        
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const printIframe = document.createElement('iframe');
+        printIframe.style.display = 'none';
+        printIframe.src = blobUrl;
+        document.body.appendChild(printIframe);
+        
+        printIframe.onload = function() {
             setTimeout(() => {
-                printStatus.classList.remove('show');
-                printProgressBar.style.width = '0%';
-            }, 1000);
-        }
-    }
-    
-    // DOĞRUDAN YAZDIRMA FONKSİYONU
-    function printSingleFileDirectly(file, currentIndex, totalCount) {
-        const fileName = file.name;
-        console.log(`Yazdırılıyor: ${fileName} (${currentIndex}/${totalCount})`);
-        
-        updatePrintProgress(currentIndex, totalCount);
-        
-        try {
-            // Android Print API
-            if (typeof Android !== 'undefined' && Android.printPDF) {
-                if (file.path) {
-                    Android.printPDF(file.path);
-                    console.log(`Android Print API ile yazdırma başlatıldı: ${fileName}`);
-                    return;
-                }
-            }
-            
-            // Base64'ten yazdırma
-            if (file.base64) {
-                printBase64PDF(file.base64, fileName);
-            } else {
-                // Direkt yazdırma seçeneği
-                alert(`"${fileName}" yazdırma işlemi başlatılıyor...`);
-                if (typeof Android !== 'undefined' && Android.printPDF && file.path) {
-                    Android.printPDF(file.path);
-                }
-            }
-            
-        } catch (e) {
-            console.error('Yazdırma hatası:', e);
-            alert(`"${fileName}" yazdırılırken hata oluştu: ${e.message}`);
-        }
-    }
-    
-    function printBase64PDF(base64Data, fileName) {
-        try {
-            const base64WithoutPrefix = base64Data.split(',')[1];
-            const binaryData = atob(base64WithoutPrefix);
-            const bytes = new Uint8Array(binaryData.length);
-            
-            for (let i = 0; i < binaryData.length; i++) {
-                bytes[i] = binaryData.charCodeAt(i);
-            }
-            
-            const blob = new Blob([bytes], { type: 'application/pdf' });
-            const blobUrl = URL.createObjectURL(blob);
-            
-            const printIframe = document.createElement('iframe');
-            printIframe.style.display = 'none';
-            printIframe.src = blobUrl;
-            document.body.appendChild(printIframe);
-            
-            printIframe.onload = function() {
-                setTimeout(() => {
-                    try {
-                        printIframe.contentWindow.print();
-                        setTimeout(() => {
-                            document.body.removeChild(printIframe);
-                            URL.revokeObjectURL(blobUrl);
-                        }, 1000);
-                    } catch (e) {
-                        console.error('Yazdırma hatası:', e);
+                try {
+                    printIframe.contentWindow.print();
+                    setTimeout(() => {
                         document.body.removeChild(printIframe);
                         URL.revokeObjectURL(blobUrl);
-                    }
-                }, 500);
-            };
-        } catch (e) {
-            console.error('Base64 yazdırma hatası:', e);
-            alert('Yazdırma işlemi başlatılamadı.');
-        }
+                    }, 1000);
+                } catch (e) {
+                    console.error('Yazdırma hatası:', e);
+                    document.body.removeChild(printIframe);
+                    URL.revokeObjectURL(blobUrl);
+                }
+            }, 500);
+        };
+    } catch (e) {
+        console.error('Base64 yazdırma hatası:', e);
     }
+}
 
+
+
+
+
+      
     // GERÇEK SİLME
     function deleteSelectedCards() {
         if (selectedCards.size === 0) {

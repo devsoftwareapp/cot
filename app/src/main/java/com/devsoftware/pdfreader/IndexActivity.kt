@@ -39,6 +39,7 @@ class IndexActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
+        // PDF Reader klasörü
         pdfReaderFolder = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             "PDF Reader"
@@ -51,65 +52,52 @@ class IndexActivity : AppCompatActivity() {
         settings.domStorageEnabled = true
         settings.allowFileAccess = true
         settings.allowContentAccess = true
-        settings.allowUniversalAccessFromFileURLs = true
         settings.allowFileAccessFromFileURLs = true
-        settings.cacheMode = WebSettings.LOAD_DEFAULT
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-        }
+        settings.allowUniversalAccessFromFileURLs = true
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
         webView.webChromeClient = WebChromeClient()
-        webView.webViewClient = object : WebViewClient() {
 
+        webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-
                 checkAndUpdatePermission()
-
-                // ❗ SADECE INDEX.HTML ÜZERİNDE PDF LİSTESİ YÜKLE
-                if (url?.contains("index.html") == true) {
-                    loadSharedPDFs()
-                }
+                loadSharedPDFs()
             }
         }
 
         webView.addJavascriptInterface(AndroidInterface(this), "Android")
+
+        // SADECE index.html
         webView.loadUrl("file:///android_asset/web/index.html")
 
+        loadSharedPDFs()
         handleShareIntent(intent)
     }
 
     override fun onResume() {
         super.onResume()
         checkAndUpdatePermission()
-
-        // Sadece index açıksa tekrar liste yükle
-        if (webView.url?.contains("index.html") == true) {
-            loadSharedPDFs()
-        }
+        loadSharedPDFs()
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShareIntent(intent)
     }
 
-    private fun handleShareIntent(intent: Intent?) {
-        intent ?: return
-
+    private fun handleShareIntent(intent: Intent) {
         when (intent.action) {
             Intent.ACTION_SEND -> {
                 if (intent.type == "application/pdf") {
                     val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-                    if (uri != null) saveSharedPDF(uri)
+                    uri?.let { saveSharedPDF(it) }
                 }
             }
-
             Intent.ACTION_SEND_MULTIPLE -> {
                 val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
                 uris?.forEach { uri ->
-                    if (uri.toString().endsWith(".pdf", true)) saveSharedPDF(uri)
+                    if (uri.toString().lowercase().endsWith(".pdf")) saveSharedPDF(uri)
                 }
             }
         }
@@ -117,100 +105,88 @@ class IndexActivity : AppCompatActivity() {
 
     private fun saveSharedPDF(uri: Uri) {
         try {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
+            contentResolver.openInputStream(uri)?.use { input ->
                 val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                val fileName = "Paylaşılan_${timestamp}.pdf"
-                val outputFile = File(sharedPDFsFolder, fileName)
+                val name = "Paylaşılan_${timestamp}.pdf"
+                val out = File(sharedPDFsFolder, name)
 
-                FileOutputStream(outputFile).use { output ->
-                    inputStream.copyTo(output)
-                }
+                FileOutputStream(out).use { output -> input.copyTo(output) }
 
-                val sharedPDF = SharedPDF(
-                    name = fileName,
-                    path = outputFile.absolutePath,
-                    size = formatFileSize(outputFile.length()),
+                val pdf = SharedPDF(
+                    name = name,
+                    path = out.absolutePath,
+                    size = formatSize(out.length()),
                     date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date()),
                     sharedDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date())
                 )
 
-                sharedPDFs.add(0, sharedPDF)
+                sharedPDFs.add(0, pdf)
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     updateSharedPDFsList()
                 }, 500)
-
-                Toast.makeText(this, "PDF Paylaşılanlar'a kaydedildi", Toast.LENGTH_SHORT).show()
             }
-
         } catch (e: Exception) {
-            Log.e("PDFReader", "Kaydetme hatası", e)
-            Toast.makeText(this, "PDF kaydedilemedi", Toast.LENGTH_SHORT).show()
+            Log.e("PDFReader", "PDF Kaydetme Hatası", e)
         }
     }
 
     private fun loadSharedPDFs() {
         sharedPDFs.clear()
-
         if (sharedPDFsFolder.exists()) {
-            sharedPDFsFolder.listFiles { file -> file.isFile && file.name.endsWith(".pdf") }
+            sharedPDFsFolder.listFiles { f -> f.isFile && f.name.endsWith(".pdf") }
                 ?.sortedByDescending { it.lastModified() }
-                ?.forEach { file ->
+                ?.forEach { f ->
                     sharedPDFs.add(
                         SharedPDF(
-                            name = file.name,
-                            path = file.absolutePath,
-                            size = formatFileSize(file.length()),
-                            date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(file.lastModified())),
-                            sharedDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(file.lastModified()))
+                            name = f.name,
+                            path = f.absolutePath,
+                            size = formatSize(f.length()),
+                            date = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(f.lastModified())),
+                            sharedDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(f.lastModified()))
                         )
                     )
                 }
         }
-
         updateSharedPDFsList()
     }
 
     private fun updateSharedPDFsList() {
-        val jsonArray = sharedPDFs.joinToString(", ", "[", "]") { pdf ->
+        val json = sharedPDFs.joinToString(", ", "[", "]") { p ->
             """
             {
-              "name": "${escapeJson(pdf.name)}",
-              "path": "${escapeJson(pdf.path)}",
-              "size": "${escapeJson(pdf.size)}",
-              "date": "${escapeJson(pdf.date)}",
-              "sharedDate": "${escapeJson(pdf.sharedDate)}",
-              "id": ${sharedPDFs.indexOf(pdf) + 10000}
+                "name": "${escape(p.name)}",
+                "path": "${escape(p.path)}",
+                "size": "${escape(p.size)}",
+                "date": "${escape(p.date)}",
+                "sharedDate": "${escape(p.sharedDate)}"
             }
-            """
+            """.trimIndent()
         }
 
         webView.post {
-            webView.evaluateJavascript("updateSharedPDFsList($jsonArray)", null)
+            webView.evaluateJavascript("updateSharedPDFsList($json)", null)
         }
     }
 
-    private fun escapeJson(str: String) =
-        str.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
+    private fun escape(t: String): String =
+        t.replace("\\", "\\\\").replace("\"", "\\\"")
 
-    private fun formatFileSize(size: Long): String {
-        return when {
-            size >= 1024 * 1024 -> String.format("%.1f MB", size.toDouble() / 1024 / 1024)
-            size >= 1024 -> String.format("%.0f KB", size.toDouble() / 1024)
-            else -> "${size} B"
+    private fun formatSize(s: Long): String =
+        when {
+            s >= 1024 * 1024 -> "${(s / 1024f / 1024f).format(1)} MB"
+            s >= 1024 -> "${(s / 1024f).format(0)} KB"
+            else -> "$s B"
         }
-    }
+
+    private fun Float.format(d: Int) = "%.${d}f".format(this)
 
     private fun checkAndUpdatePermission() {
-        val hasPermission =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Environment.isExternalStorageManager()
-            else true
+        val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+            Environment.isExternalStorageManager()
+        else true
 
-        val js = if (hasPermission) "onPermissionGranted()" else "onPermissionDenied()"
+        val js = if (granted) "onPermissionGranted()" else "onPermissionDenied()"
 
         webView.post {
             webView.evaluateJavascript(js, null)
@@ -218,8 +194,7 @@ class IndexActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (webView.canGoBack()) webView.goBack()
-        else super.onBackPressed()
+        if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
     }
 
     data class SharedPDF(
@@ -230,246 +205,76 @@ class IndexActivity : AppCompatActivity() {
         val sharedDate: String
     )
 
-    inner class AndroidInterface(private val activity: Activity) {
+    inner class AndroidInterface(private val act: Activity) {
 
         @JavascriptInterface
-        fun checkPermission(): Boolean {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        fun checkPermission(): Boolean =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
                 Environment.isExternalStorageManager()
             else true
-        }
 
         @JavascriptInterface
         fun openAllFilesSettings() {
-            activity.runOnUiThread {
+            act.runOnUiThread {
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val uri = Uri.parse("package:${activity.packageName}")
-                        val i1 = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply { data = uri }
-                        try {
-                            activity.startActivity(i1)
-                        } catch (_: Exception) {
-                            val i2 = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                            activity.startActivity(i2)
-                        }
-                    } else {
-                        val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        i.data = Uri.parse("package:${activity.packageName}")
-                        activity.startActivity(i)
-                    }
+                    val uri = Uri.parse("package:${act.packageName}")
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.data = uri
+                    act.startActivity(intent)
                 } catch (e: Exception) {
-                    Toast.makeText(activity, "Ayarlar açılamadı", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(act, "Ayar açılamadı", Toast.LENGTH_SHORT).show()
                 }
-            }
-        }
-
-        @JavascriptInterface
-        fun createFolder(folderPath: String): String {
-            return try {
-                val folder = File(folderPath)
-                when {
-                    folder.exists() -> "EXISTS"
-                    folder.mkdirs() -> "SUCCESS"
-                    else -> "FAILED"
-                }
-            } catch (e: Exception) {
-                "ERROR: ${e.message}"
             }
         }
 
         @JavascriptInterface
         fun listPDFs(): String {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                    !Environment.isExternalStorageManager()
-                ) return "PERMISSION_DENIED"
-
-                val list = mutableListOf<String>()
-
-                scanForPDFs(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    list,
-                    0,
-                    3
-                )
-
-                scanForPDFs(pdfReaderFolder, list, 0, 3)
-
-                return if (list.isEmpty()) "EMPTY" else list.distinct().joinToString("||")
-
-            } catch (e: Exception) {
-                return "ERROR"
-            }
-        }
-
-        private fun scanForPDFs(dir: File, list: MutableList<String>, depth: Int, maxDepth: Int) {
-            if (depth > maxDepth) return
-            try {
-                dir.listFiles()?.forEach { file ->
-                    if (file.isDirectory) {
-                        scanForPDFs(file, list, depth + 1, maxDepth)
-                    } else if (file.name.endsWith(".pdf", true)) {
-                        list.add(file.absolutePath)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("PDFReader", "Tarama hatası: ${dir.absolutePath}", e)
-            }
-        }
-
-        @JavascriptInterface
-        fun getFileSize(path: String): String =
-            try {
-                val f = File(path)
-                if (f.exists()) f.length().toString() else "0"
-            } catch (e: Exception) {
-                "0"
-            }
-
-        @JavascriptInterface
-        fun getFileDate(path: String): String =
-            try {
-                val f = File(path)
-                val d = if (f.exists()) f.lastModified() else System.currentTimeMillis()
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(d))
-            } catch (e: Exception) {
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-            }
-
-        @JavascriptInterface
-        fun printPDF(path: String) {
-            activity.runOnUiThread {
-                try {
-                    val file = File(path)
-                    if (!file.exists()) {
-                        Toast.makeText(activity, "PDF bulunamadı", Toast.LENGTH_SHORT).show()
-                        return@runOnUiThread
-                    }
-
-                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                        FileProvider.getUriForFile(activity, "${activity.packageName}.provider", file)
-                    else Uri.fromFile(file)
-
-                    val intent = Intent(Intent.ACTION_SEND)
-                    intent.type = "application/pdf"
-                    intent.putExtra(Intent.EXTRA_STREAM, uri)
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                    activity.startActivity(Intent.createChooser(intent, "PDF Yazdır"))
-
-                } catch (e: Exception) {
-                    Toast.makeText(activity, "Yazdırma açılamadı", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        @JavascriptInterface
-        fun shareFile(path: String) {
-            activity.runOnUiThread {
-                try {
-                    val file = File(path)
-                    if (!file.exists()) {
-                        Toast.makeText(activity, "Dosya yok", Toast.LENGTH_SHORT).show()
-                        return@runOnUiThread
-                    }
-
-                    val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                        FileProvider.getUriForFile(activity, "${activity.packageName}.provider", file)
-                    else Uri.fromFile(file)
-
-                    val share = Intent(Intent.ACTION_SEND)
-                    share.type = "application/pdf"
-                    share.putExtra(Intent.EXTRA_STREAM, uri)
-                    share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                    activity.startActivity(Intent.createChooser(share, "PDF Paylaş"))
-
-                } catch (e: Exception) {
-                    Toast.makeText(activity, "Paylaşım hatası", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        @JavascriptInterface
-        fun shareFiles(paths: String) {
-            activity.runOnUiThread {
-                try {
-                    val files = paths.split("||")
-                    val uris = ArrayList<Uri>()
-
-                    files.forEach { p ->
-                        val f = File(p)
-                        if (f.exists()) {
-                            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                                FileProvider.getUriForFile(activity, "${activity.packageName}.provider", f)
-                            else Uri.fromFile(f)
-
-                            uris.add(uri)
-                        }
-                    }
-
-                    if (uris.isEmpty()) {
-                        Toast.makeText(activity, "Dosya yok", Toast.LENGTH_SHORT).show()
-                        return@runOnUiThread
-                    }
-
-                    val share = Intent(Intent.ACTION_SEND_MULTIPLE)
-                    share.type = "application/pdf"
-                    share.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                    share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                    activity.startActivity(Intent.createChooser(share, "PDF Paylaş"))
-
-                } catch (e: Exception) {
-                    Toast.makeText(activity, "Paylaşım hatası", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        @JavascriptInterface
-        fun deleteFile(path: String): Boolean {
             return try {
-                val file = File(path)
-                file.exists() && file.delete()
-            } catch (e: Exception) {
-                false
-            }
-        }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (!Environment.isExternalStorageManager())
+                        return "PERMISSION_DENIED"
+                }
 
-        @JavascriptInterface
-        fun renameFile(oldPath: String, newName: String): String {
-            return try {
-                val oldFile = File(oldPath)
-                if (!oldFile.exists()) return "ERROR"
+                val result = mutableListOf<String>()
+                scan(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), result)
+                scan(pdfReaderFolder, result)
 
-                val newFile = File(oldFile.parent, newName)
-                if (oldFile.renameTo(newFile)) newFile.absolutePath else "ERROR"
+                if (result.isEmpty()) "EMPTY" else result.distinct().joinToString("||")
 
             } catch (e: Exception) {
                 "ERROR"
             }
         }
 
-        @JavascriptInterface
-        fun getFileForSharing(path: String): String {
-            return try {
-                val f = File(path)
-                if (!f.exists()) return ""
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    FileProvider.getUriForFile(activity, "${activity.packageName}.provider", f).toString()
-                else
-                    Uri.fromFile(f).toString()
-
-            } catch (e: Exception) {
-                ""
+        private fun scan(dir: File, list: MutableList<String>) {
+            if (!dir.exists()) return
+            dir.listFiles()?.forEach { f ->
+                if (f.isDirectory) scan(f, list)
+                else if (f.name.endsWith(".pdf", true)) list.add(f.absolutePath)
             }
         }
 
         @JavascriptInterface
+        fun deleteFile(path: String): Boolean =
+            try {
+                val f = File(path)
+                f.exists() && f.delete()
+            } catch (e: Exception) {
+                false
+            }
+
+        @JavascriptInterface
+        fun renameFile(oldPath: String, newName: String): String {
+            val old = File(oldPath)
+            if (!old.exists()) return "ERROR"
+            val newFile = File(old.parent, newName)
+            return if (old.renameTo(newFile)) newFile.absolutePath else "ERROR"
+        }
+
+        @JavascriptInterface
         fun showToast(msg: String) {
-            activity.runOnUiThread {
-                Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
+            act.runOnUiThread {
+                Toast.makeText(act, msg, Toast.LENGTH_SHORT).show()
             }
         }
     }

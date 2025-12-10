@@ -61,6 +61,20 @@
                 <data android:pathPattern=".*\\.pdf" />
             </intent-filter>
 
+            <!-- PDF PAYLAŞIMINI KABUL ET - SEND intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            
+            <!-- ÇOKLU PDF PAYLAŞIMI - SEND_MULTIPLE intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+
         </activity>
         
         <!-- Viewer Activity (eğer varsa) -->
@@ -77,10 +91,10 @@
             android:name=".tools.ScanActivity"
             android:exported="false" />
 
-        <!-- FileProvider -->
+        <!-- FileProvider - Sabit authority kullan -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="com.devsoftware.pdfreader.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

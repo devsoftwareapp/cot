@@ -86,6 +86,9 @@ class IndexActivity : AppCompatActivity() {
         
         // Paylaşılan PDF'leri yükle
         loadSharedPDFs()
+        
+        // onCreate'de intent'i işle
+        handleShareIntent(intent)
     }
 
     override fun onResume() {
@@ -102,12 +105,14 @@ class IndexActivity : AppCompatActivity() {
     }
 
     private fun handleShareIntent(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_SEND && intent.type == "application/pdf") {
+        intent ?: return
+        
+        if (intent.action == Intent.ACTION_SEND && intent.type == "application/pdf") {
             val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
             if (uri != null) {
                 saveSharedPDF(uri)
             }
-        } else if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
+        } else if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
             val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
             uris?.forEach { uri ->
                 if (uri.toString().endsWith(".pdf", true)) {

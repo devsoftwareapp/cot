@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.devsoftware.pdfreader">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- İnternet izni (webview için) -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -15,18 +14,14 @@
         tools:ignore="ScopedStorage" />
     
     <!-- ==== BELGE TARAMA İÇİN KAMERA İZİNLERİ ==== -->
-    <!-- 1. Kamera kullanım izni -->
+    <!-- 1. Kamera kullanım izni - TEK SEFER EKLENDİ -->
     <uses-permission android:name="android.permission.CAMERA" />
     
     <!-- 2. Video kaydı için ses izni (isteğe bağlı) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" 
         tools:ignore="UnusedAttribute" />
     
-    <!-- 3. Android 13+ için yeni kamera izni -->
-    <uses-permission android:name="android.permission.CAMERA" 
-        android:maxSdkVersion="32" />
-    
-    <!-- 4. Android 33+ için POST_NOTIFICATIONS (isteğe bağlı) -->
+    <!-- 3. Android 13+ için POST_NOTIFICATIONS (isteğe bağlı) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" 
         tools:ignore="UnusedAttribute" />
 

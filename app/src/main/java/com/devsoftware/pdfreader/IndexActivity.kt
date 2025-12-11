@@ -17,7 +17,6 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import java.io.File
@@ -430,6 +429,110 @@ class IndexActivity : AppCompatActivity() {
             }
         }
 
+        // ============ YENİ EKLENEN FONKSİYONLAR ============
+        
+        @JavascriptInterface
+        fun saveBase64PDF(base64Data: String, fileName: String) {
+            act.runOnUiThread {
+                try {
+                    // Base64 verisini PDF'ye dönüştür
+                    val pdfData = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                    val outFile = File(pdfReaderFolder, fileName)
+                    
+                    FileOutputStream(outFile).use { output ->
+                        output.write(pdfData)
+                    }
+                    
+                    Log.i("PDFReader", "PDF kaydedildi: ${outFile.absolutePath}")
+                    
+                } catch (e: Exception) {
+                    Log.e("PDFReader", "Base64 PDF kaydetme hatası", e)
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun printPDFWithOptions(options: String) {
+            act.runOnUiThread {
+                try {
+                    // Options JSON'ını parse et
+                    val json = org.json.JSONObject(options)
+                    val path = json.optString("filePath") ?: return@runOnUiThread
+                    
+                    printPDF(path) // Mevcut printPDF fonksiyonunu kullan
+                    
+                } catch (e: Exception) {
+                    Log.e("PDFReader", "Print options hatası", e)
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun openFileWith(path: String) {
+            act.runOnUiThread {
+                try {
+                    val file = File(path)
+                    if (file.exists()) {
+                        val uri = FileProvider.getUriForFile(
+                            act,
+                            FILE_PROVIDER_AUTHORITY,
+                            file
+                        )
+                        
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, getMimeType(file))
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        
+                        try {
+                            act.startActivity(intent)
+                        } catch (e: ActivityNotFoundException) {
+                            Log.e("PDFReader", "Dosya açıcı bulunamadı", e)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("PDFReader", "Dosya açma hatası", e)
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun getSharedPDFs(): String {
+            return try {
+                val jsonArray = org.json.JSONArray()
+                
+                sharedPDFs.forEach { pdf ->
+                    val json = org.json.JSONObject().apply {
+                        put("name", pdf.name)
+                        put("path", pdf.path)
+                        put("size", pdf.size)
+                        put("date", pdf.date)
+                        put("sharedDate", pdf.sharedDate)
+                        put("id", sharedPDFs.indexOf(pdf) + 10000)
+                    }
+                    jsonArray.put(json)
+                }
+                
+                jsonArray.toString()
+            } catch (e: Exception) {
+                "[]"
+            }
+        }
+
+        @JavascriptInterface
+        fun checkPermissionOnResume() {
+            val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                Environment.isExternalStorageManager()
+            else true
+
+            val js = if (granted) "onPermissionGranted()" else "onPermissionDenied()"
+            
+            webView.post {
+                webView.evaluateJavascript(js, null)
+            }
+        }
+
         // ============ YAZDIRMA ============
         @JavascriptInterface
         fun printPDF(path: String) {
@@ -456,7 +559,8 @@ class IndexActivity : AppCompatActivity() {
                             act.startActivity(printIntent)
                         } catch (e: ActivityNotFoundException) {
                             // Chooser ile fallback
-                            act.startActivity(Intent.createChooser(printIntent, "Yazdır: ${file.name}"))
+                            val chooser = Intent.createChooser(printIntent, "Yazdır: ${file.name}")
+                            act.startActivity(chooser)
                         }
                         
                     } else {
@@ -495,7 +599,8 @@ class IndexActivity : AppCompatActivity() {
                             act.startActivity(shareIntent)
                         } catch (e: ActivityNotFoundException) {
                             // Chooser ile fallback
-                            act.startActivity(Intent.createChooser(shareIntent, "Paylaş: ${file.name}"))
+                            val chooser = Intent.createChooser(shareIntent, "Paylaş: ${file.name}")
+                            act.startActivity(chooser)
                         }
                         
                     } else {
@@ -538,8 +643,9 @@ class IndexActivity : AppCompatActivity() {
                         try {
                             act.startActivity(shareIntent)
                         } catch (e: ActivityNotFoundException) {
-                            act.startActivity(Intent.createChooser(shareIntent, 
-                                if (uris.size == 1) "PDF Paylaş" else "${uris.size} PDF Dosyası Paylaş"))
+                            val title = if (uris.size == 1) "PDF Paylaş" else "${uris.size} PDF Dosyası Paylaş"
+                            val chooser = Intent.createChooser(shareIntent, title)
+                            act.startActivity(chooser)
                         }
                     } else {
                         Log.e("PDFReader", "Paylaşılacak dosya bulunamadı")
@@ -574,6 +680,16 @@ class IndexActivity : AppCompatActivity() {
                 // İsteğe bağlı: Toast göstermek isterseniz
                 // Toast.makeText(act, msg, Toast.LENGTH_SHORT).show()
                 Log.i("PDFReader", "Toast mesajı: $msg")
+            }
+        }
+
+        // ============ YARDIMCI FONKSİYONLAR ============
+        private fun getMimeType(file: File): String {
+            return when {
+                file.name.endsWith(".pdf", true) -> "application/pdf"
+                file.name.endsWith(".jpg", true) || file.name.endsWith(".jpeg", true) -> "image/jpeg"
+                file.name.endsWith(".png", true) -> "image/png"
+                else -> "*/*"
             }
         }
     }

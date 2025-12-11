@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF Reader | Dev Software</title>
   
+  <!-- jsPDF ve Tesseract OCR Kütüphaneleri -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4/dist/tesseract.min.js"></script>
+  
   <style>
     /* Material Symbols Rounded - Local WebView Font */
     @font-face {
@@ -71,6 +75,7 @@
       --z-context-menu: 2100; 
       --z-search-overlay: 2300;
       --z-dialog: 2400;
+      --z-scanner: 2500;
       
       --card-icon-size: 36px;
       --card-padding: 10px;
@@ -1427,6 +1432,248 @@
         transition: width 0.3s;
     }
 
+    /* --- BELGE TARAYICI MODAL STİLLERİ --- */
+    .scanner-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--background);
+        z-index: var(--z-scanner);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .scanner-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .scanner-header {
+        height: var(--h-header);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        z-index: 1;
+    }
+    
+    .scanner-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .camera-container {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: #000;
+    }
+    
+    #cameraView {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1); /* Mirror for front camera */
+    }
+    
+    .document-guide {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        height: 60%;
+        border: 2px dashed rgba(255, 255, 255, 0.7);
+        border-radius: 8px;
+        pointer-events: none;
+    }
+    
+    .guide-corner {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border: 3px solid var(--primary);
+    }
+    
+    .guide-corner.tl {
+        top: -3px;
+        left: -3px;
+        border-right: none;
+        border-bottom: none;
+        border-radius: 8px 0 0 0;
+    }
+    
+    .guide-corner.tr {
+        top: -3px;
+        right: -3px;
+        border-left: none;
+        border-bottom: none;
+        border-radius: 0 8px 0 0;
+    }
+    
+    .guide-corner.bl {
+        bottom: -3px;
+        left: -3px;
+        border-right: none;
+        border-top: none;
+        border-radius: 0 0 0 8px;
+    }
+    
+    .guide-corner.br {
+        bottom: -3px;
+        right: -3px;
+        border-left: none;
+        border-top: none;
+        border-radius: 0 0 8px 0;
+    }
+    
+    .detection-status {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 0 0 20px 20px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .detection-status.found {
+        background: rgba(76, 175, 80, 0.9);
+    }
+    
+    .scanner-controls {
+        height: var(--h-bottom);
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        padding: 0 20px;
+    }
+    
+    .scanner-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .scanner-btn.primary {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(229, 57, 53, 0.4);
+    }
+    
+    .scanner-btn.primary:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
+    }
+    
+    .scanner-btn.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .scanner-btn.secondary:active {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* İşleme ekranı */
+    .processing-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--background);
+        z-index: calc(var(--z-scanner) + 10);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+    
+    .processing-screen.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .processing-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        color: white;
+        font-size: 36px;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .processing-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .processing-subtext {
+        font-size: 14px;
+        color: var(--text-secondary);
+        text-align: center;
+        max-width: 80%;
+        line-height: 1.5;
+    }
+    
+    .processing-progress {
+        width: 80%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        margin-top: 24px;
+        overflow: hidden;
+    }
+    
+    .processing-progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        border-radius: 3px;
+        transition: width 0.3s;
+    }
+
   </style>
 </head>
 <body>
@@ -1518,6 +1765,60 @@
     <div class="search-result-count" id="searchResultCount"></div>
     <div class="search-results" id="searchResults">
         <!-- Arama sonuçları buraya eklenecek -->
+    </div>
+  </div>
+
+  <!-- BELGE TARAYICI MODAL -->
+  <div class="scanner-modal" id="scannerModal">
+    <div class="scanner-header">
+        <h3 class="scanner-title">Belge Tara</h3>
+        <button class="icon-button close-scanner">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+    </div>
+    
+    <div class="camera-container">
+        <video id="cameraView" autoplay playsinline></video>
+        <canvas id="documentCanvas" style="display:none"></canvas>
+        <canvas id="previewCanvas" style="display:none"></canvas>
+        
+        <div class="document-guide">
+            <div class="guide-corner tl"></div>
+            <div class="guide-corner tr"></div>
+            <div class="guide-corner bl"></div>
+            <div class="guide-corner br"></div>
+        </div>
+        
+        <div class="detection-status" id="detectionStatus">
+            <span class="material-symbols-rounded">search</span>
+            <span>Belge aranıyor...</span>
+        </div>
+    </div>
+    
+    <div class="scanner-controls">
+        <button class="scanner-btn secondary" id="switchCamera">
+            <span class="material-symbols-rounded">flip_camera_ios</span>
+        </button>
+        
+        <button class="scanner-btn primary" id="captureBtn">
+            <span class="material-symbols-rounded">photo_camera</span>
+        </button>
+        
+        <button class="scanner-btn secondary" id="flashToggle">
+            <span class="material-symbols-rounded">flash_off</span>
+        </button>
+    </div>
+  </div>
+
+  <!-- İŞLEME EKRANI -->
+  <div class="processing-screen" id="processingScreen">
+    <div class="processing-icon">
+        <span class="material-symbols-rounded">document_scanner</span>
+    </div>
+    <h3 class="processing-text" id="processingText">Belge işleniyor...</h3>
+    <p class="processing-subtext" id="processingSubtext">Belge algılanıyor ve PDF'ye dönüştürülüyor</p>
+    <div class="processing-progress">
+        <div class="processing-progress-bar" id="processingProgressBar" style="width: 0%"></div>
     </div>
   </div>
 
@@ -1642,7 +1943,7 @@
 
   <div class="fab-container">
     <div class="fab-menu" id="fabMenu">
-      <div class="fab-item" onclick="handleFabAction('scan')">
+      <div class="fab-item" onclick="openDocumentScanner()">
         <span class="material-symbols-rounded">document_scanner</span> Belge Tara
       </div>
       <div class="fab-item" onclick="handleFabAction('import')">
@@ -1870,6 +2171,20 @@
     let isSelectionMode = false;
     let selectedCards = new Set();
 
+    // Scanner Variables
+    const scannerModal = document.getElementById('scannerModal');
+    const cameraView = document.getElementById('cameraView');
+    const documentCanvas = document.getElementById('documentCanvas');
+    const previewCanvas = document.getElementById('previewCanvas');
+    const detectionStatus = document.getElementById('detectionStatus');
+    const captureBtn = document.getElementById('captureBtn');
+    const switchCameraBtn = document.getElementById('switchCamera');
+    const flashToggleBtn = document.getElementById('flashToggle');
+    const processingScreen = document.getElementById('processingScreen');
+    const processingText = document.getElementById('processingText');
+    const processingSubtext = document.getElementById('processingSubtext');
+    const processingProgressBar = document.getElementById('processingProgressBar');
+
     // Data Storage
     let importedFiles = []; // PDF Yükle ile gelen dosyalar
     let devicePDFs = []; // Cihazdan taranan PDF'ler
@@ -1894,6 +2209,13 @@
     let isHeaderHidden = false;
     const HIDE_THRESHOLD = 50; // 50px kaydırınca gizle
     const SHOW_THRESHOLD = 10; // 10px yukarı kaydırınca göster
+
+    // Scanner Variables
+    let stream = null;
+    let currentFacingMode = 'environment'; // 'environment' or 'user'
+    let isFlashOn = false;
+    let detectionInterval = null;
+    let documentDetected = false;
     
     // --- PAYLAŞILAN PDF'LERİ GÜNCELLE ---
     function updateSharedPDFsList(sharedFiles) {
@@ -2349,11 +2671,346 @@
       </div>`;
     }
 
+    // --- BELGE TARAYICI FONKSİYONLARI ---
+    function openDocumentScanner() {
+        fabMenu.classList.remove('show');
+        scannerModal.classList.add('active');
+        startCamera();
+    }
+
+    function closeDocumentScanner() {
+        scannerModal.classList.remove('active');
+        stopCamera();
+        documentDetected = false;
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+            detectionInterval = null;
+        }
+    }
+
+    async function startCamera() {
+        try {
+            const constraints = {
+                video: {
+                    facingMode: currentFacingMode,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                },
+                audio: false
+            };
+
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            cameraView.srcObject = stream;
+            cameraView.play();
+            
+            // Kamera açıldıktan sonra belge algılamayı başlat
+            setTimeout(startDocumentDetection, 1000);
+            
+        } catch (error) {
+            console.error('Kamera açma hatası:', error);
+            alert('Kamera açılamadı. Lütfen kamera iznini kontrol edin.');
+            closeDocumentScanner();
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        cameraView.srcObject = null;
+    }
+
+    function switchCamera() {
+        currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+        stopCamera();
+        startCamera();
+    }
+
+    function toggleFlash() {
+        if (!stream) return;
+        
+        const track = stream.getVideoTracks()[0];
+        if (track && track.getCapabilities && track.getCapabilities().torch) {
+            isFlashOn = !isFlashOn;
+            track.applyConstraints({
+                advanced: [{ torch: isFlashOn }]
+            });
+            
+            flashToggleBtn.innerHTML = `<span class="material-symbols-rounded">${isFlashOn ? 'flash_on' : 'flash_off'}</span>`;
+        }
+    }
+
+    function startDocumentDetection() {
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+        }
+        
+        detectionInterval = setInterval(detectDocument, 500);
+    }
+
+    function detectDocument() {
+        if (!stream) return;
+        
+        const video = cameraView;
+        const canvas = documentCanvas;
+        const ctx = canvas.getContext('2d');
+        
+        // Canvas boyutlarını video boyutlarına ayarla
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Videodan görüntü al
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Görüntüyü analiz et (basit kenar algılama)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const edges = detectEdges(imageData);
+        
+        // Eğer belge tespit edildiyse
+        if (edges > 50000) {
+            if (!documentDetected) {
+                documentDetected = true;
+                detectionStatus.innerHTML = `
+                    <span class="material-symbols-rounded">check_circle</span>
+                    <span>Belge bulundu!</span>
+                `;
+                detectionStatus.classList.add('found');
+                captureBtn.disabled = false;
+            }
+        } else {
+            if (documentDetected) {
+                documentDetected = false;
+                detectionStatus.innerHTML = `
+                    <span class="material-symbols-rounded">search</span>
+                    <span>Belge aranıyor...</span>
+                `;
+                detectionStatus.classList.remove('found');
+                captureBtn.disabled = true;
+            }
+        }
+    }
+
+    function detectEdges(imageData) {
+        // Basit kenar algılama algoritması
+        const data = imageData.data;
+        let edgeCount = 0;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // Parlaklık hesapla
+            const brightness = (r + g + b) / 3;
+            
+            // Kenar tespiti için eşik değeri
+            if (brightness < 100 || brightness > 200) {
+                edgeCount++;
+            }
+        }
+        
+        return edgeCount;
+    }
+
+    function captureDocument() {
+        if (!documentDetected) {
+            alert('Lütfen önce bir belge tespit edin.');
+            return;
+        }
+        
+        stopCamera();
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+            detectionInterval = null;
+        }
+        
+        // İşleme ekranını göster
+        showProcessingScreen();
+        
+        // Belgeyi işle
+        processCapturedDocument();
+    }
+
+    function showProcessingScreen() {
+        processingScreen.classList.add('active');
+        processingText.textContent = 'Belge işleniyor...';
+        processingSubtext.textContent = 'Belge algılanıyor ve PDF\'ye dönüştürülüyor';
+        processingProgressBar.style.width = '0%';
+    }
+
+    function updateProcessingProgress(percent, text, subtext) {
+        processingProgressBar.style.width = `${percent}%`;
+        if (text) processingText.textContent = text;
+        if (subtext) processingSubtext.textContent = subtext;
+    }
+
+    async function processCapturedDocument() {
+        try {
+            // 1. Belgeyi yakala ve ön izleme oluştur
+            updateProcessingProgress(20, 'Belge yakalanıyor...');
+            const video = cameraView;
+            const canvas = documentCanvas;
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 2. Belgeyi düzelt ve kırp
+            updateProcessingProgress(40, 'Belge düzeltiliyor...');
+            const processedImage = await correctDocumentPerspective(canvas);
+            
+            // 3. OCR ile metin çıkar (opsiyonel)
+            updateProcessingProgress(60, 'Metin tanıma yapılıyor...');
+            let ocrText = '';
+            try {
+                ocrText = await performOCR(processedImage);
+            } catch (ocrError) {
+                console.log('OCR hatası:', ocrError);
+            }
+            
+            // 4. PDF oluştur
+            updateProcessingProgress(80, 'PDF oluşturuluyor...');
+            const pdfData = await createPDFFromImage(processedImage, ocrText);
+            
+            // 5. PDF'yi kaydet
+            updateProcessingProgress(95, 'PDF kaydediliyor...');
+            await saveScannedPDF(pdfData);
+            
+            // 6. Tamamlandı
+            updateProcessingProgress(100, 'Tamamlandı!', 'Belge başarıyla PDF\'ye dönüştürüldü.');
+            
+            setTimeout(() => {
+                processingScreen.classList.remove('active');
+                closeDocumentScanner();
+                alert('Belge başarıyla tarandı ve PDF\'ye dönüştürüldü!');
+                loadData(); // Listeyi yenile
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Belge işleme hatası:', error);
+            processingScreen.classList.remove('active');
+            alert('Belge işlenirken bir hata oluştu: ' + error.message);
+            closeDocumentScanner();
+        }
+    }
+
+    async function correctDocumentPerspective(canvas) {
+        // Bu fonksiyon belge perspektifini düzeltir ve kırpar
+        // Gerçek uygulamada daha gelişmiş bir algoritma kullanılmalı
+        
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Basit bir kırpma (gerçekte kenar algılama ile)
+        const cropX = canvas.width * 0.1;
+        const cropY = canvas.height * 0.1;
+        const cropWidth = canvas.width * 0.8;
+        const cropHeight = canvas.height * 0.8;
+        
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = cropWidth;
+        croppedCanvas.height = cropHeight;
+        const croppedCtx = croppedCanvas.getContext('2d');
+        
+        croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+        
+        // Görüntü kalitesini iyileştir
+        enhanceImageQuality(croppedCanvas);
+        
+        return croppedCanvas.toDataURL('image/jpeg', 0.9);
+    }
+
+    function enhanceImageQuality(canvas) {
+        // Görüntü kalitesini iyileştir (kontrast, parlaklık)
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Kontrast artırma
+        const contrast = 1.2;
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = (data[i] - 128) * contrast + 128;     // R
+            data[i + 1] = (data[i + 1] - 128) * contrast + 128; // G
+            data[i + 2] = (data[i + 2] - 128) * contrast + 128; // B
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    async function performOCR(imageDataUrl) {
+        // Tesseract.js ile OCR yap
+        try {
+            const worker = await Tesseract.createWorker('tur');
+            const result = await worker.recognize(imageDataUrl);
+            await worker.terminate();
+            return result.data.text;
+        } catch (error) {
+            console.error('OCR hatası:', error);
+            return '';
+        }
+    }
+
+    async function createPDFFromImage(imageDataUrl, ocrText = '') {
+        // jsPDF ile PDF oluştur
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        
+        // Resmi PDF'ye ekle
+        const imgProps = pdf.getImageProperties(imageDataUrl);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imageDataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        
+        // OCR metni varsa ekle
+        if (ocrText.trim().length > 0) {
+            pdf.addPage();
+            pdf.setFontSize(12);
+            pdf.text('OCR ile Çıkarılan Metin:', 10, 20);
+            pdf.setFontSize(10);
+            
+            const lines = pdf.splitTextToSize(ocrText, pdfWidth - 20);
+            pdf.text(lines, 10, 30);
+        }
+        
+        return pdf.output('datauristring');
+    }
+
+    async function saveScannedPDF(pdfData) {
+        const fileName = `Taranan_Belge_${Date.now()}.pdf`;
+        const base64Data = pdfData.split(',')[1];
+        
+        // Android'e kaydet
+        if (typeof Android !== 'undefined' && Android.saveBase64PDF) {
+            Android.saveBase64PDF(base64Data, fileName);
+        } else {
+            // Tarayıcıya indir
+            const link = document.createElement('a');
+            link.href = pdfData;
+            link.download = fileName;
+            link.click();
+        }
+        
+        // Yerel depolamaya ekle
+        const newFile = {
+            name: fileName,
+            size: formatBytes(base64Data.length * 0.75), // Yaklaşık boyut
+            date: new Date().toLocaleDateString('tr-TR'),
+            isFavorite: false,
+            id: Date.now(),
+            base64: pdfData,
+            lastOpened: null
+        };
+        
+        importedFiles.unshift(newFile);
+        saveToCache();
+    }
+
     // --- DOSYA YÜKLEME İŞLEMLERİ ---
     function handleFabAction(action) {
-      if (action === 'scan') {
-          alert('Kamera açılıyor: Belge Tarama Modu...');
-      } else if (action === 'import') {
+      if (action === 'import') {
           pdfFileInput.click();
       }
       fabMenu.classList.remove('show');
@@ -2607,103 +3264,92 @@
         printStatusTitle.textContent = totalFiles > 1 ? `${totalFiles} Dosya Yazdırılıyor` : 'Dosya Yazdırılıyor';
         printStatusText.textContent = totalFiles > 1 ? 'Dosyalar hazırlanıyor...' : 'Dosya hazırlanıyor...';
         printProgressBar.style.width = '0%';
-
-
-
-
-
-
-printStatus.classList.add('show');
-}
-
-function updatePrintProgress(current, total) {
-    const percent = (current / total) * 100;
-    printProgressBar.style.width = `${percent}%`;
-    printStatusText.textContent = `${current}/${total} dosya yazdırılıyor...`;
-    
-    if (current === total) {
-        setTimeout(() => {
-            printStatus.classList.remove('show');
-            printProgressBar.style.width = '0%';
-        }, 1000);
+        printStatus.classList.add('show');
     }
-}
 
-// DOĞRUDAN YAZDIRMA FONKSİYONU
-function printSingleFileDirectly(file, currentIndex, totalCount) {
-    const fileName = file.name;
-    console.log(`Yazdırılıyor: ${fileName} (${currentIndex}/${totalCount})`);
-    
-    updatePrintProgress(currentIndex, totalCount);
-    
-    try {
-        // Android Print API
-        if (typeof Android !== 'undefined' && Android.printPDF) {
-            if (file.path) {
-                Android.printPDF(file.path);
-                console.log(`Android Print API ile yazdırma başlatıldı: ${fileName}`);
-                return;
-            }
-        }
+    function updatePrintProgress(current, total) {
+        const percent = (current / total) * 100;
+        printProgressBar.style.width = `${percent}%`;
+        printStatusText.textContent = `${current}/${total} dosya yazdırılıyor...`;
         
-        // Base64'ten yazdırma
-        if (file.base64) {
-            printBase64PDF(file.base64, fileName);
-        } else {
-            // Direkt yazdırma seçeneği
-            if (typeof Android !== 'undefined' && Android.printPDF && file.path) {
-                Android.printPDF(file.path);
-            }
-        }
-        
-    } catch (e) {
-        console.error('Yazdırma hatası:', e);
-    }
-}
-
-function printBase64PDF(base64Data, fileName) {
-    try {
-        const base64WithoutPrefix = base64Data.split(',')[1];
-        const binaryData = atob(base64WithoutPrefix);
-        const bytes = new Uint8Array(binaryData.length);
-        
-        for (let i = 0; i < binaryData.length; i++) {
-            bytes[i] = binaryData.charCodeAt(i);
-        }
-        
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-        
-        const printIframe = document.createElement('iframe');
-        printIframe.style.display = 'none';
-        printIframe.src = blobUrl;
-        document.body.appendChild(printIframe);
-        
-        printIframe.onload = function() {
+        if (current === total) {
             setTimeout(() => {
-                try {
-                    printIframe.contentWindow.print();
-                    setTimeout(() => {
+                printStatus.classList.remove('show');
+                printProgressBar.style.width = '0%';
+            }, 1000);
+        }
+    }
+
+    // DOĞRUDAN YAZDIRMA FONKSİYONU
+    function printSingleFileDirectly(file, currentIndex, totalCount) {
+        const fileName = file.name;
+        console.log(`Yazdırılıyor: ${fileName} (${currentIndex}/${totalCount})`);
+        
+        updatePrintProgress(currentIndex, totalCount);
+        
+        try {
+            // Android Print API
+            if (typeof Android !== 'undefined' && Android.printPDF) {
+                if (file.path) {
+                    Android.printPDF(file.path);
+                    console.log(`Android Print API ile yazdırma başlatıldı: ${fileName}`);
+                    return;
+                }
+            }
+            
+            // Base64'ten yazdırma
+            if (file.base64) {
+                printBase64PDF(file.base64, fileName);
+            } else {
+                // Direkt yazdırma seçeneği
+                if (typeof Android !== 'undefined' && Android.printPDF && file.path) {
+                    Android.printPDF(file.path);
+                }
+            }
+            
+        } catch (e) {
+            console.error('Yazdırma hatası:', e);
+        }
+    }
+
+    function printBase64PDF(base64Data, fileName) {
+        try {
+            const base64WithoutPrefix = base64Data.split(',')[1];
+            const binaryData = atob(base64WithoutPrefix);
+            const bytes = new Uint8Array(binaryData.length);
+            
+            for (let i = 0; i < binaryData.length; i++) {
+                bytes[i] = binaryData.charCodeAt(i);
+            }
+            
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const printIframe = document.createElement('iframe');
+            printIframe.style.display = 'none';
+            printIframe.src = blobUrl;
+            document.body.appendChild(printIframe);
+            
+            printIframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        printIframe.contentWindow.print();
+                        setTimeout(() => {
+                            document.body.removeChild(printIframe);
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                    } catch (e) {
+                        console.error('Yazdırma hatası:', e);
                         document.body.removeChild(printIframe);
                         URL.revokeObjectURL(blobUrl);
-                    }, 1000);
-                } catch (e) {
-                    console.error('Yazdırma hatası:', e);
-                    document.body.removeChild(printIframe);
-                    URL.revokeObjectURL(blobUrl);
-                }
-            }, 500);
-        };
-    } catch (e) {
-        console.error('Base64 yazdırma hatası:', e);
+                    }
+                }, 500);
+            };
+        } catch (e) {
+            console.error('Base64 yazdırma hatası:', e);
+        }
     }
-}
 
-
-
-
-
-      
     // GERÇEK SİLME
     function deleteSelectedCards() {
         if (selectedCards.size === 0) {
@@ -3273,6 +3919,12 @@ function printBase64PDF(base64Data, fileName) {
       closeSearchBtn.addEventListener('click', closeSearch);
       searchInput.addEventListener('input', performSearch);
 
+      // Scanner Events
+      document.querySelector('.close-scanner').addEventListener('click', closeDocumentScanner);
+      switchCameraBtn.addEventListener('click', switchCamera);
+      flashToggleBtn.addEventListener('click', toggleFlash);
+      captureBtn.addEventListener('click', captureDocument);
+
       // SCROLL MANTIĞI - TÜM PANELLER İÇİN
       panels.forEach(panel => {
         panel.addEventListener('scroll', (e) => {
@@ -3535,6 +4187,8 @@ function printBase64PDF(base64Data, fileName) {
     window.sendHelpEmail = sendHelpEmail;
     window.handleFileSource = handleFileSource;
     window.handleFabAction = handleFabAction;
+    window.openDocumentScanner = openDocumentScanner;
+    window.closeDocumentScanner = closeDocumentScanner;
     window.openSearch = openSearch;
     window.closeSearch = closeSearch;
     window.clearSearch = clearSearch;

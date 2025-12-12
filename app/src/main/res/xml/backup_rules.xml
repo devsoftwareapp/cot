@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Web asset klasörünü yedekle -->
+    <include domain="file" path="assets/web/" />
+    
+    <!-- Uygulama veritabanını yedekle -->
+    <include domain="database" path="." />
+    
+    <!-- SharedPreferences'ı yedekle -->
+    <include domain="sharedpref" path="." />
+    
+    <!-- Cache dosyalarını yedekleme -->
+    <exclude domain="file" path="cache/" />
+    <exclude domain="external" path="Android/data/${applicationId}/cache/" />
+</full-backup-content>

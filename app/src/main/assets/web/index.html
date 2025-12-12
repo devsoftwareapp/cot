@@ -1708,9 +1708,6 @@
               <button class="icon-button selection" title="Seçimi Kaldır" onclick="deselectAllCards()">
                   <span class="material-symbols-rounded">deselect</span>
               </button>
-              <button class="icon-button selection" title="Paylaş" onclick="shareSelectedCards()">
-                  <span class="material-symbols-rounded">share</span>
-              </button>
               <button class="icon-button selection" title="Yazdır" onclick="printSelectedCards()">
                   <span class="material-symbols-rounded">print</span>
               </button>
@@ -1740,10 +1737,6 @@
           <span class="material-symbols-rounded">star</span> 
           <span class="tab-label">Favoriler</span>
         </div>
-        <div class="tab" data-tab="shared">
-          <span class="material-symbols-rounded">share</span> 
-          <span class="tab-label">Paylaşılanlar</span>
-        </div>
       </div>
     </div>
   </div>
@@ -1765,60 +1758,6 @@
     <div class="search-result-count" id="searchResultCount"></div>
     <div class="search-results" id="searchResults">
         <!-- Arama sonuçları buraya eklenecek -->
-    </div>
-  </div>
-
-  <!-- BELGE TARAYICI MODAL -->
-  <div class="scanner-modal" id="scannerModal">
-    <div class="scanner-header">
-        <h3 class="scanner-title">Belge Tara</h3>
-        <button class="icon-button close-scanner">
-            <span class="material-symbols-rounded">close</span>
-        </button>
-    </div>
-    
-    <div class="camera-container">
-        <video id="cameraView" autoplay playsinline></video>
-        <canvas id="documentCanvas" style="display:none"></canvas>
-        <canvas id="previewCanvas" style="display:none"></canvas>
-        
-        <div class="document-guide">
-            <div class="guide-corner tl"></div>
-            <div class="guide-corner tr"></div>
-            <div class="guide-corner bl"></div>
-            <div class="guide-corner br"></div>
-        </div>
-        
-        <div class="detection-status" id="detectionStatus">
-            <span class="material-symbols-rounded">search</span>
-            <span>Belge aranıyor...</span>
-        </div>
-    </div>
-    
-    <div class="scanner-controls">
-        <button class="scanner-btn secondary" id="switchCamera">
-            <span class="material-symbols-rounded">flip_camera_ios</span>
-        </button>
-        
-        <button class="scanner-btn primary" id="captureBtn">
-            <span class="material-symbols-rounded">photo_camera</span>
-        </button>
-        
-        <button class="scanner-btn secondary" id="flashToggle">
-            <span class="material-symbols-rounded">flash_off</span>
-        </button>
-    </div>
-  </div>
-
-  <!-- İŞLEME EKRANI -->
-  <div class="processing-screen" id="processingScreen">
-    <div class="processing-icon">
-        <span class="material-symbols-rounded">document_scanner</span>
-    </div>
-    <h3 class="processing-text" id="processingText">Belge işleniyor...</h3>
-    <p class="processing-subtext" id="processingSubtext">Belge algılanıyor ve PDF'ye dönüştürülüyor</p>
-    <div class="processing-progress">
-        <div class="processing-progress-bar" id="processingProgressBar" style="width: 0%"></div>
     </div>
   </div>
 
@@ -1862,16 +1801,6 @@
 
     <div class="content-panel" id="favoritesPanel">
       <div class="grid" id="favoritesList"></div>
-    </div>
-    
-    <div class="content-panel" id="sharedPanel">
-      <div class="grid" id="sharedList">
-        <div class="empty-state">
-            <div class="empty-icon material-symbols-rounded">share</div>
-            <p>Henüz paylaşılan dosya yok.</p>
-            <p class="text-sm mt-2">Dosyalarınızı paylaştığınızda burada görünecektir.</p>
-        </div>
-      </div>
     </div>
     
     <div class="content-panel static-panel" id="filesPanel">
@@ -1943,11 +1872,11 @@
 
   <div class="fab-container">
     <div class="fab-menu" id="fabMenu">
-      <div class="fab-item" onclick="openDocumentScanner()">
-        <span class="material-symbols-rounded">document_scanner</span> Belge Tara
-      </div>
       <div class="fab-item" onclick="handleFabAction('import')">
         <span class="material-symbols-rounded">upload_file</span> PDF Yükle
+      </div>
+      <div class="fab-item" onclick="openToolPage('orc.html')">
+        <span class="material-symbols-rounded">text_fields</span> OCR Metin Çıkar
       </div>
     </div>
     <button class="fab" id="fabButton"><span class="material-symbols-rounded">add</span></button>
@@ -2075,9 +2004,6 @@
     <div class="sheet-item" onclick="handleContextAction('rename')">
         <span class="material-symbols-rounded">edit</span> Yeniden Adlandır
     </div>
-    <div class="sheet-item" onclick="handleContextAction('share')">
-        <span class="material-symbols-rounded">share</span> Paylaş
-    </div>
     <div class="sheet-item" onclick="handleContextAction('print')">
         <span class="material-symbols-rounded">print</span> Yazdır
     </div>
@@ -2171,26 +2097,11 @@
     let isSelectionMode = false;
     let selectedCards = new Set();
 
-    // Scanner Variables
-    const scannerModal = document.getElementById('scannerModal');
-    const cameraView = document.getElementById('cameraView');
-    const documentCanvas = document.getElementById('documentCanvas');
-    const previewCanvas = document.getElementById('previewCanvas');
-    const detectionStatus = document.getElementById('detectionStatus');
-    const captureBtn = document.getElementById('captureBtn');
-    const switchCameraBtn = document.getElementById('switchCamera');
-    const flashToggleBtn = document.getElementById('flashToggle');
-    const processingScreen = document.getElementById('processingScreen');
-    const processingText = document.getElementById('processingText');
-    const processingSubtext = document.getElementById('processingSubtext');
-    const processingProgressBar = document.getElementById('processingProgressBar');
-
     // Data Storage
     let importedFiles = []; // PDF Yükle ile gelen dosyalar
     let devicePDFs = []; // Cihazdan taranan PDF'ler
     let recentFiles = []; // Son kullanılanlar
     let favoriteFiles = []; // Favoriler
-    let sharedPDFs = []; // Paylaşılan PDF'ler
     
     // PDF Reader klasör yolu
     const PDF_READER_FOLDER = '/storage/emulated/0/Download/PDF Reader';
@@ -2203,36 +2114,19 @@
     let isVerticalScroll = false; 
     const headerHeight = 64; 
     let currentNav = 'home';
-    const tabOrder = ['recent', 'device', 'favorites', 'shared'];
+    const tabOrder = ['recent', 'device', 'favorites'];
     
     // DEĞİŞKENLER
     let isHeaderHidden = false;
     const HIDE_THRESHOLD = 50; // 50px kaydırınca gizle
     const SHOW_THRESHOLD = 10; // 10px yukarı kaydırınca göster
-
-    // Scanner Variables
-    let stream = null;
-    let currentFacingMode = 'environment'; // 'environment' or 'user'
-    let isFlashOn = false;
-    let detectionInterval = null;
-    let documentDetected = false;
     
-    // --- PAYLAŞILAN PDF'LERİ GÜNCELLE ---
-    function updateSharedPDFsList(sharedFiles) {
-        sharedPDFs = sharedFiles || [];
-        renderList('sharedList', sharedPDFs, true);
-    }
-    
-    // Global'e ekle
-    window.updateSharedPDFsList = updateSharedPDFsList;
-
     // --- VERİ YÖNETİMİ (CACHE) ---
     function saveToCache() {
         try {
             const data = {
                 importedFiles: importedFiles,
                 devicePDFs: devicePDFs,
-                sharedPDFs: sharedPDFs,
                 theme: localStorage.getItem('pdfTheme') || 'light',
                 timestamp: Date.now()
             };
@@ -2260,7 +2154,6 @@
                 
                 importedFiles = data.importedFiles || [];
                 devicePDFs = data.devicePDFs || [];
-                sharedPDFs = data.sharedPDFs || [];
                 
                 // Temayı yükle
                 if (data.theme) {
@@ -2556,7 +2449,7 @@
 
     function loadData() {
       // Tüm dosyaları birleştir
-      const allFiles = [...devicePDFs, ...importedFiles, ...sharedPDFs];
+      const allFiles = [...devicePDFs, ...importedFiles];
       
       // Son kullanılanları sırala (en yeni en üstte)
       recentFiles = allFiles
@@ -2571,31 +2464,28 @@
       renderList('recentList', recentFiles);
       renderList('deviceList', allFiles);
       renderList('favoritesList', favoriteFiles);
-      renderList('sharedList', sharedPDFs, true);
       
       // Cache'e kaydet
       saveToCache();
     }
     
     // Listeleri render eden yardımcı fonksiyon
-    function renderList(listId, files, isShared = false) {
+    function renderList(listId, files) {
         const list = document.getElementById(listId);
         if (files.length === 0) {
             let emptyText = 'Henüz dosya yok.';
             if (listId === 'recentList') emptyText = 'Henüz açılmış dosya yok.';
             if (listId === 'favoritesList') emptyText = 'Henüz favori dosya yok.';
-            if (listId === 'sharedList') emptyText = 'Henüz paylaşılan dosya yok.';
             
             list.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon material-symbols-rounded">${isShared ? 'share' : 'folder_open'}</div>
+                <div class="empty-icon material-symbols-rounded">folder_open</div>
                 <p>${emptyText}</p>
-                ${isShared ? '<p class="text-sm mt-2">Dosyalarınızı paylaştığınızda burada görünecektir.</p>' : ''}
             </div>`;
         } else {
             let html = '';
             files.forEach(file => {
-                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id, isShared, file.sharedDate);
+                 html += createCard(file.name, file.size, file.date, file.isFavorite, file.id);
             });
             list.innerHTML = html;
             attachLongPressEvents();
@@ -2603,18 +2493,16 @@
     }
 
     // KART OLUŞTURMA
-    function createCard(name, size, date, isFavorite, id, isShared = false, sharedDate = '') {
+    function createCard(name, size, date, isFavorite, id) {
       const MAX_LENGTH = 30;
       const truncatedName = name.length > MAX_LENGTH 
           ? name.substring(0, MAX_LENGTH) + '...' 
           : name;
 
       const theme = document.documentElement.getAttribute('data-theme');
-      const bgColor = isShared ? '#4CAF50' : (theme === 'dark' ? 'var(--pdf-color-bg)' : '#E53935');
-      const textColor = isShared ? '#FFFFFF' : (theme === 'dark' ? 'var(--pdf-color-text)' : '#E53935');
+      const bgColor = theme === 'dark' ? 'var(--pdf-color-bg)' : '#E53935';
+      const textColor = theme === 'dark' ? 'var(--pdf-color-text)' : '#E53935';
       const fillStar = isFavorite ? 1 : 0;
-      
-      const dateText = isShared && sharedDate ? sharedDate : date;
 
       const pdfIconSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -2637,10 +2525,9 @@
       <div class="card" 
            data-name="${name}" 
            data-size="${size}" 
-           data-date="${dateText}"
+           data-date="${date}"
            data-favorite="${isFavorite ? 'true' : 'false'}"
            data-id="${id}"
-           data-shared="${isShared}"
            onclick="handleCardClick(this, '${name}', ${id})">
         
         <div class="selection-checkbox" onclick="event.stopPropagation(); toggleCardSelection(${id})"></div>
@@ -2653,8 +2540,7 @@
             <div class="card-meta">
                 <span class="font-semibold">${size}</span> 
                 <span>•</span> 
-                <span>${dateText}</span>
-                ${isShared ? '<span class="card-shared-badge">Paylaşıldı</span>' : ''}
+                <span>${date}</span>
             </div>
         </div>
         <div class="card-actions">
@@ -2664,348 +2550,11 @@
                 <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' ${fillStar}, 'wght' 500, 'GRAD' 0, 'opsz' 24;">star</span>
             </button>
             <button class="icon-button more-btn" 
-                    onclick="event.stopPropagation(); openContextMenu('${name}', '${size}', '${dateText}', ${id})">
+                    onclick="event.stopPropagation(); openContextMenu('${name}', '${size}', '${date}', ${id})">
                 <span class="material-symbols-rounded">more_vert</span>
             </button>
         </div>
       </div>`;
-    }
-
-    // --- BELGE TARAYICI FONKSİYONLARI ---
-    function openDocumentScanner() {
-        fabMenu.classList.remove('show');
-        scannerModal.classList.add('active');
-        startCamera();
-    }
-
-    function closeDocumentScanner() {
-        scannerModal.classList.remove('active');
-        stopCamera();
-        documentDetected = false;
-        if (detectionInterval) {
-            clearInterval(detectionInterval);
-            detectionInterval = null;
-        }
-    }
-
-    async function startCamera() {
-        try {
-            const constraints = {
-                video: {
-                    facingMode: currentFacingMode,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
-                },
-                audio: false
-            };
-
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
-            cameraView.srcObject = stream;
-            cameraView.play();
-            
-            // Kamera açıldıktan sonra belge algılamayı başlat
-            setTimeout(startDocumentDetection, 1000);
-            
-        } catch (error) {
-            console.error('Kamera açma hatası:', error);
-            alert('Kamera açılamadı. Lütfen kamera iznini kontrol edin.');
-            closeDocumentScanner();
-        }
-    }
-
-    function stopCamera() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
-        cameraView.srcObject = null;
-    }
-
-    function switchCamera() {
-        currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
-        stopCamera();
-        startCamera();
-    }
-
-    function toggleFlash() {
-        if (!stream) return;
-        
-        const track = stream.getVideoTracks()[0];
-        if (track && track.getCapabilities && track.getCapabilities().torch) {
-            isFlashOn = !isFlashOn;
-            track.applyConstraints({
-                advanced: [{ torch: isFlashOn }]
-            });
-            
-            flashToggleBtn.innerHTML = `<span class="material-symbols-rounded">${isFlashOn ? 'flash_on' : 'flash_off'}</span>`;
-        }
-    }
-
-    function startDocumentDetection() {
-        if (detectionInterval) {
-            clearInterval(detectionInterval);
-        }
-        
-        detectionInterval = setInterval(detectDocument, 500);
-    }
-
-    function detectDocument() {
-        if (!stream) return;
-        
-        const video = cameraView;
-        const canvas = documentCanvas;
-        const ctx = canvas.getContext('2d');
-        
-        // Canvas boyutlarını video boyutlarına ayarla
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        // Videodan görüntü al
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Görüntüyü analiz et (basit kenar algılama)
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const edges = detectEdges(imageData);
-        
-        // Eğer belge tespit edildiyse
-        if (edges > 50000) {
-            if (!documentDetected) {
-                documentDetected = true;
-                detectionStatus.innerHTML = `
-                    <span class="material-symbols-rounded">check_circle</span>
-                    <span>Belge bulundu!</span>
-                `;
-                detectionStatus.classList.add('found');
-                captureBtn.disabled = false;
-            }
-        } else {
-            if (documentDetected) {
-                documentDetected = false;
-                detectionStatus.innerHTML = `
-                    <span class="material-symbols-rounded">search</span>
-                    <span>Belge aranıyor...</span>
-                `;
-                detectionStatus.classList.remove('found');
-                captureBtn.disabled = true;
-            }
-        }
-    }
-
-    function detectEdges(imageData) {
-        // Basit kenar algılama algoritması
-        const data = imageData.data;
-        let edgeCount = 0;
-        
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            
-            // Parlaklık hesapla
-            const brightness = (r + g + b) / 3;
-            
-            // Kenar tespiti için eşik değeri
-            if (brightness < 100 || brightness > 200) {
-                edgeCount++;
-            }
-        }
-        
-        return edgeCount;
-    }
-
-    function captureDocument() {
-        if (!documentDetected) {
-            alert('Lütfen önce bir belge tespit edin.');
-            return;
-        }
-        
-        stopCamera();
-        if (detectionInterval) {
-            clearInterval(detectionInterval);
-            detectionInterval = null;
-        }
-        
-        // İşleme ekranını göster
-        showProcessingScreen();
-        
-        // Belgeyi işle
-        processCapturedDocument();
-    }
-
-    function showProcessingScreen() {
-        processingScreen.classList.add('active');
-        processingText.textContent = 'Belge işleniyor...';
-        processingSubtext.textContent = 'Belge algılanıyor ve PDF\'ye dönüştürülüyor';
-        processingProgressBar.style.width = '0%';
-    }
-
-    function updateProcessingProgress(percent, text, subtext) {
-        processingProgressBar.style.width = `${percent}%`;
-        if (text) processingText.textContent = text;
-        if (subtext) processingSubtext.textContent = subtext;
-    }
-
-    async function processCapturedDocument() {
-        try {
-            // 1. Belgeyi yakala ve ön izleme oluştur
-            updateProcessingProgress(20, 'Belge yakalanıyor...');
-            const video = cameraView;
-            const canvas = documentCanvas;
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // 2. Belgeyi düzelt ve kırp
-            updateProcessingProgress(40, 'Belge düzeltiliyor...');
-            const processedImage = await correctDocumentPerspective(canvas);
-            
-            // 3. OCR ile metin çıkar (opsiyonel)
-            updateProcessingProgress(60, 'Metin tanıma yapılıyor...');
-            let ocrText = '';
-            try {
-                ocrText = await performOCR(processedImage);
-            } catch (ocrError) {
-                console.log('OCR hatası:', ocrError);
-            }
-            
-            // 4. PDF oluştur
-            updateProcessingProgress(80, 'PDF oluşturuluyor...');
-            const pdfData = await createPDFFromImage(processedImage, ocrText);
-            
-            // 5. PDF'yi kaydet
-            updateProcessingProgress(95, 'PDF kaydediliyor...');
-            await saveScannedPDF(pdfData);
-            
-            // 6. Tamamlandı
-            updateProcessingProgress(100, 'Tamamlandı!', 'Belge başarıyla PDF\'ye dönüştürüldü.');
-            
-            setTimeout(() => {
-                processingScreen.classList.remove('active');
-                closeDocumentScanner();
-                alert('Belge başarıyla tarandı ve PDF\'ye dönüştürüldü!');
-                loadData(); // Listeyi yenile
-            }, 1000);
-            
-        } catch (error) {
-            console.error('Belge işleme hatası:', error);
-            processingScreen.classList.remove('active');
-            alert('Belge işlenirken bir hata oluştu: ' + error.message);
-            closeDocumentScanner();
-        }
-    }
-
-    async function correctDocumentPerspective(canvas) {
-        // Bu fonksiyon belge perspektifini düzeltir ve kırpar
-        // Gerçek uygulamada daha gelişmiş bir algoritma kullanılmalı
-        
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        // Basit bir kırpma (gerçekte kenar algılama ile)
-        const cropX = canvas.width * 0.1;
-        const cropY = canvas.height * 0.1;
-        const cropWidth = canvas.width * 0.8;
-        const cropHeight = canvas.height * 0.8;
-        
-        const croppedCanvas = document.createElement('canvas');
-        croppedCanvas.width = cropWidth;
-        croppedCanvas.height = cropHeight;
-        const croppedCtx = croppedCanvas.getContext('2d');
-        
-        croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-        
-        // Görüntü kalitesini iyileştir
-        enhanceImageQuality(croppedCanvas);
-        
-        return croppedCanvas.toDataURL('image/jpeg', 0.9);
-    }
-
-    function enhanceImageQuality(canvas) {
-        // Görüntü kalitesini iyileştir (kontrast, parlaklık)
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        
-        // Kontrast artırma
-        const contrast = 1.2;
-        for (let i = 0; i < data.length; i += 4) {
-            data[i] = (data[i] - 128) * contrast + 128;     // R
-            data[i + 1] = (data[i + 1] - 128) * contrast + 128; // G
-            data[i + 2] = (data[i + 2] - 128) * contrast + 128; // B
-        }
-        
-        ctx.putImageData(imageData, 0, 0);
-    }
-
-    async function performOCR(imageDataUrl) {
-        // Tesseract.js ile OCR yap
-        try {
-            const worker = await Tesseract.createWorker('tur');
-            const result = await worker.recognize(imageDataUrl);
-            await worker.terminate();
-            return result.data.text;
-        } catch (error) {
-            console.error('OCR hatası:', error);
-            return '';
-        }
-    }
-
-    async function createPDFFromImage(imageDataUrl, ocrText = '') {
-        // jsPDF ile PDF oluştur
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
-        
-        // Resmi PDF'ye ekle
-        const imgProps = pdf.getImageProperties(imageDataUrl);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        pdf.addImage(imageDataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        
-        // OCR metni varsa ekle
-        if (ocrText.trim().length > 0) {
-            pdf.addPage();
-            pdf.setFontSize(12);
-            pdf.text('OCR ile Çıkarılan Metin:', 10, 20);
-            pdf.setFontSize(10);
-            
-            const lines = pdf.splitTextToSize(ocrText, pdfWidth - 20);
-            pdf.text(lines, 10, 30);
-        }
-        
-        return pdf.output('datauristring');
-    }
-
-    async function saveScannedPDF(pdfData) {
-        const fileName = `Taranan_Belge_${Date.now()}.pdf`;
-        const base64Data = pdfData.split(',')[1];
-        
-        // Android'e kaydet
-        if (typeof Android !== 'undefined' && Android.saveBase64PDF) {
-            Android.saveBase64PDF(base64Data, fileName);
-        } else {
-            // Tarayıcıya indir
-            const link = document.createElement('a');
-            link.href = pdfData;
-            link.download = fileName;
-            link.click();
-        }
-        
-        // Yerel depolamaya ekle
-        const newFile = {
-            name: fileName,
-            size: formatBytes(base64Data.length * 0.75), // Yaklaşık boyut
-            date: new Date().toLocaleDateString('tr-TR'),
-            isFavorite: false,
-            id: Date.now(),
-            base64: pdfData,
-            lastOpened: null
-        };
-        
-        importedFiles.unshift(newFile);
-        saveToCache();
     }
 
     // --- DOSYA YÜKLEME İŞLEMLERİ ---
@@ -3135,77 +2684,6 @@
         updateSelectionCount();
     }
     
-    // GERÇEK PAYLAŞMA - Web Share API
-    function shareSelectedCards() {
-        if (selectedCards.size === 0) return;
-        
-        const selectedFiles = [];
-        selectedCards.forEach(cardId => {
-            let file = importedFiles.find(f => f.id === cardId);
-            if (!file) {
-                file = devicePDFs.find(f => f.id === cardId);
-            }
-            if (!file) {
-                file = sharedPDFs.find(f => f.id === cardId);
-            }
-            if (file) selectedFiles.push(file);
-        });
-        
-        if (selectedFiles.length === 0) {
-            alert('Paylaşılacak dosya bulunamadı.');
-            return;
-        }
-        
-        // Web Share API kullan
-        if (navigator.share) {
-            // Base64'ten File objesi oluştur
-            const sharePromises = selectedFiles.map(file => {
-                if (file.base64) {
-                    return fetch(file.base64)
-                        .then(res => res.blob())
-                        .then(blob => new File([blob], file.name, { type: 'application/pdf' }));
-                } else if (typeof Android !== 'undefined' && Android.shareFiles) {
-                    // Android için özel yöntem
-                    return Promise.resolve({ path: file.path, name: file.name });
-                }
-                return Promise.resolve(null);
-            });
-            
-            Promise.all(sharePromises).then(files => {
-                const validFiles = files.filter(f => f);
-                if (validFiles.length > 0) {
-                    // Android paylaşımı
-                    if (typeof Android !== 'undefined' && Android.shareFiles) {
-                        const filePaths = validFiles.map(f => f.path || f.name).join('||');
-                        Android.shareFiles(filePaths);
-                    } else {
-                        // Web Share API
-                        navigator.share({
-                            title: validFiles.length === 1 ? validFiles[0].name : `${validFiles.length} PDF Dosyası`,
-                            files: validFiles.filter(f => f instanceof File)
-                        }).catch(err => {
-                            console.error('Paylaşım hatası:', err);
-                            alert(`${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`);
-                        });
-                    }
-                }
-            });
-        } else {
-            // Web Share API desteklenmiyorsa
-            alert(`${selectedFiles.length} adet dosya paylaşım için hazırlanıyor...`);
-            
-            // Android'e özel paylaşım
-            try {
-                if (typeof Android !== 'undefined' && Android.shareFiles) {
-                    const filePaths = selectedFiles.map(f => f.path || f.name).join('||');
-                    Android.shareFiles(filePaths);
-                }
-            } catch (e) {
-                console.error('Android share error:', e);
-            }
-        }
-    }
-
     // --- MODERN YAZDIRMA SİSTEMİ ---
     function printSelectedCards() {
         if (selectedCards.size === 0) {
@@ -3218,9 +2696,6 @@
             let file = importedFiles.find(f => f.id === cardId);
             if (!file) {
                 file = devicePDFs.find(f => f.id === cardId);
-            }
-            if (!file) {
-                file = sharedPDFs.find(f => f.id === cardId);
             }
             if (file) selectedFiles.push(file);
         });
@@ -3244,9 +2719,6 @@
         let file = importedFiles.find(f => f.id === cardId);
         if (!file) {
             file = devicePDFs.find(f => f.id === cardId);
-        }
-        if (!file) {
-            file = sharedPDFs.find(f => f.id === cardId);
         }
         
         if (!file) {
@@ -3376,21 +2848,6 @@
                     }
                     devicePDFs.splice(fileIndex, 1);
                 }
-                
-                // Shared PDFs'den sil
-                const sharedIndex = sharedPDFs.findIndex(f => f.id === cardId);
-                if (sharedIndex > -1) {
-                    const file = sharedPDFs[sharedIndex];
-                    // Android'den sil
-                    try {
-                        if (typeof Android !== 'undefined' && Android.deleteFile && file.path) {
-                            Android.deleteFile(file.path);
-                        }
-                    } catch (e) {
-                        console.error('Delete error:', e);
-                    }
-                    sharedPDFs.splice(sharedIndex, 1);
-                }
             });
             
             alert(`${selectedCards.size} öğe silindi.`);
@@ -3431,11 +2888,6 @@
         fileIndex = devicePDFs.findIndex(f => f.id === cardId);
         if(fileIndex > -1) {
             devicePDFs[fileIndex].isFavorite = isFavorite;
-        }
-        
-        fileIndex = sharedPDFs.findIndex(f => f.id === cardId);
-        if(fileIndex > -1) {
-            sharedPDFs[fileIndex].isFavorite = isFavorite;
         }
         
         // Favoriler listesini güncelle
@@ -3486,9 +2938,6 @@
             let fileData = importedFiles.find(f => f.id === cardId);
             if (!fileData) {
                 fileData = devicePDFs.find(f => f.id === cardId);
-            }
-            if (!fileData) {
-                fileData = sharedPDFs.find(f => f.id === cardId);
             }
 
             // DOSYA AÇILDIĞINDA SON KULLANILANLARA EKLE
@@ -3554,9 +3003,6 @@
             switch(action) {
                 case 'rename':
                     openRenameDialog(currentContextFile.cardId, currentContextFile.name);
-                    break;
-                case 'share':
-                    shareSingleFile(currentContextFile.cardId, currentContextFile.name);
                     break;
                 case 'print':
                     printSingleFile(currentContextFile.cardId, currentContextFile.name);
@@ -3638,83 +3084,9 @@
             }
         }
         
-        // Shared PDFs'de ara
-        fileIndex = sharedPDFs.findIndex(f => f.id === cardId);
-        if(fileIndex > -1) {
-            const file = sharedPDFs[fileIndex];
-            // Android'de yeniden adlandır
-            try {
-                if (typeof Android !== 'undefined' && Android.renameFile && file.path) {
-                    const newPath = Android.renameFile(file.path, newNameWithExt);
-                    if (newPath && newPath !== 'ERROR') {
-                        sharedPDFs[fileIndex].path = newPath;
-                        sharedPDFs[fileIndex].name = newNameWithExt;
-                    } else {
-                        sharedPDFs[fileIndex].name = newNameWithExt;
-                    }
-                } else {
-                    sharedPDFs[fileIndex].name = newNameWithExt;
-                }
-            } catch (e) {
-                console.error('Rename error:', e);
-                sharedPDFs[fileIndex].name = newNameWithExt;
-            }
-        }
-        
         loadData();
         saveToCache();
         alert('Dosya adı güncellendi.');
-    }
-    
-    // GERÇEK DOSYA PAYLAŞMA - Web Share API
-    function shareSingleFile(cardId, fileName) {
-        let file = importedFiles.find(f => f.id === cardId);
-        if (!file) {
-            file = devicePDFs.find(f => f.id === cardId);
-        }
-        if (!file) {
-            file = sharedPDFs.find(f => f.id === cardId);
-        }
-        
-        if (!file) {
-            alert('Dosya bulunamadı.');
-            return;
-        }
-        
-        // Web Share API kullan
-        if (navigator.share) {
-            if (file.base64) {
-                fetch(file.base64)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const fileToShare = new File([blob], fileName, { type: 'application/pdf' });
-                        navigator.share({
-                            title: fileName,
-                            files: [fileToShare]
-                        }).catch(err => {
-                            console.error('Paylaşım hatası:', err);
-                            alert(`"${fileName}" paylaşılıyor...`);
-                        });
-                    });
-            } else if (typeof Android !== 'undefined' && Android.shareFile) {
-                // Android için özel paylaşım
-                Android.shareFile(file.path || fileName);
-            } else {
-                alert(`"${fileName}" paylaşılıyor...`);
-            }
-        } else {
-            // Web Share API desteklenmiyorsa
-            alert(`"${fileName}" paylaşılıyor...`);
-            
-            // Android'e özel paylaşım
-            try {
-                if (typeof Android !== 'undefined' && Android.shareFile) {
-                    Android.shareFile(file.path || fileName);
-                }
-            } catch (e) {
-                console.error('Android share error:', e);
-            }
-        }
     }
     
     // GERÇEK DOSYA SİLME
@@ -3736,21 +3108,6 @@
                     console.error('Delete error:', e);
                 }
                 devicePDFs.splice(fileIndex, 1);
-            }
-            
-            // Shared PDFs'den sil
-            const sharedIndex = sharedPDFs.findIndex(f => f.id === cardId);
-            if(sharedIndex > -1) {
-                const file = sharedPDFs[sharedIndex];
-                // Android'den sil
-                try {
-                    if (typeof Android !== 'undefined' && Android.deleteFile && file.path) {
-                        Android.deleteFile(file.path);
-                    }
-                } catch (e) {
-                    console.error('Delete error:', e);
-                }
-                sharedPDFs.splice(sharedIndex, 1);
             }
             
             loadData();
@@ -3779,7 +3136,7 @@
     
     function performSearch() {
         const query = searchInput.value.toLowerCase().trim();
-        const allFiles = [...devicePDFs, ...importedFiles, ...sharedPDFs];
+        const allFiles = [...devicePDFs, ...importedFiles];
         
         if (query === '') {
             searchResultCount.textContent = 'Arama yapmak için bir şeyler yazın...';
@@ -3821,21 +3178,20 @@
         } else {
             let html = '';
             results.forEach(file => {
-                const isShared = sharedPDFs.some(f => f.id === file.id);
                 html += `
                 <div class="card" onclick="openPDF(${JSON.stringify(file).replace(/"/g, '&quot;')}, '${file.name.replace(/'/g, "\\'")}')">
                     <div class="card-icon-svg-wrapper">
                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
-                            <rect x="0" y="0" width="64" height="64" rx="10" fill="${isShared ? '#4CAF50' : '#E53935'}"/>
+                            <rect x="0" y="0" width="64" height="64" rx="10" fill="#E53935"/>
                             <path d="M18 12h22l10 10v30a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z"
                                   fill="#FFFFFF"/>
                             <polygon points="40,12 50,22 40,22" fill="#F0F0F0"/>
-                            <rect x="22" y="24" width="18" height="3" rx="1.5" fill="${isShared ? '#FFFFFF' : '#E53935'}"/>
-                            <rect x="22" y="30" width="20" height="3" rx="1.5" fill="${isShared ? '#FFFFFF' : '#E53935'}"/>
-                            <rect x="22" y="36" width="20" height="3" rx="1.5" fill="${isShared ? '#FFFFFF' : '#E53935'}"/>
+                            <rect x="22" y="24" width="18" height="3" rx="1.5" fill="#E53935"/>
+                            <rect x="22" y="30" width="20" height="3" rx="1.5" fill="#E53935"/>
+                            <rect x="22" y="36" width="20" height="3" rx="1.5" fill="#E53935"/>
                             <text x="50%" y="52" text-anchor="middle"
                                   font-family="Segoe UI, Roboto, Arial, sans-serif"
-                                  font-weight="700" font-size="14" fill="${isShared ? '#FFFFFF' : '#E53935'}">
+                                  font-weight="700" font-size="14" fill="#E53935">
                                 PDF
                             </text>
                         </svg>
@@ -3846,7 +3202,6 @@
                             <span class="font-semibold">${file.size}</span> 
                             <span>•</span> 
                             <span>${file.date}</span>
-                            ${isShared ? '<span class="card-shared-badge">Paylaşıldı</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -3918,12 +3273,6 @@
       searchBtn.addEventListener('click', openSearch);
       closeSearchBtn.addEventListener('click', closeSearch);
       searchInput.addEventListener('input', performSearch);
-
-      // Scanner Events
-      document.querySelector('.close-scanner').addEventListener('click', closeDocumentScanner);
-      switchCameraBtn.addEventListener('click', switchCamera);
-      flashToggleBtn.addEventListener('click', toggleFlash);
-      captureBtn.addEventListener('click', captureDocument);
 
       // SCROLL MANTIĞI - TÜM PANELLER İÇİN
       panels.forEach(panel => {
@@ -4033,7 +3382,7 @@
     function switchTab(id, isClickOrNav = false) {
       tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
       
-      const panelIds = ['recentPanel', 'devicePanel', 'favoritesPanel', 'sharedPanel'];
+      const panelIds = ['recentPanel', 'devicePanel', 'favoritesPanel'];
       panelIds.forEach(panelId => {
           const panel = document.getElementById(panelId);
           if (panel) {
@@ -4164,22 +3513,6 @@
       
       // Cache otomatik kaydetme
       setInterval(saveToCache, 30000); // 30 saniyede bir
-      
-      // Paylaşılan PDF'leri yükle
-      if (typeof Android !== 'undefined') {
-          setTimeout(() => {
-              // Android'den paylaşılan PDF'leri al
-              try {
-                  const sharedJson = Android.getSharedPDFs ? Android.getSharedPDFs() : '[]';
-                  if (sharedJson && sharedJson !== '[]') {
-                      const sharedFiles = JSON.parse(sharedJson);
-                      updateSharedPDFsList(sharedFiles);
-                  }
-              } catch (e) {
-                  console.error('Paylaşılan PDF yükleme hatası:', e);
-              }
-          }, 2000);
-      }
     });
 
     // Global fonksiyonlar
@@ -4187,8 +3520,6 @@
     window.sendHelpEmail = sendHelpEmail;
     window.handleFileSource = handleFileSource;
     window.handleFabAction = handleFabAction;
-    window.openDocumentScanner = openDocumentScanner;
-    window.closeDocumentScanner = closeDocumentScanner;
     window.openSearch = openSearch;
     window.closeSearch = closeSearch;
     window.clearSearch = clearSearch;
@@ -4204,7 +3535,6 @@
     window.selectAllCards = selectAllCards;
     window.deselectAllCards = deselectAllCards;
     window.deleteSelectedCards = deleteSelectedCards;
-    window.shareSelectedCards = shareSelectedCards;
     window.printSelectedCards = printSelectedCards;
     window.printSingleFile = printSingleFile;
     window.handleFileSelect = handleFileSelect;
@@ -4217,7 +3547,6 @@
     window.openRenameDialog = openRenameDialog;
     window.closeRenameDialog = closeRenameDialog;
     window.confirmRenameFile = confirmRenameFile;
-    window.updateSharedPDFsList = updateSharedPDFsList;
 
     // --- ARAÇLAR VERİLERİ ---
     const toolsData = [

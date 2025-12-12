@@ -388,10 +388,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    // YENİ: WebView ile viewer.html aç
+    // PDF'yi viewer.html ile aç
     @SuppressLint("SetJavaScriptEnabled")
     private fun openPdf(pdfFile: PdfFile) {
-        // WebView oluştur
+        // WebView oluştur ve viewer.html'i yükle
         val webView = WebView(this)
         setContentView(webView)
         
@@ -408,6 +408,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 // PDF yüklendi
+                supportActionBar?.title = pdfFile.name
             }
         }
         
@@ -416,16 +417,6 @@ class MainActivity : AppCompatActivity() {
         val url = "file:///android_asset/web/viewer.html?file=$encodedPath&name=${Uri.encode(pdfFile.name)}"
         
         webView.loadUrl(url)
-        
-        // Back tuşu için
-        webView.setOnKeyListener { _, keyCode, event ->
-            if (keyCode == android.view.KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
-                webView.goBack()
-                true
-            } else {
-                false
-            }
-        }
     }
     
     private fun showFabMenu() {
@@ -498,6 +489,16 @@ class MainActivity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
+        // Ana layout'a geri dön
+        setContentView(R.layout.activity_main)
+        // View'leri yeniden başlat
+        initViews()
+        setupToolbar()
+        setupTabs()
+        setupAdapters()
+        setupBottomNavigation()
+        setupFab()
+        
         // Sayfayı yenile
         if (tabLayout.selectedTabPosition == 1) {
             checkPermissions()
@@ -505,17 +506,8 @@ class MainActivity : AppCompatActivity() {
     }
     
     override fun onBackPressed() {
-        // Eğer WebView açıksa
-        if (findViewById<WebView?>(R.id.webView) != null) {
-            val webView = findViewById<WebView>(R.id.webView)
-            if (webView.canGoBack()) {
-                webView.goBack()
-            } else {
-                super.onBackPressed()
-            }
-        } else {
-            super.onBackPressed()
-        }
+        // Basit back işlemi
+        super.onBackPressed()
     }
 }
 

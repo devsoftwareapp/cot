@@ -878,8 +878,12 @@ function deselectAllCards() {
     updateSelectionCount();
 }
 
+// ============ PAYLAŞMA FONKSİYONLARI - DÜZELTİLMİŞ ============
 function shareSelectedCards() {
-    if (selectedCards.size === 0) return;
+    if (selectedCards.size === 0) {
+        log("Lütfen paylaşmak için öğe seçin.");
+        return;
+    }
     
     const filesToShare = [];
     selectedCards.forEach(id => {
@@ -896,21 +900,41 @@ function shareSelectedCards() {
     if (filesToShare.length === 1) {
         const file = filesToShare[0];
         if (typeof Android !== 'undefined' && Android.shareFile) {
+            // DOĞRUDAN PAYLAŞ - PATHS OLARAK GÖNDER
             Android.shareFile(file.path || file.name);
         } else {
-            log(`${file.name} paylaşım için hazırlanıyor...`);
+            log("Android paylaşım API'si bulunamadı");
         }
     } else {
+        // Çoklu paylaşım için path'leri birleştir
         const paths = filesToShare.map(f => f.path || f.name).join("||");
         if (typeof Android !== 'undefined' && Android.shareFiles) {
             Android.shareFiles(paths);
         } else {
-            log(`${filesToShare.length} adet dosya paylaşım için hazırlanıyor...`);
+            log("Android çoklu paylaşım API'si bulunamadı");
         }
     }
 }
 
-// ============ YAZDIRMA ============
+function shareSingleFile(cardId, fileName) {
+    log(`Tek dosya paylaşılıyor: ${fileName}`);
+    
+    let file = importedFiles.find(f => f.id === cardId);
+    if (!file) file = devicePDFs.find(f => f.id === cardId);
+    
+    if (file) {
+        if (typeof Android !== 'undefined' && Android.shareFile) {
+            // DOĞRUDAN PAYLAŞ
+            Android.shareFile(file.path);
+        } else {
+            log("Android paylaşım API'si bulunamadı");
+        }
+    } else {
+        log("Dosya bulunamadı.");
+    }
+}
+
+// ============ YAZDIRMA FONKSİYONLARI - DÜZELTİLMİŞ ============
 function printSelectedCards() {
     if (selectedCards.size === 0) {
         log("Lütfen yazdırmak için öğe seçin.");
@@ -929,12 +953,12 @@ function printSelectedCards() {
         return;
     }
     
-    // DOĞRUDAN YAZDIR - TOAST/ANIMASYON YOK
-    if (filesToPrint.length === 1) {
-        printSingleFileDirectly(filesToPrint[0]);
-    } else {
-        filesToPrint.forEach(file => printSingleFileDirectly(file));
-    }
+    // Sırayla yazdır
+    filesToPrint.forEach((file, index) => {
+        setTimeout(() => {
+            printSingleFileDirectly(file);
+        }, index * 500);
+    });
 }
 
 function printSingleFile(id) {
@@ -952,9 +976,10 @@ function printSingleFileDirectly(file) {
     log(`Yazdırılıyor: ${file.name}`);
     
     if (typeof Android !== 'undefined' && Android.printPDF) {
-        Android.printPDF(file.path || "");
+        // DOĞRUDAN YAZDIR
+        Android.printPDF(file.path);
     } else {
-        log(`"${file.name}" yazdırma işlemi başlatılamadı.`);
+        log("Android yazdırma API'si bulunamadı");
     }
 }
 
@@ -1189,22 +1214,6 @@ function renameFile(cardId, oldName, newName) {
     loadData();
     saveToCache();
     log("Dosya adı güncellendi.");
-}
-
-// ============ SHARE SINGLE ============
-function shareSingleFile(cardId, fileName) {
-    let file = importedFiles.find(f => f.id === cardId);
-    if (!file) file = devicePDFs.find(f => f.id === cardId);
-    
-    if (file) {
-        if (typeof Android !== 'undefined' && Android.shareFile) {
-            Android.shareFile(file.path || fileName);
-        } else {
-            log(`"${fileName}" paylaşılıyor...`);
-        }
-    } else {
-        log("Dosya bulunamadı.");
-    }
 }
 
 // ============ DELETE SINGLE ============

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.devsoftware.pdfreader">
 
-    <!-- İnternet izni (webview için) -->
+    <!-- İnternet izni (OCR veya bulut hizmetleri için) -->
     <uses-permission android:name="android.permission.INTERNET" />
     
     <!-- Depolama izinleri -->
@@ -13,12 +13,6 @@
     <!-- Android 11+ için TÜM DOSYALARA ERİŞİM izni -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
-    
-    <!-- BELGE TARAMA İÇİN KAMERA İZNİ -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    
-    <!-- API seviyesi kontrolü -->
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -29,9 +23,9 @@
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
         
-        <!-- DOĞRU AKTİVİTE İSMİ: IndexActivity -->
+        <!-- ANA AKTİVİTE: MainActivity -->
         <activity
-            android:name=".IndexActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize"
@@ -77,19 +71,53 @@
 
         </activity>
         
-        <!-- Viewer Activity (eğer varsa) -->
+        <!-- Diğer araç aktiviteleri -->
         <activity
-            android:name=".ViewerActivity"
+            android:name=".BirlestirmeActivity"
             android:exported="false"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
+            android:label="PDF Birleştirme" />
         
-        <!-- PDF araçları için aktiviteler -->
         <activity
-            android:name=".tools.MergeActivity"
-            android:exported="false" />
+            android:name=".SesliOkumaActivity"
+            android:exported="false"
+            android:label="Sesli Okuma" />
+            
         <activity
-            android:name=".tools.ScanActivity"
-            android:exported="false" />
+            android:name=".OrcActivity"
+            android:exported="false"
+            android:label="OCR Metin Çıkar" />
+            
+        <activity
+            android:name=".ImzaActivity"
+            android:exported="false"
+            android:label="PDF İmzalama" />
+            
+        <activity
+            android:name=".SikistirmaActivity"
+            android:exported="false"
+            android:label="PDF Sıkıştırma" />
+            
+        <activity
+            android:name=".OrganizeActivity"
+            android:exported="false"
+            android:label="Sayfa Organize" />
+            
+        <activity
+            android:name=".ResimdenPdfActivity"
+            android:exported="false"
+            android:label="Resimden PDF" />
+            
+        <activity
+            android:name=".PdfResmeActivity"
+            android:exported="false"
+            android:label="PDF'den Resim" />
+        
+        <!-- PDF Görüntüleyici -->
+        <activity
+            android:name=".PdfViewerActivity"
+            android:exported="false"
+            android:label="PDF Görüntüleyici"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
 
         <!-- FileProvider - Sabit authority kullan -->
         <provider

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.devsoftware.pdfreader">
 
-    <!-- İnternet izni -->
+    <!-- İnternet izni (webview için) -->
     <uses-permission android:name="android.permission.INTERNET" />
     
     <!-- Depolama izinleri -->
@@ -12,6 +13,12 @@
     <!-- Android 11+ için TÜM DOSYALARA ERİŞİM izni -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
+    
+    <!-- Dosya seçici için -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- API seviyesi kontrolü -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -22,9 +29,9 @@
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
         
-        <!-- ANA AKTİVİTE: MainActivity -->
+        <!-- DOĞRU AKTİVİTE İSMİ: IndexActivity -->
         <activity
-            android:name=".MainActivity"
+            android:name=".IndexActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize"
@@ -40,23 +47,60 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
+                <data android:pathPattern=".*\\.pdf" />
+            </intent-filter>
+            
+            <!-- Tüm dosya türleri için (opsiyonel) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.pdf" />
+            </intent-filter>
+
+            <!-- PDF PAYLAŞIMINI KABUL ET - SEND intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            
+            <!-- ÇOKLU PDF PAYLAŞIMI - SEND_MULTIPLE intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/pdf" />
             </intent-filter>
 
         </activity>
         
-        <!-- Diğer araç aktiviteleri -->
-        <activity android:name=".BirlestirmeActivity" android:exported="false" />
-        <activity android:name=".SesliOkumaActivity" android:exported="false" />
-        <activity android:name=".OrcActivity" android:exported="false" />
-        <activity android:name=".ImzaActivity" android:exported="false" />
-        <activity android:name=".SikistirmaActivity" android:exported="false" />
-        <activity android:name=".OrganizeActivity" android:exported="false" />
-        <activity android:name=".ResimdenPdfActivity" android:exported="false" />
-        <activity android:name=".PdfResmeActivity" android:exported="false" />
+        <!-- Viewer Activity (eğer varsa) -->
+        <activity
+            android:name=".ViewerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         
-        <!-- PDF Görüntüleyici -->
-        <activity android:name=".PdfViewerActivity" android:exported="false" />
+        <!-- PDF araçları için aktiviteler -->
+        <activity
+            android:name=".tools.MergeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".tools.ScanActivity"
+            android:exported="false" />
+
+        <!-- FileProvider - Sabit authority kullan -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.devsoftware.pdfreader.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

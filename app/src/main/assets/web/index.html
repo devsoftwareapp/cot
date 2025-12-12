@@ -600,15 +600,6 @@
         color: var(--text-secondary);
         margin-top: 2px;
     }
-    
-    .card-shared-badge {
-        background: var(--primary);
-        color: white;
-        font-size: 9px;
-        padding: 2px 6px;
-        border-radius: 10px;
-        margin-left: 4px;
-    }
 
     .card-actions {
         display: flex;
@@ -1367,313 +1358,6 @@
         transform: translateY(0);
     }
 
-    /* YAZDIRMA DURUMU GÖSTERGESİ */
-    .print-status {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--surface);
-        border-radius: 16px;
-        padding: 24px;
-        z-index: var(--z-dialog);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        min-width: 280px;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s;
-    }
-    
-    .print-status.show {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .print-status-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 16px;
-        color: white;
-        font-size: 32px;
-    }
-    
-    .print-status-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--text-primary);
-    }
-    
-    .print-status-text {
-        font-size: 14px;
-        color: var(--text-secondary);
-        margin-bottom: 16px;
-    }
-    
-    .print-progress {
-        width: 100%;
-        height: 6px;
-        background: var(--border);
-        border-radius: 3px;
-        overflow: hidden;
-        margin: 16px 0;
-    }
-    
-    .print-progress-bar {
-        height: 100%;
-        background: linear-gradient(to right, var(--primary), var(--secondary));
-        border-radius: 3px;
-        transition: width 0.3s;
-    }
-
-    /* --- BELGE TARAYICI MODAL STİLLERİ --- */
-    .scanner-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: var(--background);
-        z-index: var(--z-scanner);
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .scanner-modal.active {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .scanner-header {
-        height: var(--h-header);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 16px;
-        background: var(--surface);
-        border-bottom: 1px solid var(--border);
-        z-index: 1;
-    }
-    
-    .scanner-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-    
-    .camera-container {
-        flex: 1;
-        position: relative;
-        overflow: hidden;
-        background: #000;
-    }
-    
-    #cameraView {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transform: scaleX(-1); /* Mirror for front camera */
-    }
-    
-    .document-guide {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 80%;
-        height: 60%;
-        border: 2px dashed rgba(255, 255, 255, 0.7);
-        border-radius: 8px;
-        pointer-events: none;
-    }
-    
-    .guide-corner {
-        position: absolute;
-        width: 24px;
-        height: 24px;
-        border: 3px solid var(--primary);
-    }
-    
-    .guide-corner.tl {
-        top: -3px;
-        left: -3px;
-        border-right: none;
-        border-bottom: none;
-        border-radius: 8px 0 0 0;
-    }
-    
-    .guide-corner.tr {
-        top: -3px;
-        right: -3px;
-        border-left: none;
-        border-bottom: none;
-        border-radius: 0 8px 0 0;
-    }
-    
-    .guide-corner.bl {
-        bottom: -3px;
-        left: -3px;
-        border-right: none;
-        border-top: none;
-        border-radius: 0 0 0 8px;
-    }
-    
-    .guide-corner.br {
-        bottom: -3px;
-        right: -3px;
-        border-left: none;
-        border-top: none;
-        border-radius: 0 0 8px 0;
-    }
-    
-    .detection-status {
-        position: absolute;
-        top: 20px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        color: white;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-radius: 0 0 20px 20px;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-    
-    .detection-status.found {
-        background: rgba(76, 175, 80, 0.9);
-    }
-    
-    .scanner-controls {
-        height: var(--h-bottom);
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 40px;
-        padding: 0 20px;
-    }
-    
-    .scanner-btn {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    
-    .scanner-btn.primary {
-        background: var(--primary);
-        color: white;
-        box-shadow: 0 4px 12px rgba(229, 57, 53, 0.4);
-    }
-    
-    .scanner-btn.primary:active {
-        transform: scale(0.95);
-        box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
-    }
-    
-    .scanner-btn.secondary {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-    
-    .scanner-btn.secondary:active {
-        background: rgba(255, 255, 255, 0.2);
-    }
-    
-    /* İşleme ekranı */
-    .processing-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: var(--background);
-        z-index: calc(var(--z-scanner) + 10);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s;
-    }
-    
-    .processing-screen.active {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .processing-icon {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 24px;
-        color: white;
-        font-size: 36px;
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-    
-    .processing-text {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 8px;
-    }
-    
-    .processing-subtext {
-        font-size: 14px;
-        color: var(--text-secondary);
-        text-align: center;
-        max-width: 80%;
-        line-height: 1.5;
-    }
-    
-    .processing-progress {
-        width: 80%;
-        height: 6px;
-        background: var(--border);
-        border-radius: 3px;
-        margin-top: 24px;
-        overflow: hidden;
-    }
-    
-    .processing-progress-bar {
-        height: 100%;
-        background: linear-gradient(to right, var(--primary), var(--secondary));
-        border-radius: 3px;
-        transition: width 0.3s;
-    }
-
   </style>
 </head>
 <body>
@@ -1707,9 +1391,6 @@
               </button>
               <button class="icon-button selection" title="Seçimi Kaldır" onclick="deselectAllCards()">
                   <span class="material-symbols-rounded">deselect</span>
-              </button>
-              <button class="icon-button selection" title="Yazdır" onclick="printSelectedCards()">
-                  <span class="material-symbols-rounded">print</span>
               </button>
               <button class="icon-button selection" title="Sil" onclick="deleteSelectedCards()">
                   <span class="material-symbols-rounded">delete</span>
@@ -2004,9 +1685,6 @@
     <div class="sheet-item" onclick="handleContextAction('rename')">
         <span class="material-symbols-rounded">edit</span> Yeniden Adlandır
     </div>
-    <div class="sheet-item" onclick="handleContextAction('print')">
-        <span class="material-symbols-rounded">print</span> Yazdır
-    </div>
     <div class="sheet-item danger" onclick="handleContextAction('delete')">
         <span class="material-symbols-rounded">delete</span> Sil
     </div>
@@ -2034,18 +1712,6 @@
         <button class="dialog-button cancel" onclick="closeRenameDialog()">İptal</button>
         <button class="dialog-button primary" onclick="confirmRenameFile()">Kaydet</button>
       </div>
-    </div>
-  </div>
-
-  <!-- YAZDIRMA DURUMU GÖSTERGESİ -->
-  <div class="print-status" id="printStatus">
-    <div class="print-status-icon">
-      <span class="material-symbols-rounded">print</span>
-    </div>
-    <h3 class="print-status-title" id="printStatusTitle">Yazdırılıyor...</h3>
-    <p class="print-status-text" id="printStatusText">Dosya hazırlanıyor</p>
-    <div class="print-progress">
-      <div class="print-progress-bar" id="printProgressBar" style="width: 0%"></div>
     </div>
   </div>
 
@@ -2085,12 +1751,6 @@
     const newFileNameInput = document.getElementById('newFileNameInput');
     const renameOldName = document.getElementById('renameOldName');
 
-    // Print Status Variables
-    const printStatus = document.getElementById('printStatus');
-    const printStatusTitle = document.getElementById('printStatusTitle');
-    const printStatusText = document.getElementById('printStatusText');
-    const printProgressBar = document.getElementById('printProgressBar');
-
     // Selection Mode Variables
     const selectionHeader = document.getElementById('selectionHeader');
     const selectionCount = document.getElementById('selectionCount');
@@ -2103,7 +1763,7 @@
     let recentFiles = []; // Son kullanılanlar
     let favoriteFiles = []; // Favoriler
     
-    // PDF Reader klasör yolu
+    // PDF Reader klasör yolu - Sadece Download/PDF Reader
     const PDF_READER_FOLDER = '/storage/emulated/0/Download/PDF Reader';
     
     // Scroll & Swipe State
@@ -2305,42 +1965,24 @@
         }
     }
 
-    // GERÇEK DOSYA BOYUTU
+    // GERÇEK DOSYA BOYUTU - Android'den al
     function getRealFileSize(path) {
         try {
             if (typeof Android !== 'undefined' && Android.getFileSize) {
                 const sizeBytes = parseInt(Android.getFileSize(path));
                 if (!isNaN(sizeBytes) && sizeBytes > 0) {
                     return formatBytes(sizeBytes);
-                } else {
-                    // Android API'den alınamazsa fallback
-                    return getFallbackFileSize(path);
                 }
-            } else {
-                // Android API yoksa fallback
-                return getFallbackFileSize(path);
             }
+            // Android'den alınamazsa tahmin etme, boş bırak
+            return "0 Bytes";
         } catch (e) {
             console.error('File size error:', e);
-            return getFallbackFileSize(path);
+            return "0 Bytes";
         }
     }
-    
-    function getFallbackFileSize(path) {
-        // Dosya adından veya yolundan tahmin et
-        const name = path.toLowerCase();
-        if (name.includes('large') || name.includes('big')) return '4.2 MB';
-        if (name.includes('small') || name.includes('tiny')) return '450 KB';
-        if (name.includes('report') || name.includes('document')) return '2.1 MB';
-        if (name.includes('book') || name.includes('manual')) return '3.8 MB';
-        if (name.includes('invoice') || name.includes('bill')) return '1.5 MB';
-        
-        // Rastgele boyut (gerçekçi aralıkta)
-        const sizes = ['850 KB', '1.2 MB', '2.5 MB', '3.8 MB', '4.2 MB'];
-        return sizes[Math.floor(Math.random() * sizes.length)];
-    }
 
-    // GERÇEK DOSYA TARİHİ
+    // GERÇEK DOSYA TARİHİ - Android'den al
     function getRealFileDate(path) {
         try {
             if (typeof Android !== 'undefined' && Android.getFileDate) {
@@ -2352,29 +1994,22 @@
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const year = date.getFullYear();
                     return `${day}.${month}.${year}`;
-                } else {
-                    return getFallbackFileDate();
                 }
-            } else {
-                return getFallbackFileDate();
             }
+            // Bugünün tarihini döndür
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${day}.${month}.${year}`;
         } catch (e) {
             console.error('File date error:', e);
-            return getFallbackFileDate();
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${day}.${month}.${year}`;
         }
-    }
-    
-    function getFallbackFileDate() {
-        // Son 30 gün içinde rastgele tarih
-        const now = new Date();
-        const daysAgo = Math.floor(Math.random() * 30);
-        const date = new Date(now);
-        date.setDate(now.getDate() - daysAgo);
-        
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}.${month}.${year}`;
     }
     
     // Android Callbacks
@@ -2448,7 +2083,7 @@
     }
 
     function loadData() {
-      // Tüm dosyaları birleştir
+      // Tüm dosyaları birleştir (cihaz PDF'leri + import edilen PDF'ler)
       const allFiles = [...devicePDFs, ...importedFiles];
       
       // Son kullanılanları sırala (en yeni en üstte)
@@ -2580,7 +2215,7 @@
 
                 const newFile = {
                     name: file.name,
-                    size: formatBytes(file.size), // GERÇEK BOYUT
+                    size: formatBytes(file.size), // GERÇEK DOSYA BOYUTU
                     date: formattedDate,
                     isFavorite: false,
                     id: Date.now(),
@@ -2684,144 +2319,6 @@
         updateSelectionCount();
     }
     
-    // --- MODERN YAZDIRMA SİSTEMİ ---
-    function printSelectedCards() {
-        if (selectedCards.size === 0) {
-            alert('Lütfen yazdırmak için öğe seçin.');
-            return;
-        }
-        
-        const selectedFiles = [];
-        selectedCards.forEach(cardId => {
-            let file = importedFiles.find(f => f.id === cardId);
-            if (!file) {
-                file = devicePDFs.find(f => f.id === cardId);
-            }
-            if (file) selectedFiles.push(file);
-        });
-        
-        if (selectedFiles.length === 0) {
-            alert('Yazdırılacak dosya bulunamadı.');
-            return;
-        }
-        
-        showPrintStatus(selectedFiles.length);
-        
-        // Dosyaları sırayla yazdır
-        selectedFiles.forEach((file, index) => {
-            setTimeout(() => {
-                printSingleFileDirectly(file, index + 1, selectedFiles.length);
-            }, index * 1000); // 1 saniye aralıklarla
-        });
-    }
-    
-    function printSingleFile(cardId, fileName) {
-        let file = importedFiles.find(f => f.id === cardId);
-        if (!file) {
-            file = devicePDFs.find(f => f.id === cardId);
-        }
-        
-        if (!file) {
-            alert('Dosya bulunamadı.');
-            return;
-        }
-        
-        showPrintStatus(1);
-        setTimeout(() => {
-            printSingleFileDirectly(file, 1, 1);
-        }, 500);
-    }
-    
-    function showPrintStatus(totalFiles) {
-        printStatusTitle.textContent = totalFiles > 1 ? `${totalFiles} Dosya Yazdırılıyor` : 'Dosya Yazdırılıyor';
-        printStatusText.textContent = totalFiles > 1 ? 'Dosyalar hazırlanıyor...' : 'Dosya hazırlanıyor...';
-        printProgressBar.style.width = '0%';
-        printStatus.classList.add('show');
-    }
-
-    function updatePrintProgress(current, total) {
-        const percent = (current / total) * 100;
-        printProgressBar.style.width = `${percent}%`;
-        printStatusText.textContent = `${current}/${total} dosya yazdırılıyor...`;
-        
-        if (current === total) {
-            setTimeout(() => {
-                printStatus.classList.remove('show');
-                printProgressBar.style.width = '0%';
-            }, 1000);
-        }
-    }
-
-    // DOĞRUDAN YAZDIRMA FONKSİYONU
-    function printSingleFileDirectly(file, currentIndex, totalCount) {
-        const fileName = file.name;
-        console.log(`Yazdırılıyor: ${fileName} (${currentIndex}/${totalCount})`);
-        
-        updatePrintProgress(currentIndex, totalCount);
-        
-        try {
-            // Android Print API
-            if (typeof Android !== 'undefined' && Android.printPDF) {
-                if (file.path) {
-                    Android.printPDF(file.path);
-                    console.log(`Android Print API ile yazdırma başlatıldı: ${fileName}`);
-                    return;
-                }
-            }
-            
-            // Base64'ten yazdırma
-            if (file.base64) {
-                printBase64PDF(file.base64, fileName);
-            } else {
-                // Direkt yazdırma seçeneği
-                if (typeof Android !== 'undefined' && Android.printPDF && file.path) {
-                    Android.printPDF(file.path);
-                }
-            }
-            
-        } catch (e) {
-            console.error('Yazdırma hatası:', e);
-        }
-    }
-
-    function printBase64PDF(base64Data, fileName) {
-        try {
-            const base64WithoutPrefix = base64Data.split(',')[1];
-            const binaryData = atob(base64WithoutPrefix);
-            const bytes = new Uint8Array(binaryData.length);
-            
-            for (let i = 0; i < binaryData.length; i++) {
-                bytes[i] = binaryData.charCodeAt(i);
-            }
-            
-            const blob = new Blob([bytes], { type: 'application/pdf' });
-            const blobUrl = URL.createObjectURL(blob);
-            
-            const printIframe = document.createElement('iframe');
-            printIframe.style.display = 'none';
-            printIframe.src = blobUrl;
-            document.body.appendChild(printIframe);
-            
-            printIframe.onload = function() {
-                setTimeout(() => {
-                    try {
-                        printIframe.contentWindow.print();
-                        setTimeout(() => {
-                            document.body.removeChild(printIframe);
-                            URL.revokeObjectURL(blobUrl);
-                        }, 1000);
-                    } catch (e) {
-                        console.error('Yazdırma hatası:', e);
-                        document.body.removeChild(printIframe);
-                        URL.revokeObjectURL(blobUrl);
-                    }
-                }, 500);
-            };
-        } catch (e) {
-            console.error('Base64 yazdırma hatası:', e);
-        }
-    }
-
     // GERÇEK SİLME
     function deleteSelectedCards() {
         if (selectedCards.size === 0) {
@@ -3003,9 +2500,6 @@
             switch(action) {
                 case 'rename':
                     openRenameDialog(currentContextFile.cardId, currentContextFile.name);
-                    break;
-                case 'print':
-                    printSingleFile(currentContextFile.cardId, currentContextFile.name);
                     break;
                 case 'delete':
                     deleteSingleFile(currentContextFile.cardId, currentContextFile.name);
@@ -3535,8 +3029,6 @@
     window.selectAllCards = selectAllCards;
     window.deselectAllCards = deselectAllCards;
     window.deleteSelectedCards = deleteSelectedCards;
-    window.printSelectedCards = printSelectedCards;
-    window.printSingleFile = printSingleFile;
     window.handleFileSelect = handleFileSelect;
     window.openToolPage = openToolPage;
     window.openAndroidPermissionSettings = openAndroidPermissionSettings;

@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/background">
 
     <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
@@ -14,14 +15,17 @@
         android:theme="?attr/actionBarTheme"
         app:title="PDF Reader" />
 
-    <!-- Tabs (sadece home ekranında görünür) -->
+    <!-- Tabs -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="visible" />
+        android:visibility="visible"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="@color/text_secondary" />
 
-    <!-- Ana içerik alanı -->
+    <!-- Ana içerik -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -43,7 +47,8 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="24dp"
-                android:visibility="gone">
+                android:visibility="gone"
+                android:background="@color/surface">
 
                 <ImageView
                     android:layout_width="64dp"
@@ -58,6 +63,7 @@
                     android:text="Cihazınızdaki PDF'lere erişebilmem için izin gerekli"
                     android:textSize="18sp"
                     android:textStyle="bold"
+                    android:textColor="@color/text_primary"
                     android:layout_marginBottom="8dp"
                     android:gravity="center" />
 
@@ -66,15 +72,17 @@
                     android:layout_height="wrap_content"
                     android:text="&quot;Tüm Dosyalara Erişim&quot; iznini vermeniz gerekiyor."
                     android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
                     android:layout_marginBottom="16dp"
                     android:gravity="center" />
 
                 <Button
+                    android:id="@+id/btnPermission"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Ayarlardan Erişim Ver"
-                    android:onClick="openAllFilesSettings"
-                    style="@style/Widget.Material3.Button.Filled" />
+                    android:backgroundTint="@color/colorPrimary"
+                    android:textColor="@color/white" />
 
             </LinearLayout>
 
@@ -84,9 +92,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:visibility="visible">
+                android:visibility="visible"
+                android:background="@color/surface">
 
-                <!-- Loading indicator -->
                 <ProgressBar
                     android:id="@+id/loadingIndicator"
                     android:layout_width="wrap_content"
@@ -95,7 +103,6 @@
                     android:layout_marginTop="48dp"
                     android:visibility="gone" />
 
-                <!-- Tab içerikleri -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recentRecyclerView"
                     android:layout_width="match_parent"
@@ -127,7 +134,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:visibility="gone">
+            android:visibility="gone"
+            android:background="@color/surface">
 
             <GridView
                 android:id="@+id/toolsGrid"
@@ -147,7 +155,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:visibility="gone">
+            android:visibility="gone"
+            android:background="@color/surface">
 
             <ListView
                 android:id="@+id/filesList"
@@ -166,7 +175,9 @@
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:menu="@menu/bottom_nav_menu" />
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/bottom_nav_colors"
+        app:itemTextColor="@color/bottom_nav_colors" />
 
     <!-- FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

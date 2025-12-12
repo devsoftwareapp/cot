@@ -1,6 +1,7 @@
 package com.devsoftware.pdfreader
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -9,6 +10,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.view.View
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -67,12 +70,11 @@ class MainActivity : AppCompatActivity() {
         setupFab()
         checkPermissions()
         
-        // BUTON CLICK EKLENDİ - BAŞLANGIÇ
+        // BUTON CLICK EKLENDİ
         val btnPermission = findViewById<Button>(R.id.btnPermission)
         btnPermission.setOnClickListener {
             openAllFilesSettings()
         }
-        // BUTON CLICK EKLENDİ - BİTİŞ
     }
     
     private fun initViews() {
@@ -257,8 +259,10 @@ class MainActivity : AppCompatActivity() {
         
         for (file in files) {
             if (file.isDirectory) {
-                // Alt dizinleri tara
-                pdfList.addAll(findPDFs(file))
+                // Alt dizinleri tara (sınırlı sayıda)
+                if (!file.name.startsWith(".") && file.list()?.size ?: 0 < 50) {
+                    pdfList.addAll(findPDFs(file))
+                }
             } else if (file.isFile && file.name.endsWith(".pdf", true)) {
                 val pdfFile = PdfFile(
                     id = file.absolutePath.hashCode(),
@@ -384,12 +388,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+    // YENİ: WebView ile viewer.html aç
+    @SuppressLint("SetJavaScriptEnabled")
     private fun openPdf(pdfFile: PdfFile) {
-        // PDF görüntüleyiciye git
-        val intent = Intent(this, PdfViewerActivity::class.java)
-        intent.putExtra("pdf_path", pdfFile.path)
-        intent.putExtra("pdf_name", pdfFile.name)
-        startActivity(intent)
+        // WebView oluştur
+        val webView = WebView(this)
+        setContentView(webView)
+        
+        val webSettings = webView.settings
+        webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
+        webSettings.allowFileAccess = true
+        webSettings.allowContentAccess = true
+        webSettings.setSupportZoom(true)
+        webSettings.builtInZoomControls = true
+        webSettings.displayZoomControls = false
+        
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // PDF yüklendi
+            }
+        }
+        
+        // viewer.html'e PDF yolunu gönder
+        val encodedPath = Uri.encode(pdfFile.path)
+        val url = "file:///android_asset/web/viewer.html?file=$encodedPath&name=${Uri.encode(pdfFile.name)}"
+        
+        webView.loadUrl(url)
+        
+        // Back tuşu için
+        webView.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == android.view.KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
+                webView.goBack()
+                true
+            } else {
+                false
+            }
+        }
     }
     
     private fun showFabMenu() {
@@ -465,6 +501,20 @@ class MainActivity : AppCompatActivity() {
         // Sayfayı yenile
         if (tabLayout.selectedTabPosition == 1) {
             checkPermissions()
+        }
+    }
+    
+    override fun onBackPressed() {
+        // Eğer WebView açıksa
+        if (findViewById<WebView?>(R.id.webView) != null) {
+            val webView = findViewById<WebView>(R.id.webView)
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                super.onBackPressed()
+            }
+        } else {
+            super.onBackPressed()
         }
     }
 }

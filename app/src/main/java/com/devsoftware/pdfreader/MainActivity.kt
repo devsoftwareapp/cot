@@ -1,15 +1,20 @@
 package com.devsoftware.pdfreader
 
-import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import com.devsoftware.pdfreader.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Bu Activity sadece ana giriş ekranı olarak durabilir
-        // Eğer IndexActivity kullanıyorsan buradan ona yönlendirebilirsin:
-        // startActivity(Intent(this, IndexActivity::class.java))
-        // finish()
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // Ekranda SDK bilgisini göster
+        binding.textViewHello.text = "Hello Android SDK 36 🎉"
     }
 }

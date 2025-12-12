@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.devsoftware.pdfreader">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- İnternet izni (OCR veya bulut hizmetleri için) -->
+    <!-- İnternet izni -->
     <uses-permission android:name="android.permission.INTERNET" />
     
     <!-- Depolama izinleri -->
@@ -41,94 +40,23 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="file" />
-                <data android:mimeType="application/pdf" />
-                <data android:pathPattern=".*\\.pdf" />
-            </intent-filter>
-            
-            <!-- Tüm dosya türleri için (opsiyonel) -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" />
-                <data android:mimeType="*/*" />
-                <data android:pathPattern=".*\\.pdf" />
-            </intent-filter>
-
-            <!-- PDF PAYLAŞIMINI KABUL ET - SEND intent -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/pdf" />
-            </intent-filter>
-            
-            <!-- ÇOKLU PDF PAYLAŞIMI - SEND_MULTIPLE intent -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-                <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/pdf" />
             </intent-filter>
 
         </activity>
         
         <!-- Diğer araç aktiviteleri -->
-        <activity
-            android:name=".BirlestirmeActivity"
-            android:exported="false"
-            android:label="PDF Birleştirme" />
-        
-        <activity
-            android:name=".SesliOkumaActivity"
-            android:exported="false"
-            android:label="Sesli Okuma" />
-            
-        <activity
-            android:name=".OrcActivity"
-            android:exported="false"
-            android:label="OCR Metin Çıkar" />
-            
-        <activity
-            android:name=".ImzaActivity"
-            android:exported="false"
-            android:label="PDF İmzalama" />
-            
-        <activity
-            android:name=".SikistirmaActivity"
-            android:exported="false"
-            android:label="PDF Sıkıştırma" />
-            
-        <activity
-            android:name=".OrganizeActivity"
-            android:exported="false"
-            android:label="Sayfa Organize" />
-            
-        <activity
-            android:name=".ResimdenPdfActivity"
-            android:exported="false"
-            android:label="Resimden PDF" />
-            
-        <activity
-            android:name=".PdfResmeActivity"
-            android:exported="false"
-            android:label="PDF'den Resim" />
+        <activity android:name=".BirlestirmeActivity" android:exported="false" />
+        <activity android:name=".SesliOkumaActivity" android:exported="false" />
+        <activity android:name=".OrcActivity" android:exported="false" />
+        <activity android:name=".ImzaActivity" android:exported="false" />
+        <activity android:name=".SikistirmaActivity" android:exported="false" />
+        <activity android:name=".OrganizeActivity" android:exported="false" />
+        <activity android:name=".ResimdenPdfActivity" android:exported="false" />
+        <activity android:name=".PdfResmeActivity" android:exported="false" />
         
         <!-- PDF Görüntüleyici -->
-        <activity
-            android:name=".PdfViewerActivity"
-            android:exported="false"
-            android:label="PDF Görüntüleyici"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
-
-        <!-- FileProvider - Sabit authority kullan -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="com.devsoftware.pdfreader.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+        <activity android:name=".PdfViewerActivity" android:exported="false" />
 
     </application>
 

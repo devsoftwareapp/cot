@@ -66,6 +66,13 @@ class MainActivity : AppCompatActivity() {
         setupBottomNavigation()
         setupFab()
         checkPermissions()
+        
+        // BUTON CLICK EKLENDİ - BAŞLANGIÇ
+        val btnPermission = findViewById<Button>(R.id.btnPermission)
+        btnPermission.setOnClickListener {
+            openAllFilesSettings()
+        }
+        // BUTON CLICK EKLENDİ - BİTİŞ
     }
     
     private fun initViews() {

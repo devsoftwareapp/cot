@@ -1,10 +1,5 @@
 <resources>
     <string name="app_name">PDF Reader</string>
-    <string name="search">Ara</string>
-    <string name="menu">Menü</string>
-    <string name="recent">Son</string>
-    <string name="device">Cihaz</string>
-    <string name="favorites">Favoriler</string>
-    <string name="tools">Araçlar</string>
-    <string name="files">Dosyalar</string>
+    <string name="press_me">Press Me</string>
+    <string name="hello_pdf_reader">Hello PDF Reader</string>
 </resources>
